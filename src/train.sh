@@ -15,8 +15,8 @@ today=$(date +"%Y-%m-%d")
 python3 -m mtl.scripts.train \
   --name first_${today}\
   --log_dir ../logs \
-  --batch_size 1 \
-  --num_epochs 4\
+  --batch_size 4 \
+  --num_epochs 64\
   --dataset_root ../data/exp \
   --optimizer adam \
   --optimizer_lr 0.0001\

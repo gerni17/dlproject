@@ -8,16 +8,16 @@ conda activate pip_torch
 
 # Run training
 echo "Start training"
-cd /home/gian/git/deeplabv3p/src
+# cd /home/gian/git/deeplabv3p/src
 today=$(date +"%Y-%m-%d")
 
 
 python3 -m mtl.scripts.train \
   --name first_${today}\
-  --log_dir /home/gian/git/deeplabv3p/logs \
+  --log_dir ../logs \
   --batch_size 1 \
   --num_epochs 4\
-  --dataset_root /home/gian/git/deeplabv3p/data/exp \
+  --dataset_root ../data/exp \
   --optimizer adam \
   --optimizer_lr 0.0001\
   --model_name deeplabv3pp\

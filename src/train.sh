@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Setup environment (do not change this)
-conda activate pip_torch
+# conda create -n pip_torch
+# conda activate pip_torch
 # pip install -r requirements.txt
 
 
@@ -15,12 +16,12 @@ today=$(date +"%Y-%m-%d")
 python3 -m mtl.scripts.train \
   --name first_${today}\
   --log_dir ../logs \
-  --batch_size 4 \
-  --num_epochs 64\
+  --batch_size 1 \
+  --num_epochs 4\
   --dataset_root ../data/exp \
   --optimizer adam \
   --optimizer_lr 0.0001\
-  --model_name deeplabv3pp\
+  --model_name deeplabv3p\
   --gpu True
 
 # Wait a moment before stopping the instance to give a chance to debug

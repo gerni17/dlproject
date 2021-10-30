@@ -46,6 +46,7 @@ def main():
         name="tb",
         version="",
         save_dir=log_path,
+        log_graph=True,
     )
 
     checkpoint_local_callback = ModelCheckpoint(

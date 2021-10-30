@@ -19,6 +19,6 @@ if [ ! -d "../data/domain_shift" ]; then
   echo "\n"
 fi
 
-conda create -n pip_torch
-conda activate pip_torch
-pip install -r requirements.txt
+# conda create -n pip_torch
+# conda activate pip_torch
+# pip install -r requirements.txt

@@ -18,10 +18,10 @@ class ExperimentSemseg(pl.LightningModule):
         super(ExperimentSemseg, self).__init__()
         self.cfg = cfg
         self.save_hyperparameters(self.cfg)
-
+        # self.example_input_array=torch.rand((1,3,960,1280))
         dataset_class = resolve_dataset_class(cfg.dataset)
         self.datasets = {
-            split: dataset_class(cfg.dataset_root, split, integrity_check=True)
+            split: dataset_class(cfg.dataset_root, split, integrity_check=False)
             for split in (SPLIT_TRAIN, SPLIT_VALID, SPLIT_TEST)
         }
 
@@ -92,7 +92,7 @@ class ExperimentSemseg(pl.LightningModule):
         self.log_dict({
                 'loss_train/semseg': loss_semseg,
                 'loss_train/total': loss_total,
-            }, on_step=True, on_epoch=False, prog_bar=True
+            }, on_step=True, on_epoch=True, prog_bar=True
         )
         if self.can_visualize():
             self.visualize(batch, y_hat_semseg, batch[MOD_ID], 'imgs_train/batch_crops')
@@ -100,6 +100,10 @@ class ExperimentSemseg(pl.LightningModule):
         return {
             'loss': loss_total,
         }
+    def training_epoch_end(self, outputs):
+        sampleimg=torch.rand((1,3,960,1280)).cuda()
+        # self.logger.experiment[2].add_graph(self,sampleimg) TOFO
+        pass
 
     def inference_step(self, batch):
         rgb = batch[MOD_RGB]
@@ -223,7 +227,8 @@ class ExperimentSemseg(pl.LightningModule):
         )
         # Use commit=False to not increment the step counter
         self.logger.experiment[0].log({
-            tag: [wandb.Image(vis.cpu(), caption=tag)]
+            tag: [wandb.Image(vis.cpu(), caption=tag)],
+            "global_step": self.global_step
         }, commit=False)
 
         # Tensorboard logging

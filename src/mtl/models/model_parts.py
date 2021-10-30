@@ -121,7 +121,7 @@ class Encoder(torch.nn.Module):
 class DecoderDeeplabV3p(torch.nn.Module):
     def __init__(self, bottleneck_ch, skip_4x_ch, num_out_ch):
         super(DecoderDeeplabV3p, self).__init__()
-        self.red=48
+        self.red=48#
         self.reduce_conv2 = torch.nn.Sequential(torch.nn.Conv2d(skip_4x_ch, self.red, kernel_size=1),
                                           torch.nn.BatchNorm2d(self.red))
         self.features_to_predictions = torch.nn.Conv2d(bottleneck_ch, num_out_ch, kernel_size=1, stride=1)

@@ -20,8 +20,7 @@ class CycleGANSystem(pl.LightningModule):
         transform,  # preprocessing transformation
         reconstr_w=10,  # reconstruction weighting
         id_w=2,  # identity weighting
-        viz_nth=5,  # show output of system every nth epoch
-        visualization_dataset=None,
+        viz_set=None,
     ):
         super(CycleGANSystem, self).__init__()
         self.G_s2t = G_s2t
@@ -34,14 +33,6 @@ class CycleGANSystem(pl.LightningModule):
         self.id_w = id_w
         self.cnt_train_step = 0
         self.step = 0
-        self.viz_nth = viz_nth
-
-        if visualization_dataset:
-            visualization_dataset.prepare_data()
-            visualization_dataset.setup()
-
-            dataloader = visualization_dataset.test_dataloader()
-            self.viz_imgs, ignore = next(iter(dataloader))
 
         self.mae = nn.L1Loss()
         self.generator_loss = nn.MSELoss()
@@ -75,7 +66,8 @@ class CycleGANSystem(pl.LightningModule):
         ], []
 
     def training_step(self, batch, batch_idx, optimizer_idx):
-        source_img, target_img = batch
+        source_img, target_img = (batch["source"], batch["target"])
+
         b = source_img.size()[0]
 
         valid = torch.ones(b, 1, 30, 30).cuda()
@@ -105,6 +97,23 @@ class CycleGANSystem(pl.LightningModule):
 
             # Loss Weight
             G_loss = val_loss + self.reconstr_w * reconstr_loss + self.id_w * id_loss
+
+            logs = {
+                "G_loss": G_loss,
+                "val_source": val_source,
+                "val_target": val_target,
+                "val_loss": val_loss,
+                "reconstr_source": reconstr_source,
+                "reconstr_target": reconstr_target,
+                "reconstr_loss": reconstr_target,
+                "id_source": reconstr_target,
+                "id_target": id_target,
+                "id_loss": id_loss,
+            }
+
+            self.log_dict(
+                logs, on_step=False, on_epoch=True, prog_bar=True, logger=True
+            )
 
             return {
                 "loss": G_loss,
@@ -136,6 +145,19 @@ class CycleGANSystem(pl.LightningModule):
 
             # Count up
             self.cnt_train_step += 1
+
+            logs = {
+                "D_loss": D_loss,
+                "D_source_gen_loss": D_source_gen_loss,
+                "D_target_gen_loss": D_target_gen_loss,
+                "D_source_valid_loss": D_source_valid_loss,
+                "D_target_valid_loss": D_target_valid_loss,
+                "D_gen_loss": D_gen_loss,
+            }
+
+            self.log_dict(
+                logs, on_step=False, on_epoch=True, prog_bar=True, logger=True
+            )
 
             return {"loss": D_loss}
 
@@ -186,28 +208,7 @@ class CycleGANSystem(pl.LightningModule):
         self.reconstr.append(reconstr)
         self.identity.append(identity)
 
-        if self.step % self.viz_nth == 0 and self.viz_imgs is not None:
-            # Display Model Output
-            self.viz_imgs = self.viz_imgs.cuda()
-            gen_imgs = self.G_s2t(self.viz_imgs)
-            gen_img = torch.cat([self.viz_imgs, gen_imgs], dim=0)
-
-            # Reverse Normalization
-            gen_img = gen_img * 0.5 + 0.5
-            gen_img = gen_img * 255
-
-            joined_images_tensor = make_grid(gen_img, nrow=4, padding=2)
-
-            joined_images = joined_images_tensor.detach().cpu().numpy().astype(int)
-            joined_images = np.transpose(joined_images, [1, 2, 0])
-
-            # Visualize
-            fig = plt.figure(figsize=(18, 8))
-            plt.imshow(joined_images)
-            plt.axis("off")
-            plt.title(f"Epoch {self.step}")
-            plt.show()
-            plt.clf()
-            plt.close()
-
         return None
+
+    def generate(self, inputs):
+        return self.G_s2t(inputs)

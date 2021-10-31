@@ -150,6 +150,7 @@ dmypy.json
 
 data/*
 logs/*
+wandb/*
 models/*
 src/logs/*
 results/*

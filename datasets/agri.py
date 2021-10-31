@@ -3,6 +3,7 @@ from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 import pytorch_lightning as pl
 import os, glob, random
+from sklearn.model_selection import train_test_split
 
 # Agriculture Dataset ---------------------------------------------------------------------------
 class AgriDataset(Dataset):
@@ -23,7 +24,7 @@ class AgriDataset(Dataset):
         source_img = self.transform(source_img, self.phase)
         target_img = self.transform(target_img, self.phase)
 
-        return source_img, target_img
+        return {"source": source_img, "target": target_img}
 
 
 # Data Module

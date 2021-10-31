@@ -19,26 +19,29 @@ python -m scripts.train_cyclegan --help
 ## Folder structure
 
 Aside from the folder structure you'll get by cloning this branch, you will need to make sure your data folder has the following layout:
+
+```
 project
 ├── data
-│ ├── exp
-│ │ ├── test
-│ │ │ ├── rgb
-│ │ │ └── semseg
-│ │ ├── train
-│ │ │ ├── rgb
-│ │ │ └── semseg
-│ │ └── val
-│ │ ├── rgb
-│ │ └── semseg
-│ └── other_domains
-│ ├── test
-│ │ ├── domainA
-│ │ └── domainB
-│ └── train
-│ ├── domainA
-│ └── domainB
+│   ├── exp
+│   │   ├── test
+│   │   │   ├── rgb
+│   │   │   └── semseg
+│   │   ├── train
+│   │   │   ├── rgb
+│   │   │   └── semseg
+│   │   └── val
+│   │       ├── rgb
+│   │       └── semseg
+│   └── other_domains
+│       ├── test
+│       │   ├── domainA
+│       │   └── domainB
+│       └── train
+│           ├── domainA
+│           └── domainB
 ├── configs
 ├── models
 ├── preprocessing
 └── ...
+```

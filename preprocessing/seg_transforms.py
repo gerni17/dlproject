@@ -22,58 +22,58 @@ class Compose:
     def __init__(self, transforms):
         self.transforms = transforms
 
-    def __call__(self, image, target):
+    def __call__(self, image, segmentation):
         for t in self.transforms:
-            image, target = t(image, target)
-        return image, target
+            image, segmentation = t(image, segmentation)
+        return image, segmentation
 
 class Resize:
     def __init__(self, img_size):
         self.img_size = img_size
         self.resize=T.Resize(img_size)
-        self.resize_sem=T.Resize(img_size,interpolation=T.InterpolationMode.NEAREST)
+        self.resize_sem=T.Resize(img_size, interpolation=T.InterpolationMode.NEAREST)
 
-    def __call__(self, image, target):
+    def __call__(self, image, segmentation):
         image = self.resize(image)
-        target = self.resize_sem(target)
-        return image, target
+        segmentation = self.resize_sem(segmentation)
+        return image, segmentation
 
 class RandomHorizontalFlip:
     def __init__(self, flip_prob=0.5):
         self.flip_prob = flip_prob
 
-    def __call__(self, image, target):
+    def __call__(self, image, segmentation):
         if random.random() < self.flip_prob:
             image = F.hflip(image)
-            target = F.hflip(target)
-        return image, target
+            segmentation = F.hflip(segmentation)
+        return image, segmentation
 
 class RandomVerticalFlip:
     def __init__(self, flip_prob=0.5):
         self.flip_prob = flip_prob
 
-    def __call__(self, image, target):
+    def __call__(self, image, segmentation):
         if random.random() < self.flip_prob:
             image = F.vflip(image)
-            target = F.vflip(target)
-        return image, target
+            segmentation = F.vflip(segmentation)
+        return image, segmentation
 
 class PILToTensor:
-    def __call__(self, image, target):
+    def __call__(self, image, segmentation):
         image = F.pil_to_tensor(image)
-        target = torch.as_tensor(np.array(target), dtype=torch.int64)
-        return image, target
+        segmentation = torch.as_tensor(np.array(segmentation), dtype=torch.int64)
+        return image, segmentation
 
 class Normalize:
     def __init__(self, mean, std):
         self.mean = mean
         self.std = std
 
-    def __call__(self, image, target):
+    def __call__(self, image, segmentation):
         # this might create some values out of bounds
         image = torch.round(F.normalize(image.float(), mean=self.mean, std=self.std))
         # image=torch.clip(image,min=0,max=255)
-        return image, target
+        return image, segmentation
 
 class SegImageTransform:
     def __init__(self, img_size=64):
@@ -96,7 +96,7 @@ class SegImageTransform:
             ),
         }
 
-    def __call__(self, img, target, phase="train"):
-        img,target = self.transform[phase](img,target)
+    def __call__(self, img, segmentation, phase="train"):
+        img,segmentation = self.transform[phase](img,segmentation)
 
-        return img, target
+        return img, segmentation

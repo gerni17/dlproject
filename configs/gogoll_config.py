@@ -38,7 +38,7 @@ def command_line_parser():
 
     # -------------------------- logging settings --------------------------
     parser.add_argument(
-        "--log_dir", type=expandpath, required=True, help="Place for artifacts and logs"
+        "--log_dir", type=expandpath, default="./logs", help="Place for artifacts and logs"
     )
     parser.add_argument(
         "--use_wandb", type=str2bool, default=False, help="Use WandB for logging"
@@ -96,7 +96,7 @@ def command_line_parser():
 
     # -------------------------- data settings --------------------------
     parser.add_argument(
-        "--dataset_root", type=expandpath, required=True, help="Path to dataset"
+        "--dataset_root", type=expandpath, default="./data", help="Path to dataset"
     )
     parser.add_argument(
         "--domain",

@@ -10,7 +10,7 @@ def semseg_compute_confusion(y_hat_lbl, y_lbl, num_classes):
     if y_lbl.dim() == 4:
         y_lbl = y_lbl.squeeze(1)
 
-    y_hat_lbl.cuda()
+    y_hat_lbl
 
     # hack for bincounting 2 arrays together
     x = y_hat_lbl + num_classes * y_lbl

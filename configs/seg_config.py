@@ -41,7 +41,7 @@ def command_line_parser():
         "--log_dir", type=expandpath, required=True, help="Place for artifacts and logs"
     )
     parser.add_argument(
-        "--use_wandb", type=bool, default=False, help="Use WandB for logging"
+        "--use_wandb", type=str2bool, default=False, help="Use WandB for logging"
     )
 
     # -------------------------- training settings --------------------------
@@ -81,7 +81,7 @@ def command_line_parser():
     )
 
     # -------------------------- hardware settings --------------------------
-    parser.add_argument("--gpu", type=bool, default=True, help="GPU usage")
+    parser.add_argument("--gpu", type=str2bool, default=True, help="GPU usage")
     parser.add_argument(
         "--workers",
         type=int,

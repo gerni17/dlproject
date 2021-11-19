@@ -19,9 +19,7 @@ def str2bool(v):
 
 
 def command_line_parser():
-    parser = argparse.ArgumentParser(
-        add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
+    parser = argparse.ArgumentParser(add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     # -------------------------- wandb settings --------------------------
     parser.add_argument(
@@ -37,17 +35,11 @@ def command_line_parser():
     )
 
     # -------------------------- logging settings --------------------------
-    parser.add_argument(
-        "--log_dir", type=expandpath, required=True, help="Place for artifacts and logs"
-    )
-    parser.add_argument(
-        "--use_wandb", type=str2bool, default=False, help="Use WandB for logging"
-    )
+    parser.add_argument("--log_dir", type=expandpath, required=True, help="Place for artifacts and logs")
+    parser.add_argument("--use_wandb", type=str2bool, default=False, help="Use WandB for logging")
 
     # -------------------------- training settings --------------------------
-    parser.add_argument(
-        "--num_epochs", type=int, default=16, help="Number of training epochs"
-    )
+    parser.add_argument("--num_epochs", type=int, default=16, help="Number of training epochs")
     parser.add_argument(
         "--batch_size",
         type=int,
@@ -95,9 +87,7 @@ def command_line_parser():
     )
 
     # -------------------------- data settings --------------------------
-    parser.add_argument(
-        "--dataset_root", type=expandpath, required=True, help="Path to dataset"
-    )
+    parser.add_argument("--dataset_root", type=expandpath, required=True, help="Path to dataset")
     parser.add_argument(
         "--domain",
         type=str,
@@ -117,13 +107,13 @@ def command_line_parser():
     parser.add_argument(
         "--workers",
         type=int,
-        default=8,
+        default=1,
         help="Number of worker threads fetching training data",
     )
     parser.add_argument(
         "--workers_validation",
         type=int,
-        default=4,
+        default=1,
         help="Number of worker threads fetching validation data",
     )
 

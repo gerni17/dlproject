@@ -1,14 +1,17 @@
-
 from logging import log
+from os import path
 import wandb
 import uuid
 
 from datetime import datetime
 from pytorch_lightning import Trainer
+from logger.gogoll_pipeline_image import GogollPipelineImageLogger
+from models.lightweight_semseg import LightweightSemsegModel
 from preprocessing.seg_transforms import SegImageTransform
 from datasets.gogoll import GogollDataModule
 
 from logger.generated_image import GeneratedImageLogger
+from systems.gogoll_seg_system import GogollSegSystem
 from utils.weight_initializer import init_weights
 from configs.gogoll_config import command_line_parser
 from pytorch_lightning.loggers import WandbLogger
@@ -19,6 +22,7 @@ from models.discriminators import CycleGANDiscriminator
 from models.generators import CycleGANGenerator
 from logger.gogoll_semseg_image import GogollSemsegImageLogger
 from systems.gogoll_system import GogollSystem
+
 
 def main():
     cfg = command_line_parser()
@@ -39,9 +43,12 @@ def main():
         "seg_s": 0.0002,
         "seg_t": 0.0002,
     }
-    epoch = cfg.num_epochs
+    seg_s_lr = 0.0002
+    epochs_seg = cfg.num_epochs_seg
+    epochs_gogoll = cfg.num_epochs_gogoll
     reconstr_w = cfg.reconstruction_weight
     id_w = cfg.identity_weight
+    seg_w = cfg.segmentation_weight
 
     # Data Preprocessing  -----------------------------------------------------------------
     transform = SegImageTransform(img_size=cfg.image_size)
@@ -63,47 +70,52 @@ def main():
         init_weights(net, init_type="normal")
 
     # LightningModule  --------------------------------------------------------------
-    model = GogollSystem(
-        G_basestyle,
-        G_stylebase,
-        D_base,
-        D_style,
-        seg_net_s,
-        seg_net_t,
-        lr,
-        reconstr_w,
-        id_w,
-    )
+    seg_system = GogollSegSystem(seg_net_s, lr=seg_s_lr)
+
+    if cfg.seg_checkpoint_path:
+        print(f"Loading segmentation net from checkpoint...")
+        seg_system = GogollSegSystem.load_from_checkpoint(cfg.seg_checkpoint_path, net=seg_net_s)
+
+    main_system = GogollSystem(G_basestyle, G_stylebase, D_base, D_style, seg_net_s, seg_net_t, lr, reconstr_w, id_w, seg_w)
 
     # Logger  --------------------------------------------------------------
-    wandb_logger = WandbLogger(project=project_name, name=run_name) if cfg.use_wandb else None
+    seg_wandb_logger = WandbLogger(project=project_name, name=run_name, prefix="seg") if cfg.use_wandb else None
+    gogoll_wandb_logger = WandbLogger(project=project_name, name=run_name, prefix="gogoll") if cfg.use_wandb else None
 
     # Callbacks  --------------------------------------------------------------
-    # save the model 
-    checkpoint_callback = ModelCheckpoint(
-        dirpath=log_path,
+    # save the model
+    segmentation_checkpoint_callback = ModelCheckpoint(
+        dirpath=path.join(log_path, "segmentation"),
         save_last=False,
         save_top_k=1,
         verbose=False,
-        monitor='loss_train/semseg',
-        mode='max',
+        monitor="loss",
+        mode="max",
+    )
+    gogoll_checkpoint_callback = ModelCheckpoint(
+        dirpath=path.join(log_path, "gogoll"),
+        save_last=False,
+        save_top_k=1,
+        verbose=False,
+        monitor="loss",
+        mode="max",
     )
 
     # save the generated images (from the validation data) after every epoch to wandb
-    semseg_s_image_callback = GogollSemsegImageLogger(vs, network="seg_s", log_key="Segmentation (Source)")
-    # semseg_t_image_callback = GogollSemsegImageLogger(vs, network="seg_t", log_key="Segmentation (Target)")
+    semseg_s_image_callback = GogollSemsegImageLogger(vs, network="net", log_key="Segmentation (Source)")
+    pipeline_image_callback = GogollPipelineImageLogger(vs, log_key="Pipeline")
 
     # Trainer  --------------------------------------------------------------
     print("Start training", run_name)
-    print(f'Gpu {cfg.gpu}')
-    trainer = Trainer(
-        max_epochs=epoch,
+    print(f"Gpu {cfg.gpu}")
+    seg_trainer = Trainer(
+        max_epochs=epochs_seg,
         gpus=1 if cfg.gpu else 0,
         reload_dataloaders_every_n_epochs=True,
         num_sanity_val_steps=0,
-        logger=wandb_logger,
+        logger=seg_wandb_logger,
         callbacks=[
-            checkpoint_callback,
+            segmentation_checkpoint_callback,
             semseg_s_image_callback,
             # semseg_t_image_callback,
         ],
@@ -113,9 +125,31 @@ def main():
         # limit_test_batches=2,
     )
 
+    trainer = Trainer(
+        max_epochs=epochs_gogoll,
+        gpus=1 if cfg.gpu else 0,
+        reload_dataloaders_every_n_epochs=True,
+        num_sanity_val_steps=0,
+        logger=gogoll_wandb_logger,
+        callbacks=[
+            gogoll_checkpoint_callback,
+            pipeline_image_callback,
+        ],
+        # Uncomment the following options if you want to try out framework changes without training too long
+        # limit_train_batches=2,
+        # limit_val_batches=2,
+        # limit_test_batches=2,
+    )
+
     # Train
-    print("Fitting", run_name)
-    trainer.fit(model, datamodule=dm)
+    if not cfg.seg_checkpoint_path:
+        print("Fitting segmentation network...", run_name)
+        seg_trainer.fit(seg_system, datamodule=dm)
+    else:
+        print("Used pre-trained segmentation network", run_name)
+
+    print("Fitting gogoll system...", run_name)
+    trainer.fit(main_system, datamodule=dm)
 
     wandb.finish()
 

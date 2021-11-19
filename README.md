@@ -7,7 +7,7 @@ Make sure you install all required packages first (e.g wandb, pytorch, pytorch l
 To run the cyclegan experiment run the following command. If yo
 
 ```sh
-python -m scripts.train_cyclegan --name cyclegan_experiment --log_dir ./logs --dataset_root ./data --num_epochs 8 --use_wandb True
+python -m scripts.train_gogoll --name gogoll_experiment --use_wandb True
 ```
 
 To see which command line options you have available you can call

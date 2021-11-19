@@ -19,14 +19,13 @@ def str2bool(v):
 
 
 def command_line_parser():
-    parser = argparse.ArgumentParser(
-        add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
+    parser = argparse.ArgumentParser(add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     # -------------------------- wandb settings --------------------------
     parser.add_argument(
         "--project",
         type=str,
+        default="Gogoll",
         help="Name for your run to wandb project.",
     )
     parser.add_argument(
@@ -37,21 +36,17 @@ def command_line_parser():
     )
 
     # -------------------------- logging settings --------------------------
-    parser.add_argument(
-        "--log_dir", type=expandpath, default="./logs", help="Place for artifacts and logs"
-    )
-    parser.add_argument(
-        "--use_wandb", type=str2bool, default=False, help="Use WandB for logging"
-    )
+    parser.add_argument("--log_dir", type=expandpath, default="./logs", help="Place for artifacts and logs")
+    parser.add_argument("--use_wandb", type=str2bool, default=False, help="Use WandB for logging")
 
     # -------------------------- training settings --------------------------
-    parser.add_argument(
-        "--num_epochs", type=int, default=16, help="Number of training epochs"
-    )
+    parser.add_argument("--num_epochs_seg", type=int, default=16, help="Number of training epochs for the segmentation net")
+    parser.add_argument("--num_epochs_gogoll", type=int, default=100, help="Number of training epochs")
+    parser.add_argument("--seg_checkpoint_path", type=expandpath, help="Path to the source segmentation net's checkpoint (leave empty if should be trained)")
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=8,
+        default=4,
         help="Number of samples in a batch for training",
     )
     parser.add_argument(
@@ -71,6 +66,12 @@ def command_line_parser():
         type=float,
         default=2,
         help="Weight assigned to the identity loss",
+    )
+    parser.add_argument(
+        "--segmentation_weight",
+        type=float,
+        default=0.8,
+        help="Weight assigned to the segmentation loss",
     )
     parser.add_argument(
         "--resume",
@@ -95,13 +96,11 @@ def command_line_parser():
     )
 
     # -------------------------- data settings --------------------------
-    parser.add_argument(
-        "--dataset_root", type=expandpath, default="./data", help="Path to dataset"
-    )
+    parser.add_argument("--dataset_root", type=expandpath, default="./data", help="Path to dataset")
     parser.add_argument(
         "--domain",
         type=str,
-        default="domainA",
+        default="domainB",
         choices=["domainA", "domainB"],
         help="Type of the target domain",
     )
@@ -117,13 +116,13 @@ def command_line_parser():
     parser.add_argument(
         "--workers",
         type=int,
-        default=8,
+        default=4,
         help="Number of worker threads fetching training data",
     )
     parser.add_argument(
         "--workers_validation",
         type=int,
-        default=4,
+        default=2,
         help="Number of worker threads fetching validation data",
     )
 

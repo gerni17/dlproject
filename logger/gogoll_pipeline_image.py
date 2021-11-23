@@ -78,5 +78,5 @@ class GogollPipelineImageLogger(Callback):
                 commit=False,
             )
 
-        except:
-            print("Error occured while uploading image to wandb")
+        except BaseException as err:
+            print(f"Error occured while uploading image to wandb. {err=}, {type(err)=}")

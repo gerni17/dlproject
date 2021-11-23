@@ -45,8 +45,8 @@ class GogollSystem(pl.LightningModule):
         self.mae = nn.L1Loss()
         self.generator_loss = nn.MSELoss()
         self.discriminator_loss = nn.MSELoss()
-        # self.semseg_loss = nn.CrossEntropyLoss()
-        self.semseg_loss = torchmetrics.IoU(3)
+        self.semseg_loss = nn.CrossEntropyLoss()
+        # self.semseg_loss = torchmetrics.IoU(3)
         self.losses = []
         self.Seg_mean_losses = []
         self.G_mean_losses = []
@@ -56,41 +56,42 @@ class GogollSystem(pl.LightningModule):
         self.identity = []
 
     def configure_optimizers(self):
-        self.global_optimizer = optim.Adam(
-            chain(
-                self.G_s2t.parameters(),
-                self.G_t2s.parameters(),
-                self.D_source.parameters(),
-                self.D_target.parameters(),
-                self.seg_t.parameters(),
-            ),
-            lr=self.lr["G"],
-            betas=(0.5, 0.999),
-        )
-        # self.g_s2t_optimizer = optim.Adam(self.G_s2t.parameters(), lr=self.lr["G"], betas=(0.5, 0.999))
-        # self.g_t2s_optimizer = optim.Adam(self.G_t2s.parameters(), lr=self.lr["G"], betas=(0.5, 0.999))
-        # self.d_source_optimizer = optim.Adam(self.D_source.parameters(), lr=self.lr["D"], betas=(0.5, 0.999))
-        # self.d_target_optimizer = optim.Adam(self.D_target.parameters(), lr=self.lr["D"], betas=(0.5, 0.999))
-        # self.seg_s_optimizer = optim.Adam(self.seg_s.parameters(), lr=self.lr["seg_s"], betas=(0.5, 0.999))
-        # self.seg_t_optimizer = optim.Adam(self.seg_t.parameters(), lr=self.lr["seg_t"], betas=(0.5, 0.999))
+        # self.global_optimizer = optim.Adam(
+        #     chain(
+        #         self.G_s2t.parameters(),
+        #         self.G_t2s.parameters(),
+        #         self.D_source.parameters(),
+        #         self.D_target.parameters(),
+        #         self.seg_t.parameters(),
+        #     ),
+        #     lr=self.lr["G"],
+        #     betas=(0.5, 0.999),
+        # )
+        self.g_s2t_optimizer = optim.Adam(self.G_s2t.parameters(), lr=self.lr["G"], betas=(0.5, 0.999))
+        self.g_t2s_optimizer = optim.Adam(self.G_t2s.parameters(), lr=self.lr["G"], betas=(0.5, 0.999))
+        self.d_source_optimizer = optim.Adam(self.D_source.parameters(), lr=self.lr["D"], betas=(0.5, 0.999))
+        self.d_target_optimizer = optim.Adam(self.D_target.parameters(), lr=self.lr["D"], betas=(0.5, 0.999))
+        self.seg_s_optimizer = optim.Adam(self.seg_s.parameters(), lr=self.lr["seg_s"], betas=(0.5, 0.999))
+        self.seg_t_optimizer = optim.Adam(self.seg_t.parameters(), lr=self.lr["seg_t"], betas=(0.5, 0.999))
 
         # self.g_optimizer = optim.Adam(chain(self.G_s2t.parameters(), self.G_t2s.parameters()), lr=self.lr["G"], betas=(0.5, 0.999))
         # self.d_optimizer = optim.Adam(chain(self.D_source.parameters(), self.D_target.parameters()), lr=self.lr["D"], betas=(0.5, 0.999))
         # self.seg_optimizer = optim.Adam(chain(self.seg_s.parameters(), self.seg_t.parameters()), lr=self.lr["D"], betas=(0.5, 0.999))
 
         return [
-            self.global_optimizer,
-            # self.g_s2t_optimizer,
-            # self.g_t2s_optimizer,
-            # self.d_source_optimizer,
-            # self.d_target_optimizer,
+            # self.global_optimizer,
+            self.g_s2t_optimizer,
+            self.g_t2s_optimizer,
+            self.d_source_optimizer,
+            self.d_target_optimizer,
+            self.seg_t_optimizer,
             # self.seg_t_optimizer,
             # self.g_optimizer,
             # self.d_optimizer,
             # self.seg_optimizer,
         ], []
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, batch_idx, optimizer_idx):
         source_img, segmentation_img, target_img = (batch["source"], batch["source_segmentation"], batch["target"])
 
         b = source_img.size()[0]
@@ -98,47 +99,48 @@ class GogollSystem(pl.LightningModule):
         valid = torch.ones(b, 1, 30, 30).cuda()
         fake = torch.zeros(b, 1, 30, 30).cuda()
 
+        fake_source = self.G_t2s(target_img)
         fake_target = self.G_s2t(source_img)
         cycled_source = self.G_t2s(self.G_s2t(fake_target))
+        cycled_target = self.G_s2t(self.G_t2s(target_img))
 
-        # Segment
-        y_seg_s = self.seg_s(cycled_source)
-        y_seg_t = self.seg_t(fake_target)
+        if optimizer_idx == 0 or optimizer_idx == 1 or optimizer_idx == 4:
+            # Train Generator
+            # Validity
+            # MSELoss
+            val_source = self.generator_loss(self.D_source(fake_source), valid)
+            val_target = self.generator_loss(self.D_target(fake_target), valid)
+            val_loss = (val_source + val_target) / 2
 
-        loss_seg_s = self.semseg_loss(y_seg_s, segmentation_img)
-        loss_seg_t = self.semseg_loss(y_seg_t, segmentation_img)
+            # Reconstruction
+            reconstr_source = self.mae(cycled_source, source_img)
+            reconstr_target = self.mae(cycled_target, target_img)
+            reconstr_loss = (reconstr_source + reconstr_target) / 2
 
-        Seg_loss = (loss_seg_s + loss_seg_t) / 2
+            # Identity
+            id_source = self.mae(self.G_t2s(source_img), source_img)
+            id_target = self.mae(self.G_s2t(target_img), target_img)
+            id_loss = (id_source + id_target) / 2
 
-        logs = {
-            "Seg_loss": Seg_loss,
-            "Seg_loss_s": loss_seg_s,
-            "Seg_loss_t": loss_seg_t,
-        }
+            # Loss Weight
+            G_loss = val_loss + self.reconstr_w * reconstr_loss + self.id_w * id_loss
 
-        # Train Generator
-        # Validity
-        # MSELoss
-        val_source = self.generator_loss(self.D_source(self.G_t2s(target_img)), valid)
-        val_target = self.generator_loss(self.D_target(self.G_s2t(source_img)), valid)
-        val_loss = (val_source + val_target) / 2
+            # Segmentation
+            y_seg_s = self.seg_s(cycled_source)
+            y_seg_t = self.seg_t(fake_target)
 
-        # Reconstruction
-        reconstr_source = self.mae(self.G_t2s(self.G_s2t(source_img)), source_img)
-        reconstr_target = self.mae(self.G_s2t(self.G_t2s(target_img)), target_img)
-        reconstr_loss = (reconstr_source + reconstr_target) / 2
+            y_seg_t_s = self.seg_s(fake_source)
+            y_seg_t_t = self.seg_t(target_img)
+            y_seg_t_t_c = self.seg_t(cycled_target)
 
-        # Identity
-        id_source = self.mae(self.G_t2s(source_img), source_img)
-        id_target = self.mae(self.G_s2t(target_img), target_img)
-        id_loss = (id_source + id_target) / 2
+            loss_seg_a = self.semseg_loss(y_seg_s, segmentation_img)
+            loss_seg_b = self.semseg_loss(y_seg_t, segmentation_img)
+            loss_seg_c = self.semseg_loss(y_seg_t_t, y_seg_t_s)
+            loss_seg_d = self.semseg_loss(y_seg_t_t_c, y_seg_t_s)
 
-        # Loss Weight
-        G_loss = val_loss + self.reconstr_w * reconstr_loss + self.id_w * id_loss
+            Seg_loss = (loss_seg_a + loss_seg_b + loss_seg_c + loss_seg_d) / 4
 
-        logs = {
-            **logs,
-            **{
+            logs = {
                 "G_loss": G_loss,
                 "val_source": val_source,
                 "val_target": val_target,
@@ -149,68 +151,71 @@ class GogollSystem(pl.LightningModule):
                 "id_source": reconstr_target,
                 "id_target": id_target,
                 "id_loss": id_loss,
-            },
-        }
+                "loss_seg": Seg_loss,
+                "loss_seg_a": loss_seg_a,
+                "loss_seg_b": loss_seg_b,
+                "loss_seg_c": loss_seg_c,
+                "loss_seg_d": loss_seg_d,
+            }
 
-        # Train Discriminator
-        # MSELoss
-        D_source_gen_loss = self.discriminator_loss(self.D_source(self.G_t2s(target_img)), fake)
-        D_target_gen_loss = self.discriminator_loss(self.D_target(self.G_s2t(source_img)), fake)
-        D_source_valid_loss = self.discriminator_loss(self.D_source(source_img), valid)
-        D_target_valid_loss = self.discriminator_loss(self.D_target(target_img), valid)
+            self.log_dict(logs, on_step=False, on_epoch=True, prog_bar=True, logger=True)
 
-        D_gen_loss = (D_source_gen_loss + D_target_gen_loss) / 2
+            return 4 * G_loss + Seg_loss
 
-        # Loss Weight
-        D_loss = (D_gen_loss + D_source_valid_loss + D_target_valid_loss) / 3
+        elif optimizer_idx == 2 or optimizer_idx == 3:
+            # Train Discriminator
+            # MSELoss
+            D_source_gen_loss = self.discriminator_loss(self.D_source(fake_source), fake)
+            D_target_gen_loss = self.discriminator_loss(self.D_target(fake_target), fake)
+            D_source_valid_loss = self.discriminator_loss(self.D_source(source_img), valid)
+            D_target_valid_loss = self.discriminator_loss(self.D_target(target_img), valid)
 
-        # Count up
-        self.cnt_train_step += 1
+            D_gen_loss = (D_source_gen_loss + D_target_gen_loss) / 2
 
-        total_loss = D_loss + G_loss + self.seg_w * Seg_loss
+            # Loss Weight
+            D_loss = (D_gen_loss + D_source_valid_loss + D_target_valid_loss) / 3
 
-        logs = {
-            **logs,
-            **{
-                "loss": total_loss,
+            # Count up
+            self.cnt_train_step += 1
+
+            logs = {
                 "D_loss": D_loss,
                 "D_source_gen_loss": D_source_gen_loss,
                 "D_target_gen_loss": D_target_gen_loss,
                 "D_source_valid_loss": D_source_valid_loss,
                 "D_target_valid_loss": D_target_valid_loss,
                 "D_gen_loss": D_gen_loss,
-            },
-        }
+            }
 
-        self.log_dict(logs, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+            self.log_dict(logs, on_step=False, on_epoch=True, prog_bar=True, logger=True)
 
-        return {"loss": total_loss}
+            return D_loss
 
     def training_epoch_end(self, outputs):
         self.step += 1
 
-        # all = range(6)
-        # segmentations = [0, 1]
-        # generators = [2, 3]
-        # discriminators = [4, 5]
+        # # all = range(6)
+        # # segmentations = [0, 1]
+        # # generators = [2, 3]
+        # # discriminators = [4, 5]
 
-        # avg_loss = sum([torch.stack([x["loss"] for x in outputs[i]]).mean().item() / 4 for i in all])
-        # Seg_mean_loss = sum([torch.stack([x["loss"] for x in outputs[i]]).mean().item() / 2 for i in segmentations])
-        # G_mean_loss = sum([torch.stack([x["loss"] for x in outputs[i]]).mean().item() / 2 for i in generators])
-        # D_mean_loss = sum([torch.stack([x["loss"] for x in outputs[i]]).mean().item() / 2 for i in discriminators])
-        # validity = sum([torch.stack([x["validity"] for x in outputs[i]]).mean().item() / 2 for i in generators])
-        # reconstr = sum([torch.stack([x["reconstr"] for x in outputs[i]]).mean().item() / 2 for i in generators])
-        # identity = sum([torch.stack([x["identity"] for x in outputs[i]]).mean().item() / 2 for i in generators])
+        # # avg_loss = sum([torch.stack([x["loss"] for x in outputs[i]]).mean().item() / 4 for i in all])
+        # # Seg_mean_loss = sum([torch.stack([x["loss"] for x in outputs[i]]).mean().item() / 2 for i in segmentations])
+        # # G_mean_loss = sum([torch.stack([x["loss"] for x in outputs[i]]).mean().item() / 2 for i in generators])
+        # # D_mean_loss = sum([torch.stack([x["loss"] for x in outputs[i]]).mean().item() / 2 for i in discriminators])
+        # # validity = sum([torch.stack([x["validity"] for x in outputs[i]]).mean().item() / 2 for i in generators])
+        # # reconstr = sum([torch.stack([x["reconstr"] for x in outputs[i]]).mean().item() / 2 for i in generators])
+        # # identity = sum([torch.stack([x["identity"] for x in outputs[i]]).mean().item() / 2 for i in generators])
 
-        # self.losses.append(avg_loss)
-        # self.Seg_mean_losses.append(Seg_mean_loss)
-        # self.G_mean_losses.append(G_mean_loss)
-        # self.D_mean_losses.append(D_mean_loss)
-        # self.validity.append(validity)
-        # self.reconstr.append(reconstr)
-        # self.identity.append(identity)
+        # # self.losses.append(avg_loss)
+        # # self.Seg_mean_losses.append(Seg_mean_loss)
+        # # self.G_mean_losses.append(G_mean_loss)
+        # # self.D_mean_losses.append(D_mean_loss)
+        # # self.validity.append(validity)
+        # # self.reconstr.append(reconstr)
+        # # self.identity.append(identity)
 
-        self.losses.append(outputs[0]["loss"])
+        # self.losses.append(outputs[0]["loss"])
 
         return None
 

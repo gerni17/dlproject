@@ -14,7 +14,7 @@ class GogollPipelineImageLogger(Callback):
     The images have the same input across all epochs, so you see the progression of how the generated images get better for a given input/source-image.
     """
 
-    def __init__(self, data_module, log_key="Pipeline", num_samples=4):
+    def __init__(self, data_module, log_key="Media/Pipeline", num_samples=4):
         super().__init__()
         self.num_samples = num_samples
         self.log_key = log_key

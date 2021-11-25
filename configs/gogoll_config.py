@@ -46,7 +46,7 @@ def command_line_parser():
     parser.add_argument(
         "--batch_size",
         type=int,
-        default=4,
+        default=8,
         help="Number of samples in a batch for training",
     )
     parser.add_argument(

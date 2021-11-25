@@ -7,6 +7,7 @@ from datetime import datetime
 from pytorch_lightning import Trainer
 from logger.gogoll_pipeline_image import GogollPipelineImageLogger
 from models.lightweight_semseg import LightweightSemsegModel
+from models.unet_light_semseg import UnetLight
 from preprocessing.seg_transforms import SegImageTransform
 from datasets.gogoll import GogollDataModule
 
@@ -58,8 +59,8 @@ def main():
     vs = GogollDataModule(data_dir, cfg.domain, transform, batch_size)  # used for validation/progress visualization on wandb
 
     # Sub-Models  -----------------------------------------------------------------
-    seg_net_s = LightweightSemsegModel(32)
-    seg_net_t = LightweightSemsegModel(32)
+    seg_net_s = UnetLight()
+    seg_net_t = UnetLight()
     G_basestyle = CycleGANGenerator(filter=cfg.generator_filters)
     G_stylebase = CycleGANGenerator(filter=cfg.generator_filters)
     D_base = CycleGANDiscriminator(filter=cfg.discriminator_filters)

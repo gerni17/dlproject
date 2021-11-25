@@ -14,7 +14,7 @@ class GogollSemsegImageLogger(Callback):
     The images have the same input across all epochs, so you see the progression of how the generated images get better for a given input/source-image.
     """
 
-    def __init__(self, data_module, network="seg_s", log_key="Segmentation (Source)", num_samples=4):
+    def __init__(self, data_module, network="seg_s", log_key="Media/Segmentation (Source)", num_samples=4):
         super().__init__()
         self.num_samples = num_samples
         self.network = network
@@ -59,5 +59,5 @@ class GogollSemsegImageLogger(Callback):
                 {self.log_key: [wandb.Image(joined_images)]},
                 commit=False,
             )
-        except:
-            print("Error occured while uploading image to wandb")
+        except BaseException as err:
+            print(f"Error occured while uploading image to wandb. {err=}, {type(err)=}")

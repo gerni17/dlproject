@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from itertools import chain
 import torch
+import torchmetrics
 from torchvision.utils import make_grid
 from torch import nn, optim
 import pytorch_lightning as pl
@@ -21,6 +22,7 @@ class GogollSegSystem(pl.LightningModule):
         self.step = 0
 
         self.semseg_loss = torch.nn.CrossEntropyLoss()
+        # self.semseg_loss = torchmetrics.IoU(3)
         self.losses = []
 
     def configure_optimizers(self):
@@ -37,13 +39,11 @@ class GogollSegSystem(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         source_img, segmentation_img, target_img = (batch["source"], batch["source_segmentation"], batch["target"])
 
-        b = source_img.size()[0]
-
-        # Train Segmentation
-        # Segment
         y_seg = self.net(source_img)
 
         Seg_loss = self.semseg_loss(y_seg, segmentation_img)
+        # Seg_loss = 1 - self.semseg_loss(y_seg, segmentation_img)
+        # Seg_loss.requires_grad = True
 
         logs = {
             "loss": Seg_loss,

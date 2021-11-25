@@ -151,3 +151,5 @@ wandb/*
 src/logs/*
 results/*
 !data/.gitkeep 
+
+clean_data.py

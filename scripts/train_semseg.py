@@ -33,6 +33,8 @@ def main():
 
     # Data Preprocessing  -----------------------------------------------------------------
     transform = SegImageTransform(img_size=cfg.image_size)
+    wandb.init(reinit=True,name=run_name,config=cfg,settings=wandb.Settings(start_method="fork"))
+
 
     # DataModule  -----------------------------------------------------------------
     dm = BonnDataModule(data_dir, transform, batch_size)  # used for training

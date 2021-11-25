@@ -50,6 +50,8 @@ def main():
     reconstr_w = cfg.reconstruction_weight
     id_w = cfg.identity_weight
     seg_w = cfg.segmentation_weight
+    wandb.init(reinit=True,name=run_name,config=cfg,settings=wandb.Settings(start_method="fork"))
+
 
     # Data Preprocessing  -----------------------------------------------------------------
     transform = SegImageTransform(img_size=cfg.image_size)

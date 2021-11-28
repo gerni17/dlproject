@@ -1,5 +1,6 @@
 from logging import log
 from os import path
+from torch.utils import data
 import wandb
 import uuid
 
@@ -13,6 +14,7 @@ from datasets.gogoll import GogollDataModule
 
 from logger.generated_image import GeneratedImageLogger
 from systems.gogoll_seg_system import GogollSegSystem
+from utils.generate_targets_with_semantics import generate_targets_with_semantics
 from utils.weight_initializer import init_weights
 from configs.gogoll_config import command_line_parser
 from pytorch_lightning.loggers import WandbLogger
@@ -151,6 +153,12 @@ def main():
 
     print("Fitting gogoll system...", run_name)
     trainer.fit(main_system, datamodule=dm)
+
+    # Image Generation & Saving  --------------------------------------------------------------
+    save_path = path.join(cfg.dataset_save_root, "run_name")
+    # Generate fake target domain images and save them to a persistent folder (with the
+    # same name as the current run)
+    generate_targets_with_semantics(main_system, data_dir, transform, save_path)
 
     wandb.finish()
 

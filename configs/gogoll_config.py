@@ -97,6 +97,7 @@ def command_line_parser():
 
     # -------------------------- data settings --------------------------
     parser.add_argument("--dataset_root", type=expandpath, default="./data", help="Path to dataset")
+    parser.add_argument("--dataset_save_root", type=expandpath, default="./output/data", help="Path where you save generated images")
     parser.add_argument(
         "--domain",
         type=str,

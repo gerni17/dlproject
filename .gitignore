@@ -150,6 +150,8 @@ logs/*
 wandb/*
 src/logs/*
 results/*
+output/*
 !data/.gitkeep 
 
 clean_data.py
+migrate_data.py

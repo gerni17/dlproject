@@ -1,32 +1,59 @@
-from datasets.sources import SourceDataModule
-from torchvision.utils import save_image
-from os import path
+import torch
+from datasets.generated import GeneratedDataModule
+from torchvision.utils import save_image, make_grid, Image
+from os import path, makedirs
+import wandb
+import numpy as np
 
-def save_generated_image(save_path, idx, img, segmentation):
-    rgb_path = path.join(save_path, "rgb", f"{idx}.png")
+def save_segmentation(save_path, idx, segmentation):
     seg_path = path.join(save_path, "semseg", f"{idx}.png")
 
+    directory_seg = path.dirname(seg_path)
+
+    if not path.exists(directory_seg):
+        makedirs(directory_seg)
+
+    grid = make_grid(segmentation)
+    # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
+    ndarr = grid.permute(1, 2, 0).to('cpu', torch.uint8).numpy()
+    im = Image.fromarray(ndarr)
+    im.save(seg_path, format="png")
+
+def save_generated_image(save_path, idx, img):
+    rgb_path = path.join(save_path, "rgb", f"{idx}.png")
+
+    directory_rgb = path.dirname(rgb_path)
+
+    if not path.exists(directory_rgb):
+        makedirs(directory_rgb)
+
     save_image(img, rgb_path, "png")
-    save_image(segmentation, seg_path, "png")
 
 
 def undo_transform(image):
-    return (image * 0.5 + 0.5) * 255
+    return image * 0.5 + 0.5
 
 
-def generate_targets_with_semantics(system, data_dir, transform, save_path, max_images=10):
+def save_generated_dataset(system, data_dir, transform, save_path, max_images=10, logger=None):
     print('Generating images...')
 
-    dm = SourceDataModule(data_dir, transform, batch_size=1)
+    dm = GeneratedDataModule(system.G_s2t, data_dir, transform, batch_size=1)
+    dm.prepare_data()
+    dm.setup()
+    ds = dm.train_dataloader().dataset
     idx = 0
 
-    for sample in dm:
+    for sample in ds:
         source = sample["source"]
         segmentation = sample["source_segmentation"]
+        shape = source.shape
+        gen = undo_transform(torch.reshape(source, (shape[1], shape[2], shape[3])))
+        
+        joined_images = (gen * 255).detach().cpu().numpy().astype(int)
+        joined_images = np.transpose(joined_images, [1, 2, 0])
 
-        target = system.generate(source)
-
-        save_generated_image(save_path, idx, undo_transform(target), segmentation)
+        save_generated_image(save_path, idx, gen)
+        save_segmentation(save_path, idx, segmentation.float())
 
         idx = idx + 1
 

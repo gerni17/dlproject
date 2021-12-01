@@ -63,10 +63,10 @@ class FinalSegSystem(pl.LightningModule):
 
         return None
     
-    def validation_step(self, batch):
+    def validation_step(self, batch, batch_idx):
         source_img, segmentation_img = (batch["source"], batch["source_segmentation"])
         y_hat=self.net(source_img)
-        loss_val_semseg = self.loss_semseg(y_hat, segmentation_img)
+        loss_val_semseg = self.semseg_loss(y_hat, segmentation_img)
 
         y_hat_semseg_lbl = y_hat.argmax(dim=1)
         self.metrics_semseg.update_batch(y_hat_semseg_lbl, segmentation_img)
@@ -75,7 +75,6 @@ class FinalSegSystem(pl.LightningModule):
                 'loss_val/semseg': loss_val_semseg,
             }, on_step=False, on_epoch=True
         )
-        pass
 
     def validation_epoch_end(self, outputs):
         metrics_semseg = self.metrics_semseg.get_metrics_summary()
@@ -89,7 +88,6 @@ class FinalSegSystem(pl.LightningModule):
         scalar_logs.update({f'metrics_task_semseg/{k.replace(" ", "_")}': v for k, v in metrics_semseg.items()})
 
         self.log_dict(scalar_logs, on_step=False, on_epoch=True)
-        pass
 
     def segment(self, inputs):
         return self.net(inputs)

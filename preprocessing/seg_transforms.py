@@ -91,15 +91,51 @@ class Normalize:
         # image=torch.clip(image,min=0,max=255)
         return image, segmentation
 
+class RandomResizedCrop:
+    def __init__(self, size):
+        self.size = size
+
+    def __call__(self, image, segmentation):
+        # this might create some values out of bounds
+        image = F.normalize(image, mean=self.mean, std=self.std)
+
+        return image, segmentation
+
+class RandomCrop:
+    def __init__(self, size):
+        self.size = size
+
+    def __call__(self, image, target):
+        image = pad_if_smaller(image, self.size)
+        target = pad_if_smaller(target, self.size, fill=255)
+        crop_params = T.RandomCrop.get_params(image, (self.size, self.size))
+        image = F.crop(image, *crop_params)
+        target = F.crop(target, *crop_params)
+        return image, target
+
+class RandomRotate:
+    def __init__(self,degrees):
+        self.degrees=degrees
+        self.fill=0
+
+    def __call__(self, image,target):
+        degrees=self.degrees
+        angle = float(torch.empty(1).uniform_(float(degrees[0]), float(degrees[1])).item())
+
+        rotated_img= F.rotate(image, angle)
+        rotated_target= F.rotate(target, angle)
+        return rotated_img,rotated_target
 
 class SegImageTransform:
     def __init__(self, img_size=64):
         self.transform = {
             "train": Compose(
                 [
-                    Resize((img_size, img_size)),
                     RandomHorizontalFlip(),
                     RandomVerticalFlip(),
+                    RandomRotate(degrees=[0,45]),
+                    RandomCrop(img_size),
+                    # Resize((img_size, img_size)),
                     PILToTensor(),
                     Normalize(mean=[0.5], std=[0.5]),
                 ]

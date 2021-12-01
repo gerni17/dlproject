@@ -14,7 +14,7 @@ def semseg_compute_confusion(y_hat_lbl, y_lbl, num_classes):
 
     # hack for bincounting 2 arrays together
     x = y_hat_lbl + num_classes * y_lbl
-    x=torch.flatten(x, dtype=torch.long)
+    x=torch.flatten(x).long()
     bincount_2d = torch.bincount(x, minlength=num_classes ** 2)
     assert bincount_2d.numel() == num_classes ** 2, 'Internal error'
     conf = bincount_2d.view((num_classes, num_classes)).long()

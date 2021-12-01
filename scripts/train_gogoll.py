@@ -37,7 +37,7 @@ def main():
 
     project_name = cfg.project
     run_name = f"{cfg.name}_{timestamp}_{str(uuid.uuid4())[:2]}"
-    log_path = f"logs/{run_name}/"
+    log_path = f"{cfg.log_dir}/{run_name}/"
 
     data_dir = cfg.dataset_root
 

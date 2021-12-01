@@ -22,7 +22,8 @@ class GogollSemsegImageLogger(Callback):
 
         data_module.prepare_data()
         data_module.setup()
-        dataloader = data_module.test_dataloader()
+        dataloader = data_module.val_dataloader()
+
         val_samples = next(iter(dataloader))
 
         self.rgb_imgs = val_samples["source"]

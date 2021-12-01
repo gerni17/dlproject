@@ -48,9 +48,6 @@ def save_generated_dataset(system, data_dir, transform, save_path, max_images=10
         segmentation = sample["source_segmentation"]
         shape = source.shape
         gen = undo_transform(torch.reshape(source, (shape[1], shape[2], shape[3])))
-        
-        joined_images = (gen * 255).detach().cpu().numpy().astype(int)
-        joined_images = np.transpose(joined_images, [1, 2, 0])
 
         save_generated_image(save_path, idx, gen)
         save_segmentation(save_path, idx, segmentation.float())

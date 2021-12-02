@@ -34,7 +34,7 @@ class Resize:
     def __init__(self, img_size):
         self.img_size = img_size
         self.resize = T.Resize(img_size)
-        self.resize_sem = T.Resize(img_size, interpolation=T.InterpolationMode.NEAREST)
+        self.resize_sem = T.Resize(img_size, interpolation=0)
 
     def __call__(self, image, segmentation):
         image = self.resize(image)

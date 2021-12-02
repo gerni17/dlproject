@@ -142,15 +142,16 @@ dmypy.json
 
 # exclude data from source control by default
 
-# src/models/logs/
-# src/models/NNout.npy
-
 # src/scripts/lightning_logs
 # lsf.*
 
 data/*
 logs/*
-models/*
+wandb/*
 src/logs/*
 results/*
+output/*
 !data/.gitkeep 
+
+clean_data.py
+migrate_data.py

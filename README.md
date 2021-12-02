@@ -1,22 +1,47 @@
-# DeeplabV3p
+# Deep Learning Project
 
-## TODO:
-dataset transforms
+## Getting started
 
-create docs
+Make sure you install all required packages first (e.g wandb, pytorch, pytorch lightning etc)
 
+To run the cyclegan experiment run the following command. If yo
 
-## To get started:
+```sh
+python -m scripts.train_gogoll --name gogoll_experiment --use_wandb True
+```
 
-`cd src`
+To see which command line options you have available you can call
 
-### Download data and create env 
+```sh
+python -m scripts.train_cyclegan --help
+```
 
-`bash download_data.sh`
+## Folder structure
 
-### Login into wandb
-[wandb](https://docs.wandb.ai/quickstart)
+Aside from the folder structure you'll get by cloning this branch, you will need to make sure your data folder has the following layout:
 
-### Run:
-`bash train.sh`
-
+```
+project
+├── data
+│   ├── exp
+│   │   ├── test
+│   │   │   ├── rgb
+│   │   │   └── semseg
+│   │   ├── train
+│   │   │   ├── rgb
+│   │   │   └── semseg
+│   │   └── val
+│   │       ├── rgb
+│   │       └── semseg
+│   └── other_domains
+│       ├── test
+│       │   ├── domainA
+│       │   └── domainB
+│       └── train
+│           ├── domainA
+│           └── domainB
+├── configs
+├── models
+├── preprocessing
+└── ...
+```

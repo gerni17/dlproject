@@ -1,6 +1,7 @@
 import torch
 from datasets.generated import GeneratedDataModule
-from torchvision.utils import save_image, make_grid, Image
+from torchvision.utils import save_image, make_grid
+from PIL import Image
 from os import path, makedirs
 import wandb
 import numpy as np

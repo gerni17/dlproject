@@ -130,6 +130,7 @@ class GogollSystem(pl.LightningModule):
             y_seg_t = self.seg_t(fake_target)
 
             y_seg_t_s = self.seg_s(fake_source)
+            y_seg_t_s = torch.argmax(y_seg_t_s, dim=1)
             y_seg_t_t = self.seg_t(target_img)
             y_seg_t_t_c = self.seg_t(cycled_target)
 

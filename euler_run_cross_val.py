@@ -9,7 +9,7 @@ from pytorch_lightning import Trainer
 from datasets.generated import GeneratedDataModule
 from datasets.mixed import MixedDataModule
 from datasets.source import SourceDataModule
-from datasets.cross_val import CrossValDataModule
+from datasets.mixedCV import MixedCrossValDataModule
 from logger.gogoll_pipeline_image import GogollPipelineImageLogger
 from models.unet_light_semseg import UnetLight
 from preprocessing.seg_transforms import SegImageTransform
@@ -181,93 +181,74 @@ def main():
     source_dm = SourceDataModule(data_dir, transform, batch_size=1, max_imgs=200)
     # Generated images datamodule
     generated_dm = GeneratedDataModule(main_system.G_s2t, data_dir, transform, batch_size=1, max_imgs=200)
-    # Mix both datamodules
-    mixed_dm = MixedDataModule(
+    
+    # Mix both datamodules and do Cross Val
+    n_splits = 5
+    mixed_cv_dm = MixedCrossValDataModule(
         source_dm,
         generated_dm,
-        batch_size=batch_size
+        batch_size=batch_size,
+        n_splits=n_splits
     )
-    log_dm = MixedDataModule(
+    log_cv_dm = MixedCrossValDataModule(
         source_dm,
         generated_dm,
-        batch_size=batch_size
+        batch_size=batch_size,
+        n_splits=n_splits
     )
 
     # train the final segmentation net that we use to evaluate if our augmented dataset helps
     # with training a segnet that is more robust to different domains/conditions
-    train_final_segnet(cfg, mixed_dm, log_dm, project_name, run_name, log_path)
+    n_cross_val_epochs = 10
+    cross_val_final_segnet(cfg, mixed_cv_dm, log_cv_dm, project_name, run_name, log_path, n_cross_val_epochs)
 
-    # Cross Validation Prep
-    n_splits = 5
-    cv_dm = CrossValDataModule(data_dir, transform, batch_size=1, n_splits=5)
-    cv_trainer = Trainer(
-            max_epochs=epochs_gogoll,
-            gpus=1 if cfg.gpu else 0,
-            reload_dataloaders_every_n_epochs=True,
-            num_sanity_val_steps=0,
-            logger=gogoll_wandb_logger,
-            callbacks=[
-                gogoll_checkpoint_callback,
-                pipeline_image_callback,
-            ],
-        )
+    wandb.finish()
 
+def cross_val_final_segnet(cfg, datamodule, log_datamodule, project_name, run_name, log_path, n_epochs, n_splits):
     # Cross Validation Run
     fold_metrics = []
     for i in range(n_splits):
-        cv_dm.set_active_split(i)
-        seg_lr = 0.0002
+        datamodule.set_active_split(i)
         seg_net = UnetLight()
         seg_system = FinalSegSystem(seg_net, lr=seg_lr)
-        print('------------training fold no---------{}------------'.format(i))
-        cv_trainer.fit(seg_system, datamodule=cv_dm)
+
+        seg_lr = 0.0002
+
+        # Logger  --------------------------------------------------------------
+        seg_wandb_logger = WandbLogger(project=project_name, name=run_name, prefix="seg_final_cv_fold{}".format(i)) if cfg.use_wandb else None
+
+        # Callbacks  --------------------------------------------------------------
+        # save the model
+        segmentation_checkpoint_callback = ModelCheckpoint(
+            dirpath=path.join(log_path, "segmentation_final_cv_fold{}".format(i)),
+            save_last=False,
+            save_top_k=1,
+            verbose=False,
+            monitor="loss",
+            mode="min",
+        )
+        semseg_image_callback = GogollSemsegImageLogger(log_datamodule, network="net", log_key="Segmentation (Final) Fold {}".format(i))
+
+    
+        cv_trainer = Trainer(
+            max_epochs=n_epochs,
+            gpus=1 if cfg.gpu else 0,
+            reload_dataloaders_every_n_epochs=True,
+            num_sanity_val_steps=0,
+            logger=seg_wandb_logger,
+            callbacks=[
+                segmentation_checkpoint_callback,
+                semseg_image_callback,
+            ],
+        )
+
+        print('------------final segmentation network fold no---------{}------------'.format(i))
+        cv_trainer.fit(seg_system, datamodule=datamodule)
         print('------------testing fold no---------{}------------'.format(i))
         #cv_trainer.test(seg_system, datamodule=cv_dm)
         #Acess dict values of trainer after test and get metrics for average
         #fold_metrics.append(...)
 
-    wandb.finish()
-
-
-
-def train_final_segnet(cfg, datamodule, log_datamodule, project_name, run_name, log_path):
-    seg_lr = 0.0002
-
-    seg_net = UnetLight()
-
-    seg_system = FinalSegSystem(seg_net, lr=seg_lr)
-
-    # Logger  --------------------------------------------------------------
-    seg_wandb_logger = WandbLogger(project=project_name, name=run_name, prefix="seg_final") if cfg.use_wandb else None
-
-    # Callbacks  --------------------------------------------------------------
-    # save the model
-    segmentation_checkpoint_callback = ModelCheckpoint(
-        dirpath=path.join(log_path, "segmentation_final"),
-        save_last=False,
-        save_top_k=1,
-        verbose=False,
-        monitor="loss",
-        mode="min",
-    )
-
-    semseg_image_callback = GogollSemsegImageLogger(log_datamodule, network="net", log_key="Segmentation (Final)")
-
-    trainer = Trainer(
-        max_epochs=10,
-        gpus=1 if cfg.gpu else 0,
-        reload_dataloaders_every_n_epochs=True,
-        num_sanity_val_steps=0,
-        logger=seg_wandb_logger,
-        callbacks=[
-            segmentation_checkpoint_callback,
-            semseg_image_callback,
-        ],
-    )
-    
-    # train the segmentation network we use to evaluate how well our generated images help with the segmentation task
-    print("Fitting final segmentation network...", run_name)
-    trainer.fit(seg_system, datamodule=datamodule)
 
 if __name__ == "__main__":
     main()

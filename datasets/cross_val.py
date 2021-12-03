@@ -1,7 +1,7 @@
 import math
 from typing import Optional
 from PIL import Image
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, ConcatDataset
 import pytorch_lightning as pl
 import torch
 import os, glob, random
@@ -10,7 +10,7 @@ from sklearn.model_selection import KFold
 import numpy as np
 
 # Source domain dataset
-class CrossValDataset(Dataset):
+class SourceDataset(Dataset):
     def __init__(self, source_img_paths, segmentation_img_paths, transform, phase="train"):
         self.source_img_paths = source_img_paths
         self.segmentation_img_paths = segmentation_img_paths
@@ -29,10 +29,36 @@ class CrossValDataset(Dataset):
 
         return { "id": idx, "source": img, "source_segmentation": segmentation }
 
+class GeneratedDataset(Dataset):
+    def __init__(self, generator, source_img_paths, segmentation_img_paths, transform, phase="train", max_imgs = 200):
+        self.generator = generator
+        self.source_img_paths = source_img_paths
+        self.segmentation_img_paths = segmentation_img_paths
+        self.transform = transform
+        self.phase = phase
+        self.raw_len = min([len(self.source_img_paths), len(self.segmentation_img_paths), max_imgs])
+
+    def __len__(self):
+        return self.raw_len
+
+    def __getitem__(self, idx):
+        rgb_img = Image.open(self.source_img_paths[idx])
+        segmentation_img = Image.open(self.segmentation_img_paths[idx])
+        assert rgb_img.size == segmentation_img.size
+
+        img, segmentation = self.transform(rgb_img, segmentation_img, self.phase)
+        shape = img.shape
+
+        with torch.no_grad():
+            generated = self.generator(torch.reshape(img, (1, shape[0], shape[1], shape[2])))
+            generated = torch.reshape(generated, (generated.shape[1], generated.shape[2], generated.shape[3]))
+        
+        return { "id": idx, "source": generated, "source_segmentation": segmentation }
+
 
 # Data Module
 class CrossValDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir, transform, batch_size, n_splits=5, active_split=0):
+    def __init__(self, data_dir, transform, batch_size, n_splits=5, active_split=0, generator=None):
         super(CrossValDataModule, self).__init__()
         self.data_dir = data_dir
         self.transform = transform
@@ -46,6 +72,7 @@ class CrossValDataModule(pl.LightningDataModule):
         self.n_splits = n_splits
         self.active_split = active_split
         self.cv_splitter = KFold(n_splits=self.n_splits, random_state=None, shuffle=False)
+        self.generator = generator
 
     def set_active_split(self, split_index):
         assert split_index >= 0 and split_index  < self.n_splits
@@ -74,21 +101,39 @@ class CrossValDataModule(pl.LightningDataModule):
         # Assign train/val datasets for use in dataloaders
 
         for i in range(self.n_splits):
-            train_dataset = CrossValDataset(
+            train_dataset = SourceDataset(
                 self.rgb_train_splits[i].tolist(),
                 self.seg_train_splits[i].tolist(),
                 self.transform,
                 "train",
             )
+            if self.generator is not None:
+                train_gen_dataset = GeneratedDataset(
+                    self.generator,
+                    self.rgb_train_splits[i].tolist(),
+                    self.seg_train_splits[i].tolist(),
+                    self.transform,
+                    "test"
+                )
+                train_dataset = ConcatDataset([train_dataset, train_gen_dataset])
             self.train_datasets.append(train_dataset)
 
         for i in range(self.n_splits):
-            test_dataset = CrossValDataset(
+            test_dataset = SourceDataset(
                 self.rgb_test_splits[i].tolist(),
                 self.seg_test_splits[i].tolist(),
                 self.transform,
                 "train",
             )
+            if self.generator is not None:
+                test_gen_dataset = GeneratedDataset(
+                    self.generator,
+                    self.rgb_test_splits[i].tolist(),
+                    self.seg_test_splits[i].tolist(),
+                    self.transform,
+                    "test"
+                )
+                test_dataset = ConcatDataset([test_dataset, test_gen_dataset])
             self.test_datasets.append(test_dataset)
 
     def train_dataloader(self):

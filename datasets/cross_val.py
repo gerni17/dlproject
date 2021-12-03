@@ -10,7 +10,7 @@ from sklearn.model_selection import KFold
 import numpy as np
 
 # Source domain dataset
-class SourceDataset(Dataset):
+class CrossValDataset(Dataset):
     def __init__(self, source_img_paths, segmentation_img_paths, transform, phase="train"):
         self.source_img_paths = source_img_paths
         self.segmentation_img_paths = segmentation_img_paths
@@ -31,9 +31,9 @@ class SourceDataset(Dataset):
 
 
 # Data Module
-class SourceDataModule(pl.LightningDataModule):
+class CrossValDataModule(pl.LightningDataModule):
     def __init__(self, data_dir, transform, batch_size, n_splits=5, active_split=0):
-        super(SourceDataModule, self).__init__()
+        super(CrossValDataModule, self).__init__()
         self.data_dir = data_dir
         self.transform = transform
         self.batch_size = batch_size
@@ -74,7 +74,7 @@ class SourceDataModule(pl.LightningDataModule):
         # Assign train/val datasets for use in dataloaders
 
         for i in range(self.n_splits):
-            train_dataset = SourceDataset(
+            train_dataset = CrossValDataset(
                 self.rgb_train_splits[i].tolist(),
                 self.seg_train_splits[i].tolist(),
                 self.transform,
@@ -83,7 +83,7 @@ class SourceDataModule(pl.LightningDataModule):
             self.train_datasets.append(train_dataset)
 
         for i in range(self.n_splits):
-            test_dataset = SourceDataset(
+            test_dataset = CrossValDataset(
                 self.rgb_test_splits[i].tolist(),
                 self.seg_test_splits[i].tolist(),
                 self.transform,

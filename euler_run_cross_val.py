@@ -9,13 +9,12 @@ from pytorch_lightning import Trainer
 from datasets.generated import GeneratedDataModule
 from datasets.mixed import MixedDataModule
 from datasets.source import SourceDataModule
+from datasets.cross_val import CrossValDataModule
 from logger.gogoll_pipeline_image import GogollPipelineImageLogger
-from models.lightweight_semseg import LightweightSemsegModel
 from models.unet_light_semseg import UnetLight
 from preprocessing.seg_transforms import SegImageTransform
 from datasets.gogoll import GogollDataModule
 
-from logger.generated_image import GeneratedImageLogger
 from systems.final_seg_system import FinalSegSystem
 from systems.gogoll_seg_system import GogollSegSystem
 from utils.generate_targets_with_semantics import save_generated_dataset
@@ -23,8 +22,6 @@ from utils.weight_initializer import init_weights
 from configs.gogoll_config import command_line_parser
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
-from systems.experiment_semseg import Semseg
-from models.semseg_model import ModelDeepLabV3Plus
 from models.discriminators import CycleGANDiscriminator
 from models.generators import CycleGANGenerator
 from logger.gogoll_semseg_image import GogollSemsegImageLogger
@@ -200,7 +197,37 @@ def main():
     # with training a segnet that is more robust to different domains/conditions
     train_final_segnet(cfg, mixed_dm, log_dm, project_name, run_name, log_path)
 
+    # Cross Validation Prep
+    n_splits = 5
+    cv_dm = CrossValDataModule(data_dir, transform, batch_size=1, n_splits=5)
+    cv_trainer = Trainer(
+            max_epochs=epochs_gogoll,
+            gpus=1 if cfg.gpu else 0,
+            reload_dataloaders_every_n_epochs=True,
+            num_sanity_val_steps=0,
+            logger=gogoll_wandb_logger,
+            callbacks=[
+                gogoll_checkpoint_callback,
+                pipeline_image_callback,
+            ],
+        )
+
+    # Cross Validation Run
+    fold_metrics = []
+    for i in range(n_splits):
+        cv_dm.set_active_split(i)
+        seg_lr = 0.0002
+        seg_net = UnetLight()
+        seg_system = FinalSegSystem(seg_net, lr=seg_lr)
+        print('------------training fold no---------{}------------'.format(i))
+        cv_trainer.fit(seg_system, datamodule=cv_dm)
+        print('------------testing fold no---------{}------------'.format(i))
+        #cv_trainer.test(seg_system, datamodule=cv_dm)
+        #Acess dict values of trainer after test and get metrics for average
+        #fold_metrics.append(...)
+
     wandb.finish()
+
 
 
 def train_final_segnet(cfg, datamodule, log_datamodule, project_name, run_name, log_path):

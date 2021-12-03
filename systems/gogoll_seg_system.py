@@ -43,7 +43,7 @@ class GogollSegSystem(pl.LightningModule):
         y_seg = self.net(source_img)
         y_seg = torch.argmax(y_seg, dim=1)
 
-        Seg_loss = self.semseg_loss(y_seg, segmentation_img)
+        Seg_loss = self.semseg_loss(y_seg.float(), segmentation_img.float())
         # Seg_loss = 1 - self.semseg_loss(y_seg, segmentation_img)
         # Seg_loss.requires_grad = True
 

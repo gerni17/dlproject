@@ -135,10 +135,10 @@ class GogollSystem(pl.LightningModule):
             y_seg_t_t = self.seg_t(target_img)
             y_seg_t_t_c = self.seg_t(cycled_target)
 
-            loss_seg_a = self.semseg_loss(y_seg_s, segmentation_img)
-            loss_seg_b = self.semseg_loss(y_seg_t, segmentation_img)
-            loss_seg_c = self.semseg_loss(y_seg_t_t, y_seg_t_s)
-            loss_seg_d = self.semseg_loss(y_seg_t_t_c, y_seg_t_s)
+            loss_seg_a = self.semseg_loss(y_seg_s.float(), segmentation_img.float())
+            loss_seg_b = self.semseg_loss(y_seg_t.float(), segmentation_img.float())
+            loss_seg_c = self.semseg_loss(y_seg_t_t.float(), y_seg_t_s.float())
+            loss_seg_d = self.semseg_loss(y_seg_t_t_c.float(), y_seg_t_s.float())
 
             Seg_loss = (loss_seg_a + loss_seg_b + loss_seg_c + loss_seg_d) / 4
 

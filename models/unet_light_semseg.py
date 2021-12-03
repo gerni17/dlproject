@@ -27,7 +27,7 @@ class UnetLight(nn.Module):
         # add conditional for clasess
         self.out = nn.Sequential(
             nn.Conv2d(16, n_classes, kernel_size=1),
-            # nn.Softmax(dim=1) pytorch cross entropy already uses softmax
+            nn.Softmax(dim=1) #pytorch cross entropy already uses softmax
         )
 
     def forward(self, x):

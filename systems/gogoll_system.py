@@ -45,8 +45,8 @@ class GogollSystem(pl.LightningModule):
         self.mae = nn.L1Loss()
         self.generator_loss = nn.MSELoss()
         self.discriminator_loss = nn.MSELoss()
-        #self.semseg_loss = nn.CrossEntropyLoss()
-        self.semseg_loss = torchmetrics.IoU(3)
+        self.semseg_loss = nn.CrossEntropyLoss()
+        #self.semseg_loss = torchmetrics.IoU(3)
         self.losses = []
         self.Seg_mean_losses = []
         self.G_mean_losses = []

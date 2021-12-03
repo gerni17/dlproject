@@ -208,11 +208,10 @@ def cross_val_final_segnet(cfg, datamodule, log_datamodule, project_name, run_na
     # Cross Validation Run
     fold_metrics = []
     for i in range(n_splits):
+        seg_lr = 0.0002
         datamodule.set_active_split(i)
         seg_net = UnetLight()
         seg_system = FinalSegSystem(seg_net, lr=seg_lr)
-
-        seg_lr = 0.0002
 
         # Logger  --------------------------------------------------------------
         seg_wandb_logger = WandbLogger(project=project_name, name=run_name, prefix="seg_final_cv_fold{}".format(i)) if cfg.use_wandb else None

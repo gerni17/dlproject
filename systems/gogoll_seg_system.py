@@ -12,6 +12,7 @@ import torchmetrics
 from torchvision.utils import make_grid
 from torch import nn, optim
 import pytorch_lightning as pl
+from models.jaccard import IoULoss
 
 
 class GogollSegSystem(pl.LightningModule):
@@ -21,8 +22,8 @@ class GogollSegSystem(pl.LightningModule):
         self.lr = lr
         self.step = 0
 
-        self.semseg_loss = torch.nn.CrossEntropyLoss()
-        #self.semseg_loss = torchmetrics.IoU(3)
+        #self.semseg_loss = torch.nn.CrossEntropyLoss()
+        self.semseg_loss = IoULoss()
         self.losses = []
 
     def configure_optimizers(self):

@@ -178,9 +178,9 @@ def main():
         save_generated_dataset(main_system, data_dir, transform, save_path, logger=seg_wandb_logger, max_images=cfg.max_generated_images_saved)
 
     # Source domain datamodule
-    source_dm = SourceDataModule(data_dir, transform, batch_size=1, max_imgs=200)
+    source_dm = SourceDataModule(data_dir, transform, batch_size=1, max_imgs=2)
     # Generated images datamodule
-    generated_dm = GeneratedDataModule(main_system.G_s2t, data_dir, transform, batch_size=1, max_imgs=200)
+    generated_dm = GeneratedDataModule(main_system.G_s2t, data_dir, transform, batch_size=1, max_imgs=2)
     
     # Mix both datamodules and do Cross Val
     n_splits = 5

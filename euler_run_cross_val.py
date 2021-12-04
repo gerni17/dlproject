@@ -249,9 +249,10 @@ def cross_val_final_segnet(cfg, datamodule, log_datamodule, project_name, run_na
         print('------------final segmentation network fold no---------{}------------'.format(i))
         cv_trainer.fit(seg_system, datamodule=datamodule)
         print('------------testing fold no---------{}------------'.format(i))
-        #cv_trainer.test(seg_system, datamodule=cv_dm)
+        res = cv_trainer.test(seg_system, datamodule=datamodule)
+        print(res)
         #Acess dict values of trainer after test and get metrics for average
-        #fold_metrics.append(...)
+        fold_metrics.append(res)
 
 
 if __name__ == "__main__":

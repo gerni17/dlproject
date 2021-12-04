@@ -9,7 +9,7 @@ from pytorch_lightning import Trainer
 from datasets.generated import GeneratedDataModule
 from datasets.mixed import MixedDataModule
 from datasets.source import SourceDataModule
-from datasets.mixedCV import MixedCrossValDataModule
+from datasets.crossval import CrossValidationDataModule
 from logger.gogoll_pipeline_image import GogollPipelineImageLogger
 from models.unet_light_semseg import UnetLight
 from preprocessing.seg_transforms import SegImageTransform
@@ -178,21 +178,26 @@ def main():
         save_generated_dataset(main_system, data_dir, transform, save_path, logger=seg_wandb_logger, max_images=cfg.max_generated_images_saved)
 
     # Source domain datamodule
-    source_dm = SourceDataModule(data_dir, transform, batch_size=1, max_imgs=200)
+    source_dm = SourceDataModule(data_dir, transform, batch_size=1, split=False, max_imgs=200)
     # Generated images datamodule
-    generated_dm = GeneratedDataModule(main_system.G_s2t, data_dir, transform, batch_size=1, max_imgs=200)
+    generated_dm = GeneratedDataModule(main_system.G_s2t, data_dir, transform, batch_size=1, split=False, max_imgs=200)
+
+    # Mix both datamodules
+    mixed_dm = MixedDataModule(
+        source_dm,
+        generated_dm,
+        batch_size=batch_size
+    )
     
     # Mix both datamodules and do Cross Val
     n_splits = 5
-    mixed_cv_dm = MixedCrossValDataModule(
-        source_dm,
-        generated_dm,
+    cv_dm = CrossValidationDataModule(
+        mixed_dm,
         batch_size=batch_size,
         n_splits=n_splits
     )
-    log_cv_dm = MixedCrossValDataModule(
-        source_dm,
-        generated_dm,
+    log_dm = CrossValidationDataModule(
+        mixed_dm,
         batch_size=batch_size,
         n_splits=n_splits
     )
@@ -200,7 +205,7 @@ def main():
     # train the final segmentation net that we use to evaluate if our augmented dataset helps
     # with training a segnet that is more robust to different domains/conditions
     n_cross_val_epochs = 10
-    cross_val_final_segnet(cfg, mixed_cv_dm, log_cv_dm, project_name, run_name, log_path, n_cross_val_epochs, n_splits)
+    cross_val_final_segnet(cfg, cv_dm, log_dm, project_name, run_name, log_path, n_cross_val_epochs, n_splits)
 
     wandb.finish()
 

@@ -36,12 +36,13 @@ class GeneratedDataset(Dataset):
 
 # Data Module
 class GeneratedDataModule(pl.LightningDataModule):
-    def __init__(self, generator, data_dir, transform, batch_size, max_imgs = 200):
+    def __init__(self, generator, data_dir, transform, batch_size, split=True, max_imgs = 200):
         super(GeneratedDataModule, self).__init__()
         self.generator = generator
         self.data_dir = data_dir
         self.transform = transform
         self.batch_size = batch_size
+        self.split = split
         self.max_imgs = max_imgs
 
     def prepare_data(self):
@@ -52,7 +53,13 @@ class GeneratedDataModule(pl.LightningDataModule):
             os.path.join(self.data_dir, "exp", "semseg", "*.png")
         )
 
-        self.rgb_train, self.rgb_val, self.seg_train, self.seg_val = train_test_split(self.rgb_paths, self.segmentation_paths, test_size=0.2)
+        if self.split:
+            self.rgb_train, self.rgb_val, self.seg_train, self.seg_val = train_test_split(self.rgb_paths, self.segmentation_paths, test_size=0.2)
+        else:
+            self.rgb_train = self.rgb_paths
+            self.rgb_val = []
+            self.seg_train = self.segmentation_paths
+            self.seg_val = []
 
     def setup(self, stage: Optional[str] = None):
         # Assign train/val datasets for use in dataloaders
@@ -91,7 +98,7 @@ class GeneratedDataModule(pl.LightningDataModule):
             pin_memory=True,
             num_workers=4
         )
-
+    
     def test_dataloader(self):
         return DataLoader(
             self.val_dataset,

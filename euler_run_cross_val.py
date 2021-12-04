@@ -253,7 +253,7 @@ def cross_val_final_segnet(cfg, datamodule, log_datamodule, project_name, run_na
         print('------------testing fold no---------{}------------'.format(i))
         res = cv_trainer.test(seg_system, datamodule=datamodule)
         #Acess dict values of trainer after test and get metrics for average
-        fold_metrics.append(res['IOU Metric'])
+        fold_metrics.append(res[0]['IOU Metric'])
         logName = "IOU fold {}".format(i+1)
         wandb.log({logName: mean(fold_metrics)})
     print(mean(fold_metrics))

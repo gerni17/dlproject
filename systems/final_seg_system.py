@@ -2,16 +2,15 @@ import warnings
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
-import glob
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
 from itertools import chain
 import torch
-import torchmetrics
 from torchvision.utils import make_grid
 from torch import nn, optim
 import pytorch_lightning as pl
+from torchmetrics import IoU
 
 
 class FinalSegSystem(pl.LightningModule):
@@ -22,7 +21,7 @@ class FinalSegSystem(pl.LightningModule):
         self.step = 0
 
         self.semseg_loss = torch.nn.CrossEntropyLoss()
-        #self.semseg_loss = torchmetrics.IoU(3)
+        self.iou_metric = IoU(num_classes=3)
         self.losses = []
 
     def configure_optimizers(self):
@@ -59,6 +58,19 @@ class FinalSegSystem(pl.LightningModule):
         self.losses.append(outputs[0]["loss"])
 
         return None
+    
+    def test_step(self, batch, batch_idx):
+        source_img, segmentation_img = (batch["source"], batch["source_segmentation"])
+
+        y_seg = self.net(source_img)
+
+        jaccard_index = self.iou_metric(y_seg, segmentation_img.int())
+
+        logs = {
+            "IOU Metric": jaccard_index,
+        }
+
+        self.log_dict(logs, on_step=False, on_epoch=True, prog_bar=True, logger=True)
 
     def segment(self, inputs):
         return self.net(inputs)

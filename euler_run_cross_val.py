@@ -214,19 +214,19 @@ def cross_val_final_segnet(cfg, datamodule, log_datamodule, project_name, run_na
         seg_system = FinalSegSystem(seg_net, lr=seg_lr)
 
         # Logger  --------------------------------------------------------------
-        seg_wandb_logger = WandbLogger(project=project_name, name=run_name, prefix="seg_final_cv_fold{}".format(i)) if cfg.use_wandb else None
+        seg_wandb_logger = WandbLogger(project=project_name, name=run_name, prefix="seg_final_cv_fold{}".format(i+1)) if cfg.use_wandb else None
 
         # Callbacks  --------------------------------------------------------------
         # save the model
         segmentation_checkpoint_callback = ModelCheckpoint(
-            dirpath=path.join(log_path, "segmentation_final_cv_fold{}".format(i)),
+            dirpath=path.join(log_path, "segmentation_final_cv_fold{}".format(i+1)),
             save_last=False,
             save_top_k=1,
             verbose=False,
             monitor="loss",
             mode="min",
         )
-        semseg_image_callback = GogollSemsegImageLogger(log_datamodule, network="net", log_key="Segmentation (Final) Fold {}".format(i))
+        semseg_image_callback = GogollSemsegImageLogger(log_datamodule, network="net", log_key="Segmentation (Final) Fold {}".format(i+1))
 
     
         cv_trainer = Trainer(

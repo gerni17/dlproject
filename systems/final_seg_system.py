@@ -39,9 +39,8 @@ class FinalSegSystem(pl.LightningModule):
         source_img, segmentation_img = (batch["source"], batch["source_segmentation"])
 
         y_seg = self.net(source_img)
-        y_seg = torch.argmax(y_seg, dim=1)
 
-        Seg_loss = self.semseg_loss(y_seg.float(), segmentation_img.float())
+        Seg_loss = self.semseg_loss(y_seg, segmentation_img)
         # Seg_loss = 1 - self.semseg_loss(y_seg, segmentation_img)
         # Seg_loss.requires_grad = True
 
@@ -72,8 +71,6 @@ class FinalSegSystem(pl.LightningModule):
         }
 
         self.log_dict(logs, on_step=False, on_epoch=True, prog_bar=True, logger=True)
-
-        return {"IOU Metric": jaccard_index}
 
     def segment(self, inputs):
         return self.net(inputs)

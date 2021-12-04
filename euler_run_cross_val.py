@@ -248,15 +248,11 @@ def cross_val_final_segnet(cfg, datamodule, log_datamodule, project_name, run_na
             ],
         )
 
-        print('------------final segmentation network fold no---------{}------------'.format(i))
         cv_trainer.fit(seg_system, datamodule=datamodule)
-        print('------------testing fold no---------{}------------'.format(i))
         res = cv_trainer.test(seg_system, datamodule=datamodule)
         #Acess dict values of trainer after test and get metrics for average
         fold_metrics.append(res[0]['IOU Metric'])
-        logName = "IOU fold {}".format(i+1)
-        wandb.run.summary["IOU"] = res[0]['IOU Metric']
-    print(mean(fold_metrics))
+    print('------------IOU Average {}------------'.format(mean(fold_metrics)))
     wandb.run.summary["MEAN IOU"] = mean(fold_metrics)
 
 

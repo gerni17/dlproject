@@ -73,5 +73,7 @@ class FinalSegSystem(pl.LightningModule):
 
         self.log_dict(logs, on_step=False, on_epoch=True, prog_bar=True, logger=True)
 
+        return {"IOU Metric": jaccard_index}
+
     def segment(self, inputs):
         return self.net(inputs)

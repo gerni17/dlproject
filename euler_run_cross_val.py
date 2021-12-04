@@ -27,6 +27,8 @@ from models.generators import CycleGANGenerator
 from logger.gogoll_semseg_image import GogollSemsegImageLogger
 from systems.gogoll_system import GogollSystem
 
+from numpy import mean
+
 def main():
     cfg = command_line_parser()
 
@@ -250,9 +252,12 @@ def cross_val_final_segnet(cfg, datamodule, log_datamodule, project_name, run_na
         cv_trainer.fit(seg_system, datamodule=datamodule)
         print('------------testing fold no---------{}------------'.format(i))
         res = cv_trainer.test(seg_system, datamodule=datamodule)
-        print(res)
         #Acess dict values of trainer after test and get metrics for average
-        fold_metrics.append(res)
+        fold_metrics.append(res['IOU Metric'])
+        logName = "IOU fold {}".format(i+1)
+        wandb.log({logName: mean(fold_metrics)})
+    print(mean(fold_metrics))
+    wandb.log({"meanIOU": mean(fold_metrics)})
 
 
 if __name__ == "__main__":

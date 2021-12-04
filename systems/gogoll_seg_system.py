@@ -12,7 +12,6 @@ import torchmetrics
 from torchvision.utils import make_grid
 from torch import nn, optim
 import pytorch_lightning as pl
-from models.jaccard import IoULoss
 
 
 class GogollSegSystem(pl.LightningModule):

@@ -66,14 +66,6 @@ class SourceDataModule(pl.LightningDataModule):
             math.ceil(self.max_imgs*0.2)
         )
 
-        self.full_dataset = SourceDataset(
-            self.rgb_paths,
-            self.segmentation_paths,
-            self.transform,
-            "train",
-            self.max_imgs
-        )
-
     def train_dataloader(self):
         return DataLoader(
             self.train_dataset,

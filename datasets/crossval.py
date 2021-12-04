@@ -7,34 +7,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
 import numpy as np
 
-class MixedDataset(Dataset):
-    def __init__(self, datasets):
-        self.datasets = datasets
-        self.length = sum(len(s) for s in self.datasets)
-
-    def __len__(self):
-        return self.length
-
-    def __getitem__(self, idx):
-        c_len_start = 0
-        c_len = 0
-
-        for ds in self.datasets:
-            c_len += len(ds)
-
-            if idx < c_len:
-                return ds[idx - c_len_start]
-            
-            c_len_start += len(ds)
-        
-        raise LookupError("Index was out of bounds for datasets")
-
-
 # Data Module
-class MixedCrossValDataModule(pl.LightningDataModule):
-    def __init__(self, *datamodules, batch_size=4, n_splits=5, active_split=0):
-        super(MixedCrossValDataModule, self).__init__()
-        self.datamodules = datamodules
+class CrossValidationDataModule(pl.LightningDataModule):
+    def __init__(self, datamodule, batch_size=4, n_splits=5, active_split=0):
+        super(CrossValidationDataModule, self).__init__()
+        self.datamodule = datamodule
         self.batch_size = batch_size
         self.train_subsamplers = []
         self.test_subsamplers = []
@@ -42,26 +19,17 @@ class MixedCrossValDataModule(pl.LightningDataModule):
         self.active_split = active_split
         self.cv_splitter = KFold(n_splits=self.n_splits, random_state=None, shuffle=False)
 
-    def get_datamoduels(self):
-        return self.datamodules
-
     def set_active_split(self, split_index):
         assert split_index >= 0 and split_index  < self.n_splits
         self.active_split = split_index
 
     def prepare_data(self):
-        for dm in self.datamodules:
-            dm.prepare_data()
+        self.datamodule.prepare_data()
 
     def setup(self, stage: Optional[str] = None):
-        all_datasets = []
-
-        for dm in self.datamodules:
-            dm.setup()
-            all_datasets.append(dm.full_dataset)
-
-        self.concatenated_dataset = ConcatDataset(all_datasets)
-        for train_index, test_index in self.cv_splitter.split(self.concatenated_dataset):
+        self.datamodule.setup()
+        self.full_dataset = self.datamodule.train_dataset
+        for train_index, test_index in self.cv_splitter.split(self.full_dataset):
             train_subsampler = SubsetRandomSampler(train_index)
             test_subsampler = SubsetRandomSampler(test_index)
             self.train_subsamplers.append(train_subsampler)
@@ -70,7 +38,7 @@ class MixedCrossValDataModule(pl.LightningDataModule):
 
     def train_dataloader(self):
         return DataLoader(
-            self.concatenated_dataset,
+            self.full_dataset,
             batch_size=self.batch_size,
             pin_memory=True,
             num_workers=4,
@@ -79,7 +47,7 @@ class MixedCrossValDataModule(pl.LightningDataModule):
 
     def val_dataloader(self):
         return DataLoader(
-            self.concatenated_dataset,
+            self.full_dataset,
             batch_size=self.batch_size,
             pin_memory=True,
             num_workers=4,
@@ -88,7 +56,7 @@ class MixedCrossValDataModule(pl.LightningDataModule):
 
     def test_dataloader(self):
         return DataLoader(
-            self.concatenated_dataset,
+            self.full_dataset,
             batch_size=self.batch_size,
             pin_memory=True,
             num_workers=4,

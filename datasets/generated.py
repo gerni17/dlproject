@@ -73,16 +73,7 @@ class GeneratedDataModule(pl.LightningDataModule):
             "test",
             math.ceil(self.max_imgs*0.2)
         )
-
-        self.full_dataset = GeneratedDataset(
-            self.generator,
-            self.rgb_paths,
-            self.segmentation_paths,
-            self.transform,
-            "test",
-            self.max_imgs
-        )
-
+        
     def train_dataloader(self):
         return DataLoader(
             self.train_dataset,

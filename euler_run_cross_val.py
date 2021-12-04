@@ -180,10 +180,10 @@ def main():
         save_generated_dataset(main_system, data_dir, transform, save_path, logger=seg_wandb_logger, max_images=cfg.max_generated_images_saved)
 
     # Source domain datamodule
-    source_dm = SourceDataModule(data_dir, transform, batch_size=1, split=False, max_imgs=100)
+    source_dm = SourceDataModule(data_dir, transform, batch_size=1, split=False, max_imgs=20)
     # Generated images datamodule
-    generated_dm = GeneratedDataModule(main_system.G_s2t, data_dir, transform, batch_size=1, split=False, max_imgs=100)
-
+    generated_dm = GeneratedDataModule(main_system.G_s2t, data_dir, transform, batch_size=1, split=False, max_imgs=20)
+    batch_size = 1
     # Mix both datamodules
     mixed_dm = MixedDataModule(
         source_dm,
@@ -255,9 +255,9 @@ def cross_val_final_segnet(cfg, datamodule, log_datamodule, project_name, run_na
         #Acess dict values of trainer after test and get metrics for average
         fold_metrics.append(res[0]['IOU Metric'])
         logName = "IOU fold {}".format(i+1)
-        wandb.log({logName: mean(fold_metrics)})
+        wandb.run.summary["IOU"] = res[0]['IOU Metric']
     print(mean(fold_metrics))
-    wandb.log({"meanIOU": mean(fold_metrics)})
+    wandb.run.summary["MEAN IOU"] = mean(fold_metrics)
 
 
 if __name__ == "__main__":

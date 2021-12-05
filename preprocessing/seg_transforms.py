@@ -91,6 +91,7 @@ class Normalize:
         # image=torch.clip(image,min=0,max=255)
         return image, segmentation
 
+
 class RandomResizedCrop:
     def __init__(self, size):
         self.size = size
@@ -114,17 +115,20 @@ class RandomCrop:
         return image, target
 
 class RandomRotate:
-    def __init__(self,degrees):
-        self.degrees=degrees
-        self.fill=0
+    def __init__(self, degrees):
+        self.degrees = degrees
+        self.fill = 0
 
-    def __call__(self, image,target):
-        degrees=self.degrees
-        angle = float(torch.empty(1).uniform_(float(degrees[0]), float(degrees[1])).item())
+    def __call__(self, image, target):
+        degrees = self.degrees
+        angle = float(
+            torch.empty(1).uniform_(float(degrees[0]), float(degrees[1])).item()
+        )
 
-        rotated_img= F.rotate(image, angle)
-        rotated_target= F.rotate(target, angle)
-        return rotated_img,rotated_target
+        rotated_img = F.rotate(image, angle)
+        rotated_target = F.rotate(target, angle)
+        return rotated_img, rotated_target
+
 
 class SegImageTransform:
     def __init__(self, img_size=64):
@@ -133,7 +137,7 @@ class SegImageTransform:
                 [
                     RandomHorizontalFlip(),
                     RandomVerticalFlip(),
-                    RandomRotate(degrees=[0,45]),
+                    RandomRotate(degrees=[0, 45]),
                     RandomCrop(img_size),
                     # Resize((img_size, img_size)),
                     PILToTensor(),

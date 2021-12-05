@@ -1,21 +1,18 @@
-from logging import log
 from os import path
-from torch.utils import data
-import wandb
 import uuid
+import wandb
 
 from datetime import datetime
 from pytorch_lightning import Trainer
 from datasets.generated import GeneratedDataModule
 from datasets.mixed import MixedDataModule
 from datasets.source import SourceDataModule
+from datasets.crossval import CrossValidationDataModule
 from logger.gogoll_pipeline_image import GogollPipelineImageLogger
-from models.lightweight_semseg import LightweightSemsegModel
 from models.unet_light_semseg import UnetLight
 from preprocessing.seg_transforms import SegImageTransform
 from datasets.gogoll import GogollDataModule
 
-from logger.generated_image import GeneratedImageLogger
 from systems.final_seg_system import FinalSegSystem
 from systems.gogoll_seg_system import GogollSegSystem
 from utils.generate_targets_with_semantics import save_generated_dataset
@@ -23,12 +20,13 @@ from utils.weight_initializer import init_weights
 from configs.gogoll_config import command_line_parser
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
-from systems.experiment_semseg import Semseg
-from models.semseg_model import ModelDeepLabV3Plus
 from models.discriminators import CycleGANDiscriminator
 from models.generators import CycleGANGenerator
 from logger.gogoll_semseg_image import GogollSemsegImageLogger
 from systems.gogoll_system import GogollSystem
+
+from numpy import mean
+
 
 def main():
     cfg = command_line_parser()
@@ -70,7 +68,6 @@ def main():
             config=cfg,
             settings=wandb.Settings(start_method="fork"),
         )
-
     # Data Preprocessing  -----------------------------------------------------------------
     transform = SegImageTransform(img_size=cfg.image_size)
 
@@ -122,6 +119,7 @@ def main():
         if cfg.use_wandb
         else None
     )
+    wandb.login(key="969803cb62211763351a441ac5c9e96ce995f7eb")  # for aleks euler
 
     # Callbacks  --------------------------------------------------------------
     # save the model
@@ -187,7 +185,7 @@ def main():
         print("Fitting segmentation network...", run_name)
         seg_trainer.fit(seg_system, datamodule=dm)
     else:
-        print(f"Loading segmentation net from checkpoint...")
+        print("Loading segmentation net from checkpoint...")
         seg_system = GogollSegSystem.load_from_checkpoint(
             cfg.seg_checkpoint_path, net=seg_net_s
         )
@@ -196,7 +194,7 @@ def main():
         print("Fitting gogoll system...", run_name)
         trainer.fit(main_system, datamodule=dm)
     else:
-        print(f"Loading gogol net from checkpoint...")
+        print("Loading gogol net from checkpoint...")
         main_system = GogollSystem.load_from_checkpoint(
             cfg.gogoll_checkpoint_path, **gogoll_net_config
         )
@@ -216,65 +214,103 @@ def main():
         )
 
     # Source domain datamodule
-    source_dm = SourceDataModule(data_dir, transform, batch_size=1, max_imgs=200)
+    source_dm = SourceDataModule(
+        data_dir, transform, batch_size=1, split=False, max_imgs=200
+    )
     # Generated images datamodule
     generated_dm = GeneratedDataModule(
-        main_system.G_s2t, data_dir, transform, batch_size=1, max_imgs=200
+        main_system.G_s2t, data_dir, transform, batch_size=1, split=False, max_imgs=200
     )
+    batch_size = 8
     # Mix both datamodules
     mixed_dm = MixedDataModule(source_dm, generated_dm, batch_size=batch_size)
-    log_dm = MixedDataModule(source_dm, generated_dm, batch_size=batch_size)
+
+    # Mix both datamodules and do Cross Val
+    n_splits = 5
+    cv_dm = CrossValidationDataModule(
+        mixed_dm, batch_size=batch_size, n_splits=n_splits
+    )
+    log_dm = CrossValidationDataModule(
+        mixed_dm, batch_size=batch_size, n_splits=n_splits
+    )
 
     # train the final segmentation net that we use to evaluate if our augmented dataset helps
     # with training a segnet that is more robust to different domains/conditions
-    train_final_segnet(cfg, mixed_dm, log_dm, project_name, run_name, log_path)
+    n_cross_val_epochs = 10
+    cross_val_final_segnet(
+        cfg,
+        cv_dm,
+        log_dm,
+        project_name,
+        run_name,
+        log_path,
+        n_cross_val_epochs,
+        n_splits,
+    )
 
     wandb.finish()
 
 
-def train_final_segnet(
-    cfg, datamodule, log_datamodule, project_name, run_name, log_path
+def cross_val_final_segnet(
+    cfg,
+    datamodule,
+    log_datamodule,
+    project_name,
+    run_name,
+    log_path,
+    n_epochs,
+    n_splits,
 ):
-    seg_lr = 0.0002
+    # Cross Validation Run
+    fold_metrics = []
+    for i in range(n_splits):
+        seg_lr = 0.0002
+        datamodule.set_active_split(i)
+        seg_net = UnetLight()
+        seg_system = FinalSegSystem(seg_net, lr=seg_lr)
 
-    seg_net = UnetLight()
+        # Logger  --------------------------------------------------------------
+        seg_wandb_logger = (
+            WandbLogger(
+                project=project_name,
+                name=run_name,
+                prefix="seg_final_cv_fold{}".format(i + 1),
+            )
+            if cfg.use_wandb
+            else None
+        )
 
-    seg_system = FinalSegSystem(seg_net, lr=seg_lr)
+        # Callbacks  --------------------------------------------------------------
+        # save the model
+        segmentation_checkpoint_callback = ModelCheckpoint(
+            dirpath=path.join(log_path, "segmentation_final_cv_fold{}".format(i + 1)),
+            save_last=False,
+            save_top_k=1,
+            verbose=False,
+            monitor="loss",
+            mode="min",
+        )
+        semseg_image_callback = GogollSemsegImageLogger(
+            log_datamodule,
+            network="net",
+            log_key="Segmentation (Final) Fold {}".format(i + 1),
+        )
 
-    # Logger  --------------------------------------------------------------
-    seg_wandb_logger = (
-        WandbLogger(project=project_name, name=run_name, prefix="seg_final")
-        if cfg.use_wandb
-        else None
-    )
+        cv_trainer = Trainer(
+            max_epochs=n_epochs,
+            gpus=1 if cfg.gpu else 0,
+            reload_dataloaders_every_n_epochs=True,
+            num_sanity_val_steps=0,
+            logger=seg_wandb_logger,
+            callbacks=[segmentation_checkpoint_callback, semseg_image_callback,],
+        )
 
-    # Callbacks  --------------------------------------------------------------
-    # save the model
-    segmentation_checkpoint_callback = ModelCheckpoint(
-        dirpath=path.join(log_path, "segmentation_final"),
-        save_last=False,
-        save_top_k=1,
-        verbose=False,
-        monitor="loss",
-        mode="min",
-    )
+        cv_trainer.fit(seg_system, datamodule=datamodule)
+        res = cv_trainer.test(seg_system, datamodule=datamodule)
+        # Acess dict values of trainer after test and get metrics for average
+        fold_metrics.append(res[0]["IOU Metric"])
+    wandb.run.summary["MEAN IOU"] = mean(fold_metrics)
 
-    semseg_image_callback = GogollSemsegImageLogger(
-        log_datamodule, network="net", log_key="Segmentation (Final)"
-    )
-
-    trainer = Trainer(
-        max_epochs=10,
-        gpus=1 if cfg.gpu else 0,
-        reload_dataloaders_every_n_epochs=True,
-        num_sanity_val_steps=0,
-        logger=seg_wandb_logger,
-        callbacks=[segmentation_checkpoint_callback, semseg_image_callback,],
-    )
-
-    # train the segmentation network we use to evaluate how well our generated images help with the segmentation task
-    print("Fitting final segmentation network...", run_name)
-    trainer.fit(seg_system, datamodule=datamodule)
 
 if __name__ == "__main__":
     main()

@@ -31,12 +31,13 @@ class GogollDataset(Dataset):
 
 # Data Module
 class GogollDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir, domain, transform, batch_size):
+    def __init__(self, data_dir, domain, transform, batch_size, split=True):
         super(GogollDataModule, self).__init__()
         self.data_dir = data_dir
         self.transform = transform
         self.domain = domain
         self.batch_size = batch_size
+        self.split = split
 
     def prepare_data(self):
         self.rgb_paths = glob.glob(
@@ -49,8 +50,17 @@ class GogollDataModule(pl.LightningDataModule):
             os.path.join(self.data_dir, "other_domains", self.domain, "*.jpg")
         )
 
-        self.rgb_train, self.rgb_val, self.seg_train, self.seg_val = train_test_split(self.rgb_paths, self.segmentation_paths, test_size=0.2)
-        self.target_train, self.target_val = train_test_split(self.target_paths, test_size=0.2)
+        if self.split:
+            self.rgb_train, self.rgb_val, self.seg_train, self.seg_val = train_test_split(self.rgb_paths, self.segmentation_paths, test_size=0.2)
+            self.target_train, self.target_val = train_test_split(self.target_paths, test_size=0.2)
+        else:
+            self.rgb_train = self.rgb_paths
+            self.rgb_val = []
+            self.seg_train = self.segmentation_paths
+            self.seg_val = []
+            self.target_train = self.target_paths
+            self.target_val = []
+
 
     def setup(self, stage: Optional[str] = None):
         # Assign train/val datasets for use in dataloaders

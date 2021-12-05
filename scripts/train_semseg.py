@@ -8,12 +8,14 @@ from preprocessing.seg_transforms import SegImageTransform
 from datasets.bonn import BonnDataModule
 
 from logger.generated_image import GeneratedImageLogger
+
 # from utils.weight_initializer import init_weights
 from configs.seg_config import command_line_parser
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from systems.experiment_semseg import Semseg
 from models.semseg_model import ModelDeepLabV3Plus
+
 
 def main():
     cfg = command_line_parser()
@@ -33,35 +35,38 @@ def main():
 
     # Data Preprocessing  -----------------------------------------------------------------
     transform = SegImageTransform(img_size=cfg.image_size)
-    wandb.init(reinit=True,name=run_name,config=cfg,settings=wandb.Settings(start_method="fork"))
-
+    wandb.init(
+        reinit=True,
+        name=run_name,
+        config=cfg,
+        settings=wandb.Settings(start_method="fork"),
+    )
 
     # DataModule  -----------------------------------------------------------------
     dm = BonnDataModule(data_dir, transform, batch_size)  # used for training
-    vs = BonnDataModule(data_dir, transform, batch_size)  # used for validation/progress visualization on wandb
-
+    vs = BonnDataModule(
+        data_dir, transform, batch_size
+    )  # used for validation/progress visualization on wandb
 
     net = ModelDeepLabV3Plus(3)
 
     # LightningModule  --------------------------------------------------------------
-    model = Semseg(
-        cfg,
-        net,
-        lr
-    )
+    model = Semseg(cfg, net, lr)
     print(cfg.use_wandb)
     # Logger  --------------------------------------------------------------
-    wandb_logger = WandbLogger(project=project_name, name=run_name) if cfg.use_wandb else None
+    wandb_logger = (
+        WandbLogger(project=project_name, name=run_name) if cfg.use_wandb else None
+    )
 
     # Callbacks  --------------------------------------------------------------
-    # save the model 
+    # save the model
     checkpoint_callback = ModelCheckpoint(
         dirpath=log_path,
         save_last=False,
         save_top_k=2,
         verbose=False,
-        monitor='loss_train/semseg',
-        mode='max',
+        monitor="loss_train/semseg",
+        mode="max",
     )
 
     # save the generated images (from the validation data) after every epoch to wandb
@@ -75,10 +80,7 @@ def main():
         reload_dataloaders_every_n_epochs=True,
         num_sanity_val_steps=0,
         logger=wandb_logger if cfg.use_wandb else None,
-        callbacks=[
-            checkpoint_callback,
-            semseg_image_callback
-        ],
+        callbacks=[checkpoint_callback, semseg_image_callback],
         # Uncomment the following options if you want to try out framework changes without training too long
         # limit_train_batches=2,
         # limit_val_batches=2,

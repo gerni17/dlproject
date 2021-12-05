@@ -38,6 +38,7 @@ def command_line_parser():
     # -------------------------- logging settings --------------------------
     parser.add_argument("--log_dir", type=expandpath, default="./logs", help="Place for artifacts and logs")
     parser.add_argument("--use_wandb", type=str2bool, default=False, help="Use WandB for logging")
+    parser.add_argument("--shared", type=str2bool, default=False, help="Push to shared wandb project")
 
     # -------------------------- training settings --------------------------
     parser.add_argument("--num_epochs_seg", type=int, default=16, help="Number of training epochs for the segmentation net")

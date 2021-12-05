@@ -8,11 +8,11 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from itertools import chain
 import torch
-import torchmetrics
 from torchvision.utils import make_grid
 from torch import nn, optim
 import pytorch_lightning as pl
 from utils.metrics import MetricsSemseg
+from torchmetrics import IoU
 
 
 class FinalSegSystem(pl.LightningModule):
@@ -22,8 +22,8 @@ class FinalSegSystem(pl.LightningModule):
         self.lr = lr
         self.step = 0
 
-        self.semseg_loss = torch.nn.CrossEntropyLoss()
-        # self.semseg_loss = torchmetrics.IoU(3)
+        # self.semseg_loss = torch.nn.CrossEntropyLoss()
+        self.iou_metric = IoU(num_classes=3)
         self.losses = []
         names=["crop","weed", "soil"]
         self.metrics_semseg = MetricsSemseg(3, names)
@@ -88,6 +88,19 @@ class FinalSegSystem(pl.LightningModule):
         scalar_logs.update({f'metrics_task_semseg/{k.replace(" ", "_")}': v for k, v in metrics_semseg.items()})
 
         self.log_dict(scalar_logs, on_step=False, on_epoch=True)
+
+    def test_step(self, batch, batch_idx):
+        source_img, segmentation_img = (batch["source"], batch["source_segmentation"])
+
+        y_seg = self.net(source_img)
+
+        jaccard_index = self.iou_metric(y_seg, segmentation_img.int())
+
+        logs = {
+            "IOU Metric": jaccard_index,
+        }
+
+        self.log_dict(logs, on_step=False, on_epoch=True, prog_bar=True, logger=True)
 
     def segment(self, inputs):
         return self.net(inputs)

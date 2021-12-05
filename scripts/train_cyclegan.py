@@ -38,8 +38,12 @@ def main():
     transform = ImageTransform(img_size=cfg.image_size)
 
     # DataModule  -----------------------------------------------------------------
-    dm = AgriDataModule(data_dir, transform, batch_size, domain=domain)  # used for training
-    vs = AgriDataModule(data_dir, transform, batch_size, domain=domain)  # used for validation/progress visualization on wandb
+    dm = AgriDataModule(
+        data_dir, transform, batch_size, domain=domain
+    )  # used for training
+    vs = AgriDataModule(
+        data_dir, transform, batch_size, domain=domain
+    )  # used for validation/progress visualization on wandb
 
     G_basestyle = CycleGANGenerator(filter=cfg.generator_filters)
     G_stylebase = CycleGANGenerator(filter=cfg.generator_filters)
@@ -52,18 +56,13 @@ def main():
 
     # LightningModule  --------------------------------------------------------------
     model = CycleGANSystem(
-        G_basestyle,
-        G_stylebase,
-        D_base,
-        D_style,
-        lr,
-        transform,
-        reconstr_w,
-        id_w,
+        G_basestyle, G_stylebase, D_base, D_style, lr, transform, reconstr_w, id_w,
     )
 
     # Logger  --------------------------------------------------------------
-    wandb_logger = WandbLogger(project=project_name, name=run_name) if cfg.use_wandb else None
+    wandb_logger = (
+        WandbLogger(project=project_name, name=run_name) if cfg.use_wandb else None
+    )
 
     # Callbacks  --------------------------------------------------------------
     # save the model which had the best generator

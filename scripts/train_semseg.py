@@ -3,9 +3,9 @@ import uuid
 
 from datetime import datetime
 from pytorch_lightning import Trainer
-from logger.semseg_image import SemsegImageLogger
+from logger.gogoll_semseg_image import GogollSemsegImageLogger
 from preprocessing.seg_transforms import SegImageTransform
-from datasets.bonn import BonnDataModule
+from datasets.source import SourceDataModule
 
 from logger.generated_image import GeneratedImageLogger
 
@@ -14,7 +14,7 @@ from configs.seg_config import command_line_parser
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from systems.experiment_semseg import Semseg
-from models.semseg_model import ModelDeepLabV3Plus
+from models.unet_light_semseg import UnetLight
 
 
 def main():
@@ -43,16 +43,15 @@ def main():
     )
 
     # DataModule  -----------------------------------------------------------------
-    dm = BonnDataModule(data_dir, transform, batch_size)  # used for training
-    vs = BonnDataModule(
+    dm = SourceDataModule(data_dir, transform, batch_size,split=True,max_imgs=20)  # used for training
+    vs = SourceDataModule(
         data_dir, transform, batch_size
     )  # used for validation/progress visualization on wandb
 
-    net = ModelDeepLabV3Plus(3)
+    net = UnetLight()
 
     # LightningModule  --------------------------------------------------------------
     model = Semseg(cfg, net, lr)
-    print(cfg.use_wandb)
     # Logger  --------------------------------------------------------------
     wandb_logger = (
         WandbLogger(project=project_name, name=run_name) if cfg.use_wandb else None
@@ -70,7 +69,9 @@ def main():
     )
 
     # save the generated images (from the validation data) after every epoch to wandb
-    semseg_image_callback = SemsegImageLogger(vs)
+    semseg_image_callback = GogollSemsegImageLogger(
+        vs, network="net", log_key="Segmentation",
+    )
 
     # Trainer  --------------------------------------------------------------
     print("Start training", run_name)
@@ -90,6 +91,7 @@ def main():
     # Train
     print("Fitting", run_name)
     trainer.fit(model, datamodule=dm)
+    trainer.test(model, datamodule=dm)
 
     wandb.finish()
 

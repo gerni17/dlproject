@@ -59,8 +59,7 @@ def main():
             name=run_name,
             config=cfg,
             settings=wandb.Settings(start_method="fork"),
-            project="deep-learning-shared",
-            entity="gerni",
+            entity="dlshared",
         )
     else:
         wandb.init(

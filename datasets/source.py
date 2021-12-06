@@ -81,7 +81,7 @@ class SourceDataModule(pl.LightningDataModule):
             self.rgb_val,
             self.seg_val,
             self.transform,
-            "train",
+            "test",
             math.ceil(self.max_imgs * 0.2),
         )
 

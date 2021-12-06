@@ -40,8 +40,8 @@ class SemsegImageLogger(Callback):
         dataloader = data_module.test_dataloader()
         val_samples = next(iter(dataloader))
 
-        self.rgb_imgs = val_samples["rgb"]
-        self.label_imgs = val_samples["label"]
+        self.rgb_imgs = val_samples["source"]
+        self.label_imgs = val_samples["source_segmentation"]
         self.label_imgs = prepare_semseg(self.label_imgs)
 
     def on_validation_epoch_end(self, trainer, pl_module, *args):
@@ -49,7 +49,7 @@ class SemsegImageLogger(Callback):
         labeled_imgs = self.label_imgs.to(device=pl_module.device)
         # Get model prediction
         semseg = pl_module.net(input_imgs)
-        semseg = semseg["semseg"].argmax(dim=1)
+        semseg = semseg.argmax(dim=1)
         semseg = prepare_semseg(semseg).to(device=pl_module.device)
 
         imgs = torch.cat([input_imgs, labeled_imgs, semseg], dim=0)

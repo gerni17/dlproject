@@ -25,7 +25,7 @@ class FinalSegSystem(pl.LightningModule):
         self.semseg_loss = torch.nn.CrossEntropyLoss()
         self.iou_metric = IoU(num_classes=3)
         self.losses = []
-        names = ["crop", "weed", "soil"]
+        names = ["soil", "crop", "weed"]
         self.metrics_semseg = MetricsSemseg(3, names)
 
     def configure_optimizers(self):
@@ -92,6 +92,9 @@ class FinalSegSystem(pl.LightningModule):
 
         y_seg = self.net(source_img)
 
+        y_hat_semseg_lbl = y_seg.argmax(dim=1)
+        self.metrics_semseg.update_batch(y_hat_semseg_lbl, segmentation_img)
+
         jaccard_index = self.iou_metric(y_seg, segmentation_img.int())
 
         logs = {
@@ -99,6 +102,20 @@ class FinalSegSystem(pl.LightningModule):
         }
 
         self.log_dict(logs, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+
+    def test_epoch_end(self,outputs):
+        metrics_semseg = self.metrics_semseg.get_metrics_summary()
+        self.metrics_semseg.reset()
+
+        metric_semseg = metrics_semseg['mean_iou']
+
+
+        scalar_logs = {
+            'metrics_test_summary/semseg': metric_semseg,
+        }
+        scalar_logs.update({f'metrics_test_semseg/{k.replace(" ", "_")}': v for k, v in metrics_semseg.items()})
+
+        self.log_dict(scalar_logs, on_step=False, on_epoch=True)
 
     def segment(self, inputs):
         return self.net(inputs)

@@ -5,12 +5,15 @@ import torch
 
 import wandb
 
+
 def prepare_semseg(img):
-    assert (img.dim() == 3 or img.dim() == 4 and img.shape[1] == 1) and img.dtype in (torch.int, torch.long), \
-        f'Expecting 4D tensor with semseg classes, got {img.shape}'
+    assert (img.dim() == 3 or img.dim() == 4 and img.shape[1] == 1) and img.dtype in (
+        torch.int,
+        torch.long,
+    ), f"Expecting 4D tensor with semseg classes, got {img.shape}"
     if img.dim() == 4:
         img = img.squeeze(1)
-    semseg_color_map=[(0, 0, 0),(0, 200, 0),(200, 0, 0)]
+    semseg_color_map = [(0, 0, 0), (0, 200, 0), (200, 0, 0)]
     colors = torch.tensor(semseg_color_map, dtype=torch.float32)
     assert colors.dim() == 2 and colors.shape[1] == 3
     if torch.max(colors) > 128:
@@ -19,6 +22,7 @@ def prepare_semseg(img):
     img = colors[img]  # N x H x W x 3
     img = img.permute(0, 3, 1, 2)
     return img
+
 
 class SemsegImageLogger(Callback):
     """
@@ -38,19 +42,17 @@ class SemsegImageLogger(Callback):
 
         self.rgb_imgs = val_samples["rgb"]
         self.label_imgs = val_samples["label"]
-        self.label_imgs=prepare_semseg(self.label_imgs)
-
-
+        self.label_imgs = prepare_semseg(self.label_imgs)
 
     def on_validation_epoch_end(self, trainer, pl_module, *args):
         input_imgs = self.rgb_imgs.to(device=pl_module.device)
         labeled_imgs = self.label_imgs.to(device=pl_module.device)
         # Get model prediction
         semseg = pl_module.net(input_imgs)
-        semseg=semseg["semseg"].argmax(dim=1)
-        semseg=prepare_semseg(semseg).to(device=pl_module.device)
+        semseg = semseg["semseg"].argmax(dim=1)
+        semseg = prepare_semseg(semseg).to(device=pl_module.device)
 
-        imgs = torch.cat([input_imgs,labeled_imgs, semseg], dim=0)
+        imgs = torch.cat([input_imgs, labeled_imgs, semseg], dim=0)
 
         joined_images_tensor = make_grid(imgs, nrow=8, padding=2)
 
@@ -59,6 +61,5 @@ class SemsegImageLogger(Callback):
 
         # Log the images as wandb Image
         trainer.logger.experiment.log(
-            {"End of epoch results": [wandb.Image(joined_images)]},
-            commit=False,
+            {"End of epoch results": [wandb.Image(joined_images)]}, commit=False,
         )

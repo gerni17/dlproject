@@ -3,11 +3,12 @@ from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 import pytorch_lightning as pl
 import os, glob, random
+
 # from sklearn.model_selection import train_test_split
 
 # Agriculture Dataset ---------------------------------------------------------------------------
 class BonnDataset(Dataset):
-    def __init__(self, source_img_paths,target_img_paths, transform, phase="train"):
+    def __init__(self, source_img_paths, target_img_paths, transform, phase="train"):
         self.source_img_paths = source_img_paths
         self.target_img_paths = target_img_paths
         self.transform = transform
@@ -21,9 +22,9 @@ class BonnDataset(Dataset):
         target_img = Image.open(self.target_img_paths[idx])
         assert rgb_img.size == target_img.size
 
-        img, target = self.transform(rgb_img, target_img,self.phase)
+        img, target = self.transform(rgb_img, target_img, self.phase)
 
-        return { "id": idx, "rgb": img, "label": target }
+        return {"id": idx, "rgb": img, "label": target}
 
 
 # Data Module
@@ -67,14 +68,13 @@ class BonnDataModule(pl.LightningDataModule):
             self.test_rgb_paths, self.test_label_paths, self.transform, "train"
         )
 
-
     def train_dataloader(self):
         return DataLoader(
             self.train_dataset,
             batch_size=self.batch_size,
             shuffle=True,
             pin_memory=True,
-            num_workers=4
+            num_workers=4,
         )
 
     def val_dataloader(self):
@@ -83,8 +83,8 @@ class BonnDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=True,
             pin_memory=True,
-            num_workers=4
-            )
+            num_workers=4,
+        )
 
     def test_dataloader(self):
         return DataLoader(
@@ -92,5 +92,5 @@ class BonnDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=True,
             pin_memory=True,
-            num_workers=4
+            num_workers=4,
         )

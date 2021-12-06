@@ -25,9 +25,7 @@ def command_line_parser():
 
     # -------------------------- wandb settings --------------------------
     parser.add_argument(
-        "--project",
-        type=str,
-        help="Name for your run to wandb project.",
+        "--project", type=str, help="Name for your run to wandb project.",
     )
     parser.add_argument(
         "--name",

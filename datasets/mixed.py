@@ -23,9 +23,9 @@ class MixedDataset(Dataset):
 
             if idx < c_len:
                 return ds[idx - c_len_start]
-            
+
             c_len_start += len(ds)
-        
+
         raise LookupError("Index was out of bounds for datasets")
 
 
@@ -71,7 +71,7 @@ class MixedDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=True,
             pin_memory=True,
-            num_workers=4
+            num_workers=4,
         )
 
     def val_dataloader(self):
@@ -80,7 +80,7 @@ class MixedDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=True,
             pin_memory=True,
-            num_workers=4
+            num_workers=4,
         )
 
     def test_dataloader(self):
@@ -89,5 +89,5 @@ class MixedDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=True,
             pin_memory=True,
-            num_workers=4
+            num_workers=4,
         )

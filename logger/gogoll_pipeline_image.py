@@ -74,8 +74,7 @@ class GogollPipelineImageLogger(Callback):
         try:
             # Log the images as wandb Image
             trainer.logger.experiment.log(
-                {self.log_key: [wandb.Image(joined_images)]},
-                commit=False,
+                {self.log_key: [wandb.Image(joined_images)]}, commit=False,
             )
 
         except BaseException as err:

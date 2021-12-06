@@ -19,7 +19,9 @@ def str2bool(v):
 
 
 def command_line_parser():
-    parser = argparse.ArgumentParser(add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
 
     # -------------------------- wandb settings --------------------------
     parser.add_argument(
@@ -36,15 +38,39 @@ def command_line_parser():
     )
 
     # -------------------------- logging settings --------------------------
-    parser.add_argument("--log_dir", type=expandpath, default="./logs", help="Place for artifacts and logs")
-    parser.add_argument("--use_wandb", type=str2bool, default=False, help="Use WandB for logging")
-    parser.add_argument("--shared", type=str2bool, default=False, help="Push to shared wandb project")
+    parser.add_argument(
+        "--log_dir",
+        type=expandpath,
+        default="./logs",
+        help="Place for artifacts and logs",
+    )
+    parser.add_argument(
+        "--use_wandb", type=str2bool, default=False, help="Use WandB for logging"
+    )
+    parser.add_argument(
+        "--shared", type=str2bool, default=False, help="Push to shared wandb project"
+    )
 
     # -------------------------- training settings --------------------------
-    parser.add_argument("--num_epochs_seg", type=int, default=16, help="Number of training epochs for the segmentation net")
-    parser.add_argument("--num_epochs_gogoll", type=int, default=100, help="Number of training epochs")
-    parser.add_argument("--seg_checkpoint_path", type=expandpath, help="Path to the source segmentation net's checkpoint (leave empty if should be trained)")
-    parser.add_argument("--gogoll_checkpoint_path", type=expandpath, help="Path to the gogol net's checkpoint (leave empty if should be trained)")
+    parser.add_argument(
+        "--num_epochs_seg",
+        type=int,
+        default=16,
+        help="Number of training epochs for the segmentation net",
+    )
+    parser.add_argument(
+        "--num_epochs_gogoll", type=int, default=100, help="Number of training epochs"
+    )
+    parser.add_argument(
+        "--seg_checkpoint_path",
+        type=expandpath,
+        help="Path to the source segmentation net's checkpoint (leave empty if should be trained)",
+    )
+    parser.add_argument(
+        "--gogoll_checkpoint_path",
+        type=expandpath,
+        help="Path to the gogol net's checkpoint (leave empty if should be trained)",
+    )
     parser.add_argument(
         "--batch_size",
         type=int,
@@ -98,7 +124,9 @@ def command_line_parser():
     )
 
     # -------------------------- data settings --------------------------
-    parser.add_argument("--dataset_root", type=expandpath, default="./data", help="Path to dataset")
+    parser.add_argument(
+        "--dataset_root", type=expandpath, default="./data", help="Path to dataset"
+    )
     parser.add_argument(
         "--domain",
         type=str,
@@ -112,9 +140,24 @@ def command_line_parser():
         default=256,
         help="Size training images should be scaled to",
     )
-    parser.add_argument("--save_generated_images", type=str2bool, default=False, help="Save generated images at the end of training?")
-    parser.add_argument("--max_generated_images_saved", type=int, default=100, help="Maximum number of images to generate and save at the end of training")
-    parser.add_argument("--generated_dataset_save_root", type=expandpath, default="./output/data", help="Path where you save generated images")
+    parser.add_argument(
+        "--save_generated_images",
+        type=str2bool,
+        default=False,
+        help="Save generated images at the end of training?",
+    )
+    parser.add_argument(
+        "--max_generated_images_saved",
+        type=int,
+        default=100,
+        help="Maximum number of images to generate and save at the end of training",
+    )
+    parser.add_argument(
+        "--generated_dataset_save_root",
+        type=expandpath,
+        default="./output/data",
+        help="Path where you save generated images",
+    )
 
     # -------------------------- hardware settings --------------------------
     parser.add_argument("--gpu", type=str2bool, default=True, help="GPU usage")

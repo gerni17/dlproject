@@ -30,6 +30,7 @@ from models.generators import CycleGANGenerator
 from logger.gogoll_semseg_image import GogollSemsegImageLogger
 from systems.gogoll_system import GogollSystem
 
+
 def main():
     cfg = command_line_parser()
 
@@ -275,6 +276,7 @@ def train_final_segnet(
     # train the segmentation network we use to evaluate how well our generated images help with the segmentation task
     print("Fitting final segmentation network...", run_name)
     trainer.fit(seg_system, datamodule=datamodule)
+
 
 if __name__ == "__main__":
     main()

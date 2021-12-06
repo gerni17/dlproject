@@ -1,5 +1,6 @@
 from torchvision import transforms
 
+
 class ImageTransform:
     def __init__(self, img_size=64):
         self.transform = {

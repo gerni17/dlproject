@@ -27,23 +27,21 @@ class GogollSegSystem(pl.LightningModule):
 
     def configure_optimizers(self):
         self.global_optimizer = optim.Adam(
-            self.net.parameters(),
-            lr=self.lr,
-            betas=(0.5, 0.999),
+            self.net.parameters(), lr=self.lr, betas=(0.5, 0.999),
         )
 
-        return [
-            self.global_optimizer,
-        ], []
+        return [self.global_optimizer,], []
 
     def training_step(self, batch, batch_idx):
-        source_img, segmentation_img, target_img = (batch["source"], batch["source_segmentation"], batch["target"])
+        source_img, segmentation_img, target_img = (
+            batch["source"],
+            batch["source_segmentation"],
+            batch["target"],
+        )
 
         y_seg = self.net(source_img)
 
         Seg_loss = self.semseg_loss(y_seg, segmentation_img)
-        # Seg_loss = 1 - self.semseg_loss(y_seg, segmentation_img)
-        # Seg_loss.requires_grad = True
 
         logs = {
             "loss": Seg_loss,

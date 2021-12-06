@@ -17,10 +17,12 @@ class CrossValidationDataModule(pl.LightningDataModule):
         self.test_subsamplers = []
         self.n_splits = n_splits
         self.active_split = active_split
-        self.cv_splitter = KFold(n_splits=self.n_splits, random_state=None, shuffle=False)
+        self.cv_splitter = KFold(
+            n_splits=self.n_splits, random_state=None, shuffle=False
+        )
 
     def set_active_split(self, split_index):
-        assert split_index >= 0 and split_index  < self.n_splits
+        assert split_index >= 0 and split_index < self.n_splits
         self.active_split = split_index
 
     def prepare_data(self):
@@ -35,14 +37,13 @@ class CrossValidationDataModule(pl.LightningDataModule):
             self.train_subsamplers.append(train_subsampler)
             self.test_subsamplers.append(test_subsampler)
 
-
     def train_dataloader(self):
         return DataLoader(
             self.full_dataset,
             batch_size=self.batch_size,
             pin_memory=True,
             num_workers=4,
-            sampler=self.train_subsamplers[self.active_split]
+            sampler=self.train_subsamplers[self.active_split],
         )
 
     def val_dataloader(self):
@@ -51,7 +52,7 @@ class CrossValidationDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             pin_memory=True,
             num_workers=4,
-            sampler=self.test_subsamplers[self.active_split]
+            sampler=self.test_subsamplers[self.active_split],
         )
 
     def test_dataloader(self):
@@ -60,5 +61,5 @@ class CrossValidationDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             pin_memory=True,
             num_workers=4,
-            sampler=self.test_subsamplers[self.active_split]
+            sampler=self.test_subsamplers[self.active_split],
         )

@@ -67,32 +67,51 @@ class GogollSystem(pl.LightningModule):
         #     lr=self.lr["G"],
         #     betas=(0.5, 0.999),
         # )
-        self.g_s2t_optimizer = optim.Adam(self.G_s2t.parameters(), lr=self.lr["G"], betas=(0.5, 0.999))
-        self.g_t2s_optimizer = optim.Adam(self.G_t2s.parameters(), lr=self.lr["G"], betas=(0.5, 0.999))
-        self.d_source_optimizer = optim.Adam(self.D_source.parameters(), lr=self.lr["D"], betas=(0.5, 0.999))
-        self.d_target_optimizer = optim.Adam(self.D_target.parameters(), lr=self.lr["D"], betas=(0.5, 0.999))
-        self.seg_s_optimizer = optim.Adam(self.seg_s.parameters(), lr=self.lr["seg_s"], betas=(0.5, 0.999))
-        self.seg_t_optimizer = optim.Adam(self.seg_t.parameters(), lr=self.lr["seg_t"], betas=(0.5, 0.999))
+        self.g_s2t_optimizer = optim.Adam(
+            self.G_s2t.parameters(), lr=self.lr["G"], betas=(0.5, 0.999)
+        )
+        self.g_t2s_optimizer = optim.Adam(
+            self.G_t2s.parameters(), lr=self.lr["G"], betas=(0.5, 0.999)
+        )
+        self.d_source_optimizer = optim.Adam(
+            self.D_source.parameters(), lr=self.lr["D"], betas=(0.5, 0.999)
+        )
+        self.d_target_optimizer = optim.Adam(
+            self.D_target.parameters(), lr=self.lr["D"], betas=(0.5, 0.999)
+        )
+        self.seg_s_optimizer = optim.Adam(
+            self.seg_s.parameters(), lr=self.lr["seg_s"], betas=(0.5, 0.999)
+        )
+        self.seg_t_optimizer = optim.Adam(
+            self.seg_t.parameters(), lr=self.lr["seg_t"], betas=(0.5, 0.999)
+        )
 
         # self.g_optimizer = optim.Adam(chain(self.G_s2t.parameters(), self.G_t2s.parameters()), lr=self.lr["G"], betas=(0.5, 0.999))
         # self.d_optimizer = optim.Adam(chain(self.D_source.parameters(), self.D_target.parameters()), lr=self.lr["D"], betas=(0.5, 0.999))
         # self.seg_optimizer = optim.Adam(chain(self.seg_s.parameters(), self.seg_t.parameters()), lr=self.lr["D"], betas=(0.5, 0.999))
 
-        return [
-            # self.global_optimizer,
-            self.g_s2t_optimizer,
-            self.g_t2s_optimizer,
-            self.d_source_optimizer,
-            self.d_target_optimizer,
-            self.seg_t_optimizer,
-            # self.seg_t_optimizer,
-            # self.g_optimizer,
-            # self.d_optimizer,
-            # self.seg_optimizer,
-        ], []
+        return (
+            [
+                # self.global_optimizer,
+                self.g_s2t_optimizer,
+                self.g_t2s_optimizer,
+                self.d_source_optimizer,
+                self.d_target_optimizer,
+                self.seg_t_optimizer,
+                # self.seg_t_optimizer,
+                # self.g_optimizer,
+                # self.d_optimizer,
+                # self.seg_optimizer,
+            ],
+            [],
+        )
 
     def training_step(self, batch, batch_idx, optimizer_idx):
-        source_img, segmentation_img, target_img = (batch["source"], batch["source_segmentation"], batch["target"])
+        source_img, segmentation_img, target_img = (
+            batch["source"],
+            batch["source_segmentation"],
+            batch["target"],
+        )
 
         b = source_img.size()[0]
 
@@ -158,17 +177,27 @@ class GogollSystem(pl.LightningModule):
                 "loss_seg_d": loss_seg_d,
             }
 
-            self.log_dict(logs, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+            self.log_dict(
+                logs, on_step=False, on_epoch=True, prog_bar=True, logger=True
+            )
 
             return 4 * G_loss + Seg_loss
 
         elif optimizer_idx == 2 or optimizer_idx == 3:
             # Train Discriminator
             # MSELoss
-            D_source_gen_loss = self.discriminator_loss(self.D_source(fake_source), fake)
-            D_target_gen_loss = self.discriminator_loss(self.D_target(fake_target), fake)
-            D_source_valid_loss = self.discriminator_loss(self.D_source(source_img), valid)
-            D_target_valid_loss = self.discriminator_loss(self.D_target(target_img), valid)
+            D_source_gen_loss = self.discriminator_loss(
+                self.D_source(fake_source), fake
+            )
+            D_target_gen_loss = self.discriminator_loss(
+                self.D_target(fake_target), fake
+            )
+            D_source_valid_loss = self.discriminator_loss(
+                self.D_source(source_img), valid
+            )
+            D_target_valid_loss = self.discriminator_loss(
+                self.D_target(target_img), valid
+            )
 
             D_gen_loss = (D_source_gen_loss + D_target_gen_loss) / 2
 
@@ -187,7 +216,9 @@ class GogollSystem(pl.LightningModule):
                 "D_gen_loss": D_gen_loss,
             }
 
-            self.log_dict(logs, on_step=False, on_epoch=True, prog_bar=True, logger=True)
+            self.log_dict(
+                logs, on_step=False, on_epoch=True, prog_bar=True, logger=True
+            )
 
             return D_loss
 

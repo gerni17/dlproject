@@ -5,6 +5,7 @@ from os import path, makedirs
 import wandb
 import numpy as np
 
+
 def save_segmentation(save_path, idx, segmentation):
     seg_path = path.join(save_path, "semseg", f"{idx}.png")
 
@@ -15,9 +16,10 @@ def save_segmentation(save_path, idx, segmentation):
 
     grid = make_grid(segmentation)
     # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
-    ndarr = grid.permute(1, 2, 0).to('cpu', torch.uint8).numpy()
+    ndarr = grid.permute(1, 2, 0).to("cpu", torch.uint8).numpy()
     im = Image.fromarray(ndarr)
     im.save(seg_path, format="png")
+
 
 def save_generated_image(save_path, idx, img):
     rgb_path = path.join(save_path, "rgb", f"{idx}.png")
@@ -34,8 +36,10 @@ def undo_transform(image):
     return image * 0.5 + 0.5
 
 
-def save_generated_dataset(system, data_dir, transform, save_path, max_images=10, logger=None):
-    print('Generating images...')
+def save_generated_dataset(
+    system, data_dir, transform, save_path, max_images=10, logger=None
+):
+    print("Generating images...")
 
     dm = GeneratedDataModule(system.G_s2t, data_dir, transform, batch_size=1)
     dm.prepare_data()
@@ -56,5 +60,5 @@ def save_generated_dataset(system, data_dir, transform, save_path, max_images=10
 
         if idx >= max_images:
             break
-    
-    print('Images generated successfully')
+    print("Images generated successfully")
+

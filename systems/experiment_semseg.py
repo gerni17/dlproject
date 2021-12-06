@@ -9,23 +9,19 @@ from utils.metrics import MetricsSemseg
 
 
 class Semseg(pl.LightningModule):
-    def __init__(self, cfg,net,lr):
+    def __init__(self, cfg, net, lr):
         super(Semseg, self).__init__()
         self.cfg = cfg
         self.save_hyperparameters(self.cfg)
-        self.net=net
+        self.net = net
         self.lr = lr
 
         self.loss_semseg = torch.nn.CrossEntropyLoss()
-        names=["crop","weed", "soil"]
+        names = ["crop", "weed", "soil"]
         self.metrics_semseg = MetricsSemseg(3, names)
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(
-            self.parameters(),
-            lr=self.lr,
-            betas=(0.5, 0.999),
-        )
+        optimizer = optim.Adam(self.parameters(), lr=self.lr, betas=(0.5, 0.999),)
         return [optimizer], []
 
     def training_step(self, batch, batch_nb):
@@ -41,15 +37,16 @@ class Semseg(pl.LightningModule):
 
         loss_semseg = self.loss_semseg(y_hat_semseg, y_semseg_lbl)
 
-        self.log_dict({
-                'loss_train/semseg': loss_semseg,
-            }, on_step=True, on_epoch=True, prog_bar=True
+        self.log_dict(
+            {"loss_train/semseg": loss_semseg,},
+            on_step=True,
+            on_epoch=True,
+            prog_bar=True,
         )
 
         return {
-            'loss': loss_semseg,
+            "loss": loss_semseg,
         }
-
 
     # def training_epoch_end(self, outputs):
     #     sampleimg=torch.rand((1,3,960,1280)).cuda()
@@ -73,7 +70,7 @@ class Semseg(pl.LightningModule):
         y_hat_semseg, y_hat_semseg_lbl = self.inference_step(batch)
         y_semseg_lbl = batch["label"]
 
-        if torch.cuda.is_available()  and self.cfg.gpu:
+        if torch.cuda.is_available() and self.cfg.gpu:
             y_semseg_lbl = y_semseg_lbl.cuda()
 
         loss_val_semseg = self.loss_semseg(y_hat_semseg, y_semseg_lbl)
@@ -82,10 +79,10 @@ class Semseg(pl.LightningModule):
         #  TODO
         # self.metrics_semseg.update_batch(y_hat_semseg_lbl, y_semseg_lbl)
 
-        self.log_dict({
-                'loss_val/semseg': loss_val_semseg,
-                'loss_val/total': loss_val_total,
-            }, on_step=False, on_epoch=True
+        self.log_dict(
+            {"loss_val/semseg": loss_val_semseg, "loss_val/total": loss_val_total,},
+            on_step=False,
+            on_epoch=True,
         )
 
     def validation_epoch_end(self, outputs):
@@ -94,7 +91,7 @@ class Semseg(pl.LightningModule):
 
         # metric_semseg = metrics_semseg['mean_iou']
 
-        # metric_total = metric_semseg 
+        # metric_total = metric_semseg
 
         # scalar_logs = {
         #     'metrics_summary/semseg': metric_semseg,

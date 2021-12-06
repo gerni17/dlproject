@@ -1,8 +1,13 @@
 import torch
 
+
 def semseg_compute_confusion(y_hat_lbl, y_lbl, num_classes):
-    assert torch.is_tensor(y_hat_lbl) and torch.is_tensor(y_lbl), 'Inputs must be torch tensors'
-    assert y_lbl.device == y_hat_lbl.device, 'Input tensors have different device placement'
+    assert torch.is_tensor(y_hat_lbl) and torch.is_tensor(
+        y_lbl
+    ), "Inputs must be torch tensors"
+    assert (
+        y_lbl.device == y_hat_lbl.device
+    ), "Input tensors have different device placement"
     assert y_hat_lbl.dim() == 3 or y_hat_lbl.dim() == 4 and y_hat_lbl.shape[1] == 1
     assert y_lbl.dim() == 3 or y_lbl.dim() == 4 and y_lbl.shape[1] == 1
     if y_hat_lbl.dim() == 4:
@@ -14,18 +19,22 @@ def semseg_compute_confusion(y_hat_lbl, y_lbl, num_classes):
 
     # hack for bincounting 2 arrays together
     x = y_hat_lbl + num_classes * y_lbl
-    x=torch.flatten(x).long()
+    x = torch.flatten(x).long()
     bincount_2d = torch.bincount(x, minlength=num_classes ** 2)
-    assert bincount_2d.numel() == num_classes ** 2, 'Internal error'
+    assert bincount_2d.numel() == num_classes ** 2, "Internal error"
     conf = bincount_2d.view((num_classes, num_classes)).long()
     return conf
+
 
 def semseg_accum_confusion_to_iou(confusion_accum):
     conf = confusion_accum.double()
     diag = conf.diag()
-    iou_per_class = 100 * diag / (conf.sum(dim=1) + conf.sum(dim=0) - diag).clamp(min=1e-12)
+    iou_per_class = (
+        100 * diag / (conf.sum(dim=1) + conf.sum(dim=0) - diag).clamp(min=1e-12)
+    )
     iou_mean = iou_per_class.mean()
     return iou_mean, iou_per_class
+
 
 class MetricsSemseg:
     def __init__(self, num_classes, class_names):
@@ -38,7 +47,9 @@ class MetricsSemseg:
 
     def update_batch(self, y_hat_lbl, y_lbl):
         with torch.no_grad():
-            metrics_batch = semseg_compute_confusion(y_hat_lbl, y_lbl, self.num_classes).cpu()
+            metrics_batch = semseg_compute_confusion(
+                y_hat_lbl, y_lbl, self.num_classes
+            ).cpu()
             if self.metrics_acc is None:
                 self.metrics_acc = metrics_batch
             else:
@@ -47,5 +58,5 @@ class MetricsSemseg:
     def get_metrics_summary(self):
         iou_mean, iou_per_class = semseg_accum_confusion_to_iou(self.metrics_acc)
         out = {self.class_names[i]: iou for i, iou in enumerate(iou_per_class)}
-        out['mean_iou'] = iou_mean
+        out["mean_iou"] = iou_mean
         return out

@@ -19,13 +19,13 @@ def str2bool(v):
 
 
 def command_line_parser():
-    parser = argparse.ArgumentParser(add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        add_help=True, formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
 
     # -------------------------- wandb settings --------------------------
     parser.add_argument(
-        "--project",
-        type=str,
-        help="Name for your run to wandb project.",
+        "--project", type=str, help="Name for your run to wandb project.",
     )
     parser.add_argument(
         "--name",
@@ -35,11 +35,17 @@ def command_line_parser():
     )
 
     # -------------------------- logging settings --------------------------
-    parser.add_argument("--log_dir", type=expandpath, required=True, help="Place for artifacts and logs")
-    parser.add_argument("--use_wandb", type=str2bool, default=False, help="Use WandB for logging")
+    parser.add_argument(
+        "--log_dir", type=expandpath, required=True, help="Place for artifacts and logs"
+    )
+    parser.add_argument(
+        "--use_wandb", type=str2bool, default=False, help="Use WandB for logging"
+    )
 
     # -------------------------- training settings --------------------------
-    parser.add_argument("--num_epochs", type=int, default=16, help="Number of training epochs")
+    parser.add_argument(
+        "--num_epochs", type=int, default=16, help="Number of training epochs"
+    )
     parser.add_argument(
         "--batch_size",
         type=int,
@@ -87,7 +93,9 @@ def command_line_parser():
     )
 
     # -------------------------- data settings --------------------------
-    parser.add_argument("--dataset_root", type=expandpath, required=True, help="Path to dataset")
+    parser.add_argument(
+        "--dataset_root", type=expandpath, required=True, help="Path to dataset"
+    )
     parser.add_argument(
         "--domain",
         type=str,

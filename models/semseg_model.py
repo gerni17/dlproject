@@ -1,7 +1,12 @@
 import torch
 import torch.nn.functional as F
 
-from models.model_parts import Encoder, get_encoder_channel_counts, ASPP, DecoderDeeplabV3p
+from models.model_parts import (
+    Encoder,
+    get_encoder_channel_counts,
+    ASPP,
+    DecoderDeeplabV3p,
+)
 
 
 class ModelDeepLabV3Plus(torch.nn.Module):
@@ -18,7 +23,9 @@ class ModelDeepLabV3Plus(torch.nn.Module):
             replace_stride_with_dilation=(False, False, True),
         )
 
-        ch_out_encoder_bottleneck, ch_out_encoder_4x = get_encoder_channel_counts(model_encoder_name)
+        ch_out_encoder_bottleneck, ch_out_encoder_4x = get_encoder_channel_counts(
+            model_encoder_name
+        )
 
         self.aspp = ASPP(ch_out_encoder_bottleneck, 256)
 
@@ -39,6 +46,8 @@ class ModelDeepLabV3Plus(torch.nn.Module):
 
         predictions_4x, _ = self.decoder(features_tasks, features[4])
 
-        predictions_1x = F.interpolate(predictions_4x, size=input_resolution, mode="bilinear", align_corners=False)
+        predictions_1x = F.interpolate(
+            predictions_4x, size=input_resolution, mode="bilinear", align_corners=False
+        )
 
         return predictions_1x

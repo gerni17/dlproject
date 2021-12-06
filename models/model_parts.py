@@ -5,15 +5,25 @@ import torchvision.models.resnet as resnet
 
 class BasicBlockWithDilation(torch.nn.Module):
     """Workaround for prohibited dilation in BasicBlock in 0.4.0"""
+
     expansion = 1
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1,
-                 base_width=64, dilation=1, norm_layer=None):
+    def __init__(
+        self,
+        inplanes,
+        planes,
+        stride=1,
+        downsample=None,
+        groups=1,
+        base_width=64,
+        dilation=1,
+        norm_layer=None,
+    ):
         super(BasicBlockWithDilation, self).__init__()
         if norm_layer is None:
             norm_layer = torch.nn.BatchNorm2d
         if groups != 1 or base_width != 64:
-            raise ValueError('BasicBlock only supports groups=1 and base_width=64')
+            raise ValueError("BasicBlock only supports groups=1 and base_width=64")
         self.conv1 = resnet.conv3x3(inplanes, planes, stride=stride)
         self.bn1 = norm_layer(planes)
         self.relu = torch.nn.ReLU()
@@ -37,8 +47,8 @@ class BasicBlockWithDilation(torch.nn.Module):
 
 
 _basic_block_layers = {
-    'resnet18': (2, 2, 2, 2),
-    'resnet34': (3, 4, 6, 3),
+    "resnet18": (2, 2, 2, 2),
+    "resnet34": (3, 4, 6, 3),
 }
 
 
@@ -63,12 +73,19 @@ class Encoder(torch.nn.Module):
             model = fn_name(**encoder_kwargs)
         else:
             # special case due to prohibited dilation in the original BasicBlock
-            pretrained = encoder_kwargs.pop('pretrained', False)
-            progress = encoder_kwargs.pop('progress', True)
+            pretrained = encoder_kwargs.pop("pretrained", False)
+            progress = encoder_kwargs.pop("progress", True)
             model = resnet._resnet(
-                name, BasicBlockWithDilation, _basic_block_layers[name], pretrained, progress, **encoder_kwargs
+                name,
+                BasicBlockWithDilation,
+                _basic_block_layers[name],
+                pretrained,
+                progress,
+                **encoder_kwargs
             )
-        replace_stride_with_dilation = encoder_kwargs.get('replace_stride_with_dilation', (False, False, True))
+        replace_stride_with_dilation = encoder_kwargs.get(
+            "replace_stride_with_dilation", (False, False, True)
+        )
         assert len(replace_stride_with_dilation) == 3
         if replace_stride_with_dilation[0]:
             model.layer2[0].conv2.padding = (2, 2)
@@ -121,15 +138,29 @@ class Encoder(torch.nn.Module):
 class DecoderDeeplabV3p(torch.nn.Module):
     def __init__(self, bottleneck_ch, skip_4x_ch, num_out_ch):
         super(DecoderDeeplabV3p, self).__init__()
-        self.red=48#
-        self.reduce_conv2 = torch.nn.Sequential(torch.nn.Conv2d(skip_4x_ch, self.red, kernel_size=1),
-                                          torch.nn.BatchNorm2d(self.red))
-        self.features_to_predictions = torch.nn.Conv2d(bottleneck_ch, num_out_ch, kernel_size=1, stride=1)
-        self.last_conv = torch.nn.Sequential(torch.nn.Conv2d(self.red+bottleneck_ch, bottleneck_ch, kernel_size=3, stride=1, padding=1),
-                                torch.nn.BatchNorm2d(bottleneck_ch),
-                                torch.nn.Conv2d(bottleneck_ch, bottleneck_ch, kernel_size=3, stride=1, padding=1),
-                                torch.nn.BatchNorm2d(bottleneck_ch),
-                                torch.nn.Conv2d(bottleneck_ch, num_out_ch, kernel_size=1, stride=1))
+        self.red = 48  #
+        self.reduce_conv2 = torch.nn.Sequential(
+            torch.nn.Conv2d(skip_4x_ch, self.red, kernel_size=1),
+            torch.nn.BatchNorm2d(self.red),
+        )
+        self.features_to_predictions = torch.nn.Conv2d(
+            bottleneck_ch, num_out_ch, kernel_size=1, stride=1
+        )
+        self.last_conv = torch.nn.Sequential(
+            torch.nn.Conv2d(
+                self.red + bottleneck_ch,
+                bottleneck_ch,
+                kernel_size=3,
+                stride=1,
+                padding=1,
+            ),
+            torch.nn.BatchNorm2d(bottleneck_ch),
+            torch.nn.Conv2d(
+                bottleneck_ch, bottleneck_ch, kernel_size=3, stride=1, padding=1
+            ),
+            torch.nn.BatchNorm2d(bottleneck_ch),
+            torch.nn.Conv2d(bottleneck_ch, num_out_ch, kernel_size=1, stride=1),
+        )
 
     def forward(self, features_bottleneck, features_skip_4x):
         """
@@ -138,16 +169,24 @@ class DecoderDeeplabV3p(torch.nn.Module):
         :param features_skip_4x: features of encoder of scale == 4
         :return: features with 256 channels and the final tensor of predictions
         """
-        features_4x = F.interpolate(features_bottleneck, scale_factor=(4,4), mode='bilinear', align_corners=False)
-        low_level_features = self.reduce_conv2(features_skip_4x)#64
-        x = torch.cat((features_4x, low_level_features), dim=1)#256+64=320
+        features_4x = F.interpolate(
+            features_bottleneck,
+            scale_factor=(4, 4),
+            mode="bilinear",
+            align_corners=False,
+        )
+        low_level_features = self.reduce_conv2(features_skip_4x)  # 64
+        x = torch.cat((features_4x, low_level_features), dim=1)  # 256+64=320
         predictions_4x = self.last_conv(x)
         return predictions_4x, x
+
 
 class DecoderDeeplabSimple(torch.nn.Module):
     def __init__(self, bottleneck_ch, skip_4x_ch, num_out_ch):
         super(DecoderDeeplabSimple, self).__init__()
-        self.features_to_predictions = torch.nn.Conv2d(bottleneck_ch, num_out_ch, kernel_size=1, stride=1)
+        self.features_to_predictions = torch.nn.Conv2d(
+            bottleneck_ch, num_out_ch, kernel_size=1, stride=1
+        )
 
     def forward(self, features_bottleneck, features_skip_4x):
         """
@@ -158,16 +197,29 @@ class DecoderDeeplabSimple(torch.nn.Module):
         """
 
         features_4x = F.interpolate(
-            features_bottleneck, size=features_skip_4x.shape[2:], mode='bilinear', align_corners=False
+            features_bottleneck,
+            size=features_skip_4x.shape[2:],
+            mode="bilinear",
+            align_corners=False,
         )
         predictions_4x = self.features_to_predictions(features_4x)
         return predictions_4x
 
 
 class ASPPpart(torch.nn.Sequential):
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1):
+    def __init__(
+        self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dilation=1
+    ):
         super().__init__(
-            torch.nn.Conv2d(in_channels, out_channels, kernel_size, stride, padding, dilation, bias=False),
+            torch.nn.Conv2d(
+                in_channels,
+                out_channels,
+                kernel_size,
+                stride,
+                padding,
+                dilation,
+                bias=False,
+            ),
             torch.nn.BatchNorm2d(out_channels),
             torch.nn.ReLU(),
         )
@@ -176,14 +228,26 @@ class ASPPpart(torch.nn.Sequential):
 class ASPP(torch.nn.Module):
     def __init__(self, in_channels, out_channels, rates=(3, 6, 9)):
         super().__init__()
-        self.aspp1 = ASPPpart(in_channels , out_channels, dilation=1,kernel_size=1,padding=0)
-        self.aspp2 = ASPPpart(in_channels , out_channels, dilation=rates[0],padding=rates[0])
-        self.aspp3 = ASPPpart(in_channels , out_channels, dilation=rates[1],padding=rates[1])
-        self.aspp4 = ASPPpart(in_channels , out_channels, dilation=rates[2],padding=rates[2])
-        self.image_pool = torch.nn.Sequential(torch.nn.AdaptiveMaxPool2d(1),
-                                        torch.nn.Conv2d(in_channels, out_channels, kernel_size=1))
-        self.fc1 = torch.nn.Sequential(torch.nn.Conv2d(5*out_channels, out_channels, kernel_size=1),
-                            torch.nn.BatchNorm2d(out_channels))
+        self.aspp1 = ASPPpart(
+            in_channels, out_channels, dilation=1, kernel_size=1, padding=0
+        )
+        self.aspp2 = ASPPpart(
+            in_channels, out_channels, dilation=rates[0], padding=rates[0]
+        )
+        self.aspp3 = ASPPpart(
+            in_channels, out_channels, dilation=rates[1], padding=rates[1]
+        )
+        self.aspp4 = ASPPpart(
+            in_channels, out_channels, dilation=rates[2], padding=rates[2]
+        )
+        self.image_pool = torch.nn.Sequential(
+            torch.nn.AdaptiveMaxPool2d(1),
+            torch.nn.Conv2d(in_channels, out_channels, kernel_size=1),
+        )
+        self.fc1 = torch.nn.Sequential(
+            torch.nn.Conv2d(5 * out_channels, out_channels, kernel_size=1),
+            torch.nn.BatchNorm2d(out_channels),
+        )
 
     def forward(self, x):
         x1 = self.aspp1(x)
@@ -191,7 +255,7 @@ class ASPP(torch.nn.Module):
         x3 = self.aspp3(x)
         x4 = self.aspp4(x)
         x5 = self.image_pool(x)
-        x5 = F.interpolate(x5, size=x4.size()[2:], mode='nearest')
+        x5 = F.interpolate(x5, size=x4.size()[2:], mode="nearest")
         out = torch.cat((x1, x2, x3, x4, x5), dim=1)
         out = self.fc1(out)
         return out
@@ -201,7 +265,9 @@ class SelfAttention(torch.nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.conv = torch.nn.Conv2d(in_channels, out_channels, 3, padding=1, bias=False)
-        self.attention = torch.nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1, bias=False)
+        self.attention = torch.nn.Conv2d(
+            in_channels, out_channels, kernel_size=3, padding=1, bias=False
+        )
         with torch.no_grad():
             self.attention.weight.copy_(torch.zeros_like(self.attention.weight))
 
@@ -215,6 +281,7 @@ class SqueezeAndExcitation(torch.nn.Module):
     """
     Squeeze and excitation module as explained in https://arxiv.org/pdf/1709.01507.pdf
     """
+
     def __init__(self, channels, r=16):
         super(SqueezeAndExcitation, self).__init__()
         self.transform = torch.nn.Sequential(

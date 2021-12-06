@@ -41,6 +41,5 @@ class GeneratedImageLogger(Callback):
 
         # Log the images as wandb Image
         trainer.logger.experiment.log(
-            {"End of epoch results": [wandb.Image(joined_images)]},
-            commit=False,
+            {"End of epoch results": [wandb.Image(joined_images)]}, commit=False,
         )

@@ -58,12 +58,15 @@ class CycleGANSystem(pl.LightningModule):
             self.D_target.parameters(), lr=self.lr["D"], betas=(0.5, 0.999)
         )
 
-        return [
-            self.g_s2t_optimizer,
-            self.g_t2s_optimizer,
-            self.d_source_optimizer,
-            self.d_target_optimizer,
-        ], []
+        return (
+            [
+                self.g_s2t_optimizer,
+                self.g_t2s_optimizer,
+                self.d_source_optimizer,
+                self.d_target_optimizer,
+            ],
+            [],
+        )
 
     def training_step(self, batch, batch_idx, optimizer_idx):
         source_img, target_img = (batch["source"], batch["target"])

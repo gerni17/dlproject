@@ -22,22 +22,18 @@ class FinalSegSystem(pl.LightningModule):
         self.lr = lr
         self.step = 0
 
-        # self.semseg_loss = torch.nn.CrossEntropyLoss()
+        self.semseg_loss = torch.nn.CrossEntropyLoss()
         self.iou_metric = IoU(num_classes=3)
         self.losses = []
-        names=["crop","weed", "soil"]
+        names = ["crop", "weed", "soil"]
         self.metrics_semseg = MetricsSemseg(3, names)
 
     def configure_optimizers(self):
         self.global_optimizer = optim.Adam(
-            self.net.parameters(),
-            lr=self.lr,
-            betas=(0.5, 0.999),
+            self.net.parameters(), lr=self.lr, betas=(0.5, 0.999),
         )
 
-        return [
-            self.global_optimizer,
-        ], []
+        return [self.global_optimizer,], []
 
     def training_step(self, batch, batch_idx):
         source_img, segmentation_img = (batch["source"], batch["source_segmentation"])
@@ -45,8 +41,6 @@ class FinalSegSystem(pl.LightningModule):
         y_seg = self.net(source_img)
 
         Seg_loss = self.semseg_loss(y_seg, segmentation_img)
-        # Seg_loss = 1 - self.semseg_loss(y_seg, segmentation_img)
-        # Seg_loss.requires_grad = True
 
         logs = {
             "loss": Seg_loss,
@@ -62,30 +56,34 @@ class FinalSegSystem(pl.LightningModule):
         self.losses.append(outputs[0]["loss"])
 
         return None
-    
+
     def validation_step(self, batch, batch_idx):
         source_img, segmentation_img = (batch["source"], batch["source_segmentation"])
-        y_hat=self.net(source_img)
+        y_hat = self.net(source_img)
         loss_val_semseg = self.semseg_loss(y_hat, segmentation_img)
 
         y_hat_semseg_lbl = y_hat.argmax(dim=1)
         self.metrics_semseg.update_batch(y_hat_semseg_lbl, segmentation_img)
 
-        self.log_dict({
-                'loss_val/semseg': loss_val_semseg,
-            }, on_step=False, on_epoch=True
+        self.log_dict(
+            {"loss_val/semseg": loss_val_semseg,}, on_step=False, on_epoch=True
         )
 
     def validation_epoch_end(self, outputs):
         metrics_semseg = self.metrics_semseg.get_metrics_summary()
         self.metrics_semseg.reset()
 
-        metric_semseg = metrics_semseg['mean_iou']
+        metric_semseg = metrics_semseg["mean_iou"]
 
         scalar_logs = {
-            'metrics_summary/semseg': metric_semseg,
+            "metrics_summary/semseg": metric_semseg,
         }
-        scalar_logs.update({f'metrics_task_semseg/{k.replace(" ", "_")}': v for k, v in metrics_semseg.items()})
+        scalar_logs.update(
+            {
+                f'metrics_task_semseg/{k.replace(" ", "_")}': v
+                for k, v in metrics_semseg.items()
+            }
+        )
 
         self.log_dict(scalar_logs, on_step=False, on_epoch=True)
 

@@ -102,6 +102,7 @@ class RandomResizedCrop:
 
         return image, segmentation
 
+
 class RandomCrop:
     def __init__(self, size):
         self.size = size
@@ -113,6 +114,7 @@ class RandomCrop:
         image = F.crop(image, *crop_params)
         target = F.crop(target, *crop_params)
         return image, target
+
 
 class RandomRotate:
     def __init__(self, degrees):

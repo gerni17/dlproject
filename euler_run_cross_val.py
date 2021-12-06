@@ -53,7 +53,7 @@ def main():
     reconstr_w = cfg.reconstruction_weight
     id_w = cfg.identity_weight
     seg_w = cfg.segmentation_weight
-    if cfg.share:
+    if cfg.shared:
         wandb.init(
             reinit=True,
             name=run_name,

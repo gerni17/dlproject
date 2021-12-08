@@ -7,6 +7,8 @@ import torch
 import os, glob, random
 from sklearn.model_selection import train_test_split
 
+from utils.sanity import assert_matching_images
+
 # Source domain dataset
 class SourceDataset(Dataset):
     def __init__(
@@ -22,6 +24,8 @@ class SourceDataset(Dataset):
         self.transform = transform
         self.phase = phase
         self.max_imgs = max_imgs
+
+        assert_matching_images(self.source_img_paths, self.segmentation_img_paths)
 
     def __len__(self):
         return min(
@@ -54,9 +58,7 @@ class SourceDataModule(pl.LightningDataModule):
 
     def prepare_data(self):
         self.rgb_paths = glob.glob(os.path.join(self.data_dir, "exp", "rgb", "*.png"))
-        self.segmentation_paths = glob.glob(
-            os.path.join(self.data_dir, "exp", "semseg", "*.png")
-        )
+        self.segmentation_paths = glob.glob(os.path.join(self.data_dir, "exp", "semseg", "*.png"))
 
         if self.split:
             (
@@ -73,9 +75,7 @@ class SourceDataModule(pl.LightningDataModule):
 
     def setup(self, stage: Optional[str] = None):
         # Assign train/val datasets for use in dataloaders
-        self.train_dataset = SourceDataset(
-            self.rgb_train, self.seg_train, self.transform, "train", self.max_imgs
-        )
+        self.train_dataset = SourceDataset(self.rgb_train, self.seg_train, self.transform, "train", self.max_imgs)
 
         self.val_dataset = SourceDataset(
             self.rgb_val,

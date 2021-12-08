@@ -5,6 +5,8 @@ import pytorch_lightning as pl
 import os, glob, random
 from sklearn.model_selection import train_test_split
 
+from utils.sanity import assert_matching_images
+
 # Agriculture Dataset ---------------------------------------------------------------------------
 class GogollDataset(Dataset):
     def __init__(
@@ -20,6 +22,8 @@ class GogollDataset(Dataset):
         self.target_img_paths = target_img_paths
         self.transform = transform
         self.phase = phase
+
+        assert_matching_images(self.source_img_paths, self.segmentation_img_paths)
 
     def __len__(self):
         return min(

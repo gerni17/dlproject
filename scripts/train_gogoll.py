@@ -56,12 +56,12 @@ def main():
     reconstr_w = cfg.reconstruction_weight
     id_w = cfg.identity_weight
     seg_w = cfg.segmentation_weight
-    if cfg.share:
+    if cfg.shared:
         wandb.init(
             reinit=True,
             name=run_name,
             config=cfg,
-            settings=wandb.Settings(start_method="fork"),
+            # settings=wandb.Settings(start_method="fork"),
             entity="dlshared",
         )
     else:
@@ -69,7 +69,7 @@ def main():
             reinit=True,
             name=run_name,
             config=cfg,
-            settings=wandb.Settings(start_method="fork"),
+            # settings=wandb.Settings(start_method="fork"),
         )
 
     # Data Preprocessing  -----------------------------------------------------------------

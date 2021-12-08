@@ -7,6 +7,8 @@ import torch
 import os, glob, random
 from sklearn.model_selection import train_test_split
 
+from utils.sanity import assert_matching_images
+
 
 class GeneratedDataset(Dataset):
     def __init__(
@@ -26,6 +28,8 @@ class GeneratedDataset(Dataset):
         self.raw_len = min(
             [len(self.source_img_paths), len(self.segmentation_img_paths), max_imgs]
         )
+
+        assert_matching_images(self.source_img_paths, self.segmentation_img_paths)
 
     def __len__(self):
         return self.raw_len

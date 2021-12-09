@@ -84,11 +84,11 @@ class GogollDataModule(pl.LightningDataModule):
             )
         else:
             self.rgb_train = self.rgb_paths
-            self.rgb_val = []
+            self.rgb_val = self.rgb_paths
             self.seg_train = self.segmentation_paths
-            self.seg_val = []
+            self.seg_val =self.segmentation_paths
             self.target_train = self.target_paths
-            self.target_val = []
+            self.target_val = self.target_paths
 
     def setup(self, stage: Optional[str] = None):
         # Assign train/val datasets for use in dataloaders

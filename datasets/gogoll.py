@@ -23,6 +23,8 @@ class GogollDataset(Dataset):
         self.transform = transform
         self.phase = phase
 
+        self.source_img_paths.sort()
+        self.segmentation_img_paths.sort()
         assert_matching_images(self.source_img_paths, self.segmentation_img_paths)
 
     def __len__(self):
@@ -53,21 +55,21 @@ class GogollDataset(Dataset):
 
 # Data Module
 class GogollDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir, domain, transform, batch_size, split=True):
+    def __init__(self, source_dir, target_dir, transform, batch_size, split=True):
         super(GogollDataModule, self).__init__()
-        self.data_dir = data_dir
+        self.source_dir = source_dir
+        self.target_dir = target_dir
         self.transform = transform
-        self.domain = domain
         self.batch_size = batch_size
         self.split = split
 
     def prepare_data(self):
-        self.rgb_paths = glob.glob(os.path.join(self.data_dir, "exp", "rgb", "*.png"))
+        self.rgb_paths = glob.glob(os.path.join(self.source_dir, "rgb", "*.png"))
         self.segmentation_paths = glob.glob(
-            os.path.join(self.data_dir, "exp", "semseg", "*.png")
+            os.path.join(self.data_dir, "semseg", "*.png")
         )
         self.target_paths = glob.glob(
-            os.path.join(self.data_dir, "other_domains", self.domain, "*.jpg")
+            os.path.join(self.target_dir, "*.jpg")
         )
 
         if self.split:

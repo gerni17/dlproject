@@ -26,8 +26,12 @@ class GogollSemsegImageLogger(Callback):
         self.network = network
         self.log_key = log_key
 
-        data_module.prepare_data()
-        data_module.setup()
+        if not data_module.has_prepared_data:
+            data_module.prepare_data()
+
+        if not data_module.has_setup_fit:
+            data_module.setup()
+            
         dataloader = data_module.val_dataloader()
 
         val_samples = next(iter(dataloader))

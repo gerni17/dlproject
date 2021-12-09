@@ -5,8 +5,6 @@ import pytorch_lightning as pl
 import os, glob, random
 from sklearn.model_selection import train_test_split
 
-from utils.sanity import assert_matching_images
-
 # Agriculture Dataset ---------------------------------------------------------------------------
 class AgriDataset(Dataset):
     def __init__(self, source_img_paths, target_img_paths, transform, phase="train"):
@@ -14,8 +12,6 @@ class AgriDataset(Dataset):
         self.target_img_paths = target_img_paths
         self.transform = transform
         self.phase = phase
-
-        assert_matching_images(self.source_img_paths, self.segmentation_img_paths)
 
     def __len__(self):
         return min([len(self.source_img_paths), len(self.target_img_paths)])

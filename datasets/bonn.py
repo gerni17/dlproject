@@ -4,8 +4,6 @@ from torch.utils.data import DataLoader, Dataset
 import pytorch_lightning as pl
 import os, glob, random
 
-from utils.sanity import assert_matching_images
-
 # from sklearn.model_selection import train_test_split
 
 # Agriculture Dataset ---------------------------------------------------------------------------
@@ -15,8 +13,6 @@ class BonnDataset(Dataset):
         self.target_img_paths = target_img_paths
         self.transform = transform
         self.phase = phase
-
-        assert_matching_images(self.source_img_paths, self.segmentation_img_paths)
 
     def __len__(self):
         return min([len(self.source_img_paths), len(self.target_img_paths)])

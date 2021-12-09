@@ -77,11 +77,8 @@ def main():
 
     # DataModule  -----------------------------------------------------------------
     dm = GogollDataModule(
-        data_dir, cfg.domain, transform, batch_size
+        path.join(data_dir, 'exp', 'train'), path.join(data_dir, 'other_domains', cfg.domain), transform, batch_size
     )  # used for training
-    vs = GogollDataModule(
-        data_dir, cfg.domain, transform, batch_size
-    )  # used for validation/progress visualization on wandb
 
     # Sub-Models  -----------------------------------------------------------------
     seg_net_s = UnetLight()
@@ -146,9 +143,9 @@ def main():
 
     # save the generated images (from the validation data) after every epoch to wandb
     semseg_s_image_callback = GogollSemsegImageLogger(
-        vs, network="net", log_key="Segmentation (Source)"
+        dm, network="net", log_key="Segmentation (Source)"
     )
-    pipeline_image_callback = GogollPipelineImageLogger(vs, log_key="Pipeline")
+    pipeline_image_callback = GogollPipelineImageLogger(dm, log_key="Pipeline")
 
     # Trainer  --------------------------------------------------------------
     print("Start training", run_name)
@@ -209,7 +206,7 @@ def main():
         # same name as the current run)
         save_generated_dataset(
             main_system,
-            data_dir,
+            path.join(data_dir, 'exp', 'train'),
             transform,
             save_path,
             logger=seg_wandb_logger,
@@ -217,10 +214,10 @@ def main():
         )
 
     # Source domain datamodule
-    source_dm = SourceDataModule(data_dir, transform, batch_size=1, max_imgs=200)
+    source_dm = SourceDataModule(path.join(data_dir, 'exp', 'train'), transform, batch_size=1, max_imgs=200)
     # Generated images datamodule
     generated_dm = GeneratedDataModule(
-        main_system.G_s2t, data_dir, transform, batch_size=1, max_imgs=200
+        main_system.G_s2t, path.join(data_dir, 'exp', 'train'), transform, batch_size=1, max_imgs=200
     )
     # Mix both datamodules
     mixed_dm = MixedDataModule(source_dm, generated_dm, batch_size=batch_size)

@@ -29,6 +29,8 @@ class GeneratedDataset(Dataset):
             [len(self.source_img_paths), len(self.segmentation_img_paths), max_imgs]
         )
 
+        self.source_img_paths.sort()
+        self.segmentation_img_paths.sort()
         assert_matching_images(self.source_img_paths, self.segmentation_img_paths)
 
     def __len__(self):
@@ -67,9 +69,9 @@ class GeneratedDataModule(pl.LightningDataModule):
         self.max_imgs = max_imgs
 
     def prepare_data(self):
-        self.rgb_paths = glob.glob(os.path.join(self.data_dir, "exp", "rgb", "*.png"))
+        self.rgb_paths = glob.glob(os.path.join(self.data_dir, "rgb", "*.png"))
         self.segmentation_paths = glob.glob(
-            os.path.join(self.data_dir, "exp", "semseg", "*.png")
+            os.path.join(self.data_dir, "semseg", "*.png")
         )
 
         if self.split:

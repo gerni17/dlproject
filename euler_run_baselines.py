@@ -98,7 +98,7 @@ def evaluate_baseline(
 ):
     baseline_name = baseline['name']
     train_datamodule = baseline['train']
-    test_datamodule = baseline['test'] or baseline['train']
+    test_datamodule = baseline.get('test') or baseline['train']
 
     # Cross Validation Run
     fold_metrics = []
@@ -140,7 +140,7 @@ def evaluate_baseline(
         baseline_image_callback = GogollBaselineImageLogger(
             test_datamodule,
             network="net",
-            log_key=f"Segmentation (Final) - Baseline {baseline_name}",
+            log_key=f"Segmentation (Final) - Baseline Test Data - {baseline_name}",
         )
 
         cv_trainer = Trainer(

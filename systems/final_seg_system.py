@@ -73,17 +73,7 @@ class FinalSegSystem(pl.LightningModule):
         metrics_semseg = self.metrics_semseg.get_metrics_summary()
         self.metrics_semseg.reset()
 
-        metric_semseg = metrics_semseg["mean_iou"]
-
-        scalar_logs = {
-            "metrics_summary/semseg": metric_semseg,
-        }
-        scalar_logs.update(
-            {
-                f'metrics_task_semseg/{k.replace(" ", "_")}': v
-                for k, v in metrics_semseg.items()
-            }
-        )
+        scalar_logs = {f'Val Metric Summary - {k}': v for k, v in metrics_semseg.items()}
 
         self.log_dict(scalar_logs, on_step=False, on_epoch=True)
 
@@ -107,12 +97,7 @@ class FinalSegSystem(pl.LightningModule):
         metrics_semseg = self.metrics_semseg.get_metrics_summary()
         self.metrics_semseg.reset()
 
-        metric_semseg = metrics_semseg['mean_iou']
-
-        scalar_logs = {
-            'Metric Summary': metric_semseg,
-        }
-        scalar_logs.update({f'Metric Summary - {k}': v for k, v in metrics_semseg.items()})
+        scalar_logs = {f'Test Metric Summary - {k}': v for k, v in metrics_semseg.items()}
 
         self.log_dict(scalar_logs, on_step=False, on_epoch=True)
 

@@ -58,5 +58,5 @@ class MetricsSemseg:
     def get_metrics_summary(self):
         iou_mean, iou_per_class = semseg_accum_confusion_to_iou(self.metrics_acc)
         out = {self.class_names[i]: iou for i, iou in enumerate(iou_per_class)}
-        out["mean_iou"] = iou_mean
+        out["MEAN IOU"] = iou_mean
         return out

@@ -33,7 +33,7 @@ class FinalSegSystem(pl.LightningModule):
             self.net.parameters(), lr=self.lr, betas=(0.5, 0.999),
         )
 
-        return [self.global_optimizer,], []
+        return [self.global_optimizer]
 
     def training_step(self, batch, batch_idx):
         source_img, segmentation_img = (batch["source"], batch["source_segmentation"])

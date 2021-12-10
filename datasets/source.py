@@ -71,9 +71,9 @@ class SourceDataModule(pl.LightningDataModule):
             ) = train_test_split(self.rgb_paths, self.segmentation_paths, test_size=0.2)
         else:
             self.rgb_train = self.rgb_paths
-            self.rgb_val = self.rgb_paths
+            self.rgb_val = []
             self.seg_train = self.segmentation_paths
-            self.seg_val = self.segmentation_paths
+            self.seg_val = []
 
     def setup(self, stage: Optional[str] = None):
         # Assign train/val datasets for use in dataloaders

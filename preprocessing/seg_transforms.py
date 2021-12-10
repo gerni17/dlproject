@@ -68,6 +68,10 @@ class PILToTensor:
     def __call__(self, image, segmentation):
         image = F.to_tensor(image)
         segmentation = torch.as_tensor(np.array(segmentation), dtype=torch.int64)
+
+        if len(segmentation.shape) > 2 and segmentation.shape[2] == 3:
+            segmentation = segmentation[:, :, 0]
+
         return image, segmentation
 
 

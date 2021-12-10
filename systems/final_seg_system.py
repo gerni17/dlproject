@@ -83,6 +83,7 @@ class FinalSegSystem(pl.LightningModule):
         y_seg = self.net(source_img)
 
         y_hat_semseg_lbl = y_seg.argmax(dim=1)
+        
         self.metrics_semseg.update_batch(y_hat_semseg_lbl, segmentation_img)
 
         jaccard_index = self.iou_metric(y_seg, segmentation_img.int())

@@ -101,7 +101,12 @@ def evaluate_baseline(
     test_datamodule = baseline.get('test') or baseline['train']
 
     # Cross Validation Run
-    fold_metrics = []
+    fold_metrics = {
+        "iou": [],
+        "soil": [],
+        "weed": [],
+        "crop": [],
+    }
     for i in range(n_splits):
         # Cross Validation Run
         seg_lr = 0.0002
@@ -156,10 +161,16 @@ def evaluate_baseline(
 
         res = cv_trainer.test(seg_system, datamodule=test_datamodule)
         # Acess dict values of trainer after test and get metrics for average
-        fold_metrics.append(res[0]["IOU Metric"])
+        fold_metrics["iou"].append(res[0]["IOU Metric"])
+        fold_metrics["soil"].append(res[0]["soil"])
+        fold_metrics["weed"].append(res[0]["weed"])
+        fold_metrics["crop"].append(res[0]["crop"])
 
     # Acess dict values of trainer after test and get metrics for average
-    wandb.run.summary[f"MEAN IOU - {baseline_name}"] = mean(fold_metrics)
+    wandb.run.summary[f"Crossvalidation IOU - {baseline_name}"] = mean(fold_metrics["iou"])
+    wandb.run.summary[f"Crossvalidation IOU Soil - {baseline_name}"] = mean(fold_metrics["soil"])
+    wandb.run.summary[f"Crossvalidation IOU Weed - {baseline_name}"] = mean(fold_metrics["weed"])
+    wandb.run.summary[f"Crossvalidation IOU Crop - {baseline_name}"] = mean(fold_metrics["crop"])
 
 
 if __name__ == "__main__":

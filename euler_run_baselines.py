@@ -113,7 +113,7 @@ def evaluate_baseline(
     seg_lr = 0.0002
     seg_net = UnetLight()
     seg_system = FinalSegSystem(seg_net, lr=seg_lr)
-    safe_baseline_name = baseline_name.replace(' ', '_').replace('(', '').replace(')', '').replace('<', '').replace('>', '').lower()
+    safe_baseline_name = baseline_name.replace(' ', '_').replace('(', '').replace(')', '').replace('<>', 'to').lower()
 
     # Logger  --------------------------------------------------------------
     seg_wandb_logger = (
@@ -143,7 +143,7 @@ def evaluate_baseline(
         log_key=f"Segmentation (Final) - Train {baseline_name}",
     )
 
-    semseg_image_callback = GogollBaselineImageLogger(
+    baseline_image_callback = GogollBaselineImageLogger(
         test_datamodule,
         network="net",
         log_key=f"Segmentation (Final) - Baseline {baseline_name}",
@@ -155,7 +155,7 @@ def evaluate_baseline(
         reload_dataloaders_every_n_epochs=True,
         num_sanity_val_steps=0,
         logger=seg_wandb_logger,
-        callbacks=[segmentation_checkpoint_callback, semseg_image_callback,],
+        callbacks=[segmentation_checkpoint_callback, semseg_image_callback,baseline_image_callback],
     )
 
     cv_trainer.fit(seg_system, datamodule=train_datamodule)

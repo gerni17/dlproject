@@ -5,7 +5,7 @@ from datetime import datetime
 from pytorch_lightning import Trainer
 from logger.gogoll_semseg_image import GogollSemsegImageLogger
 from preprocessing.seg_transforms import SegImageTransform
-from datasets.source import SourceDataModule
+from datasets.labeled import LabeledDataModule
 
 from logger.generated_image import GeneratedImageLogger
 
@@ -43,8 +43,8 @@ def main():
     )
 
     # DataModule  -----------------------------------------------------------------
-    dm = SourceDataModule(data_dir, transform, batch_size,split=True,max_imgs=20)  # used for training
-    vs = SourceDataModule(
+    dm = LabeledDataModule(data_dir, transform, batch_size,split=True,max_imgs=20)  # used for training
+    vs = LabeledDataModule(
         data_dir, transform, batch_size
     )  # used for validation/progress visualization on wandb
 

@@ -8,7 +8,7 @@ from datetime import datetime
 from pytorch_lightning import Trainer
 from datasets.generated import GeneratedDataModule
 from datasets.mixed import MixedDataModule
-from datasets.source import SourceDataModule
+from datasets.labeled import LabeledDataModule
 from logger.gogoll_pipeline_image import GogollPipelineImageLogger
 from models.lightweight_semseg import LightweightSemsegModel
 from models.unet_light_semseg import UnetLight
@@ -77,7 +77,7 @@ def main():
 
     # DataModule  -----------------------------------------------------------------
     dm = GogollDataModule(
-        path.join(data_dir, 'exp', 'train'), path.join(data_dir, 'other_domains', cfg.domain), transform, batch_size
+        path.join(data_dir, 'exp'), path.join(data_dir, 'other_domains', cfg.domain), transform, batch_size
     )  # used for training
 
     # Sub-Models  -----------------------------------------------------------------
@@ -206,7 +206,7 @@ def main():
         # same name as the current run)
         save_generated_dataset(
             main_system,
-            path.join(data_dir, 'exp', 'train'),
+            path.join(data_dir, 'exp'),
             transform,
             save_path,
             logger=seg_wandb_logger,
@@ -214,10 +214,10 @@ def main():
         )
 
     # Source domain datamodule
-    source_dm = SourceDataModule(path.join(data_dir, 'exp', 'train'), transform, batch_size=1, max_imgs=200)
+    source_dm = LabeledDataModule(path.join(data_dir, 'exp'), transform, batch_size=1, max_imgs=200)
     # Generated images datamodule
     generated_dm = GeneratedDataModule(
-        main_system.G_s2t, path.join(data_dir, 'exp', 'train'), transform, batch_size=1, max_imgs=200
+        main_system.G_s2t, path.join(data_dir, 'exp'), transform, batch_size=1, max_imgs=200
     )
     # Mix both datamodules
     mixed_dm = MixedDataModule(source_dm, generated_dm, batch_size=batch_size)

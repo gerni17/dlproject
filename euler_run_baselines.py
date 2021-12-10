@@ -1,11 +1,14 @@
 from os import path
 import uuid
+from scipy.sparse import base
 import wandb
 
 from datetime import datetime
 from pytorch_lightning import Trainer
+from datasets.crossval import CrossValidationDataModule
 from datasets.mixed import MixedDataModule
-from datasets.source import SourceDataModule
+from datasets.labeled import LabeledDataModule
+from datasets.test import TestLabeledDataModule
 from logger.gogoll_baseline_image import GogollBaselineImageLogger
 from models.unet_light_semseg import UnetLight
 from preprocessing.seg_transforms import SegImageTransform
@@ -38,47 +41,33 @@ def main():
     batch_size = 8
 
     # Train datamodules
-    dm_source = SourceDataModule(
-        path.join(data_dir, 'exp', 'train'), transform, batch_size=batch_size, split=True, max_imgs=200
+    dm_source = LabeledDataModule(
+        path.join(data_dir, 'exp'), transform, batch_size=batch_size, split=True, max_imgs=200
     )
-    dm_easy_train = SourceDataModule(
-        path.join(data_dir, 'easy', 'train'), transform, batch_size=batch_size, split=True, max_imgs=200
+    
+    # easy dataset with a train/val/test split
+    dm_easy_split = LabeledDataModule(
+        path.join(data_dir, 'easy'), transform, batch_size=batch_size, max_imgs=200
     )
-    dm_medium_train = SourceDataModule(
-        path.join(data_dir, 'medium', 'train'), transform, batch_size=batch_size, split=True, max_imgs=200
+    # easy dataset with full dataset in test loader
+    dm_easy_test = TestLabeledDataModule(
+        path.join(data_dir, 'easy'), transform, batch_size=batch_size, max_imgs=200
     )
 
-    dm_all_easy = MixedDataModule(dm_source, dm_easy_train, batch_size=batch_size)
-    dm_all_medium = MixedDataModule(dm_medium_train, dm_easy_train, batch_size=batch_size)
+    n_splits = 5
 
-    # Test datamodules
-    easy_test = SourceDataModule(
-        path.join(data_dir, 'easy', 'test'), transform, batch_size=batch_size, split=False, max_imgs=200
-    )
-    medium_test = SourceDataModule(
-        path.join(data_dir, 'medium', 'test'), transform, batch_size=batch_size, split=False, max_imgs=200
-    )
+    cv_source = CrossValidationDataModule(dm_source, batch_size=batch_size, n_splits=n_splits)
+    cv_easy_split = CrossValidationDataModule(dm_easy_split, batch_size=batch_size, n_splits=n_splits)
 
     baselines = [
         {
-            "train": dm_source,
-            "test": easy_test,
+            "train": cv_source,
+            "test": dm_easy_test,
             "name": "Source <> Easy",
         },
         {
-            "train": dm_source,
-            "test": medium_test,
-            "name": "Source <> Medium",
-        },
-        {
-            "train": dm_all_easy,
-            "test": easy_test,
-            "name": "All (Easy) <> Easy",
-        },
-        {
-            "train": dm_all_medium,
-            "test": medium_test,
-            "name": "All (Medium) <> Medium",
+            "train": cv_easy_split, # no test datamodule because we use the same datamodule as train for test
+            "name": "Easy <> Easy",
         },
     ]
 
@@ -86,84 +75,91 @@ def main():
 
     for baseline in baselines:
         evaluate_baseline(
-            baseline['name'],
             cfg,
-            baseline['train'],
-            baseline['test'],
+            baseline,
             project_name,
             run_name,
             log_path,
-            n_epochs
+            n_epochs,
+            n_splits=n_splits
         )
 
     wandb.finish()
 
 
 def evaluate_baseline(
-    baseline_name,
     cfg,
-    train_datamodule,
-    test_datamodule,
+    baseline,
     project_name,
     run_name,
     log_path,
     n_epochs,
+    n_splits,
 ):
+    baseline_name = baseline['name']
+    train_datamodule = baseline['train']
+    test_datamodule = baseline['test'] or baseline['train']
+
     # Cross Validation Run
-    seg_lr = 0.0002
-    seg_net = UnetLight()
-    seg_system = FinalSegSystem(seg_net, lr=seg_lr)
-    safe_baseline_name = baseline_name.replace(' ', '_').replace('(', '').replace(')', '').replace('<>', 'to').lower()
+    fold_metrics = []
+    for i in range(n_splits):
+        # Cross Validation Run
+        seg_lr = 0.0002
+        seg_net = UnetLight()
+        seg_system = FinalSegSystem(seg_net, lr=seg_lr)
+        safe_baseline_name = baseline_name.replace(' ', '_').replace('(', '').replace(')', '').replace('<>', 'to').lower()
 
-    # Logger  --------------------------------------------------------------
-    seg_wandb_logger = (
-        WandbLogger(
-            project=project_name,
-            name=run_name,
-            prefix=f"{baseline_name} ",
+        # Logger  --------------------------------------------------------------
+        seg_wandb_logger = (
+            WandbLogger(
+                project=project_name,
+                name=run_name,
+                prefix=f"{baseline_name} ",
+            )
+            if cfg.use_wandb
+            else None
         )
-        if cfg.use_wandb
-        else None
-    )
 
-    # Callbacks  --------------------------------------------------------------
-    # save the model
-    segmentation_checkpoint_callback = ModelCheckpoint(
-        dirpath=path.join(log_path, f"segmentation_final_{safe_baseline_name}"),
-        save_last=False,
-        save_top_k=1,
-        verbose=False,
-        monitor="loss",
-        mode="min",
-    )
+        # Callbacks  --------------------------------------------------------------
+        # save the model
+        segmentation_checkpoint_callback = ModelCheckpoint(
+            dirpath=path.join(log_path, f"segmentation_final_{safe_baseline_name}"),
+            save_last=False,
+            save_top_k=1,
+            verbose=False,
+            monitor="loss",
+            mode="min",
+        )
 
-    semseg_image_callback = GogollSemsegImageLogger(
-        train_datamodule,
-        network="net",
-        log_key=f"Segmentation (Final) - Train {baseline_name}",
-    )
+        semseg_image_callback = GogollSemsegImageLogger(
+            train_datamodule,
+            network="net",
+            log_key=f"Segmentation (Final) - Train {baseline_name}",
+        )
 
-    baseline_image_callback = GogollBaselineImageLogger(
-        test_datamodule,
-        network="net",
-        log_key=f"Segmentation (Final) - Baseline {baseline_name}",
-    )
+        baseline_image_callback = GogollBaselineImageLogger(
+            test_datamodule,
+            network="net",
+            log_key=f"Segmentation (Final) - Baseline {baseline_name}",
+        )
 
-    cv_trainer = Trainer(
-        max_epochs=n_epochs,
-        gpus=1 if cfg.gpu else 0,
-        reload_dataloaders_every_n_epochs=True,
-        num_sanity_val_steps=0,
-        logger=seg_wandb_logger,
-        callbacks=[segmentation_checkpoint_callback, semseg_image_callback,baseline_image_callback],
-    )
+        cv_trainer = Trainer(
+            max_epochs=n_epochs,
+            gpus=1 if cfg.gpu else 0,
+            reload_dataloaders_every_n_epochs=True,
+            num_sanity_val_steps=0,
+            logger=seg_wandb_logger,
+            callbacks=[segmentation_checkpoint_callback, semseg_image_callback,baseline_image_callback],
+        )
 
-    cv_trainer.fit(seg_system, datamodule=train_datamodule)
+        cv_trainer.fit(seg_system, datamodule=train_datamodule)
 
-    res = cv_trainer.test(seg_system, datamodule=test_datamodule)
+        res = cv_trainer.test(seg_system, datamodule=test_datamodule)
+        # Acess dict values of trainer after test and get metrics for average
+        fold_metrics.append(res[0]["IOU Metric"])
 
     # Acess dict values of trainer after test and get metrics for average
-    wandb.run.summary[f"MEAN IOU - {baseline_name}"] = res[0]["IOU Metric"]
+    wandb.run.summary[f"MEAN IOU - {baseline_name}"] = mean(fold_metrics)
 
 
 if __name__ == "__main__":

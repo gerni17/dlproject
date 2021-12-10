@@ -32,7 +32,7 @@ class GogollBaselineImageLogger(Callback):
         if not data_module.has_setup_fit:
             data_module.setup()
         
-        dataloader = data_module.train_dataloader()
+        dataloader = data_module.test_dataloader()
 
         val_samples = next(iter(dataloader))
 

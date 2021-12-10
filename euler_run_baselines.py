@@ -39,13 +39,13 @@ def main():
 
     # Train datamodules
     dm_source = SourceDataModule(
-        path.join(data_dir, 'exp', 'train'), transform, batch_size=batch_size, split=False, max_imgs=200
+        path.join(data_dir, 'exp', 'train'), transform, batch_size=batch_size, split=True, max_imgs=200
     )
     dm_easy_train = SourceDataModule(
-        path.join(data_dir, 'easy', 'train'), transform, batch_size=batch_size, split=False, max_imgs=200
+        path.join(data_dir, 'easy', 'train'), transform, batch_size=batch_size, split=True, max_imgs=200
     )
     dm_medium_train = SourceDataModule(
-        path.join(data_dir, 'medium', 'train'), transform, batch_size=batch_size, split=False, max_imgs=200
+        path.join(data_dir, 'medium', 'train'), transform, batch_size=batch_size, split=True, max_imgs=200
     )
 
     dm_all_easy = MixedDataModule(dm_source, dm_easy_train, batch_size=batch_size)
@@ -143,7 +143,7 @@ def evaluate_baseline(
         log_key=f"Segmentation (Final) - Train {baseline_name}",
     )
 
-    baseline_image_callback = GogollSemsegImageLogger(
+    baseline_image_callback = GogollBaselineImageLogger(
         test_datamodule,
         network="net",
         log_key=f"Segmentation (Final) - Baseline {baseline_name}",

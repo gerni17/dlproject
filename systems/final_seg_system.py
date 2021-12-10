@@ -99,8 +99,11 @@ class FinalSegSystem(pl.LightningModule):
         self.metrics_semseg.reset()
 
         scalar_logs = {f'Test Metric Summary - {k}': v for k, v in metrics_semseg.items()}
+        return_logs = {k: v for k, v in metrics_semseg.items()}
 
         self.log_dict(scalar_logs, on_step=False, on_epoch=True)
+
+        return return_logs
 
     def segment(self, inputs):
         return self.net(inputs)

@@ -161,10 +161,10 @@ def evaluate_baseline(
 
         res = cv_trainer.test(seg_system, datamodule=test_datamodule)
         # Acess dict values of trainer after test and get metrics for average
-        fold_metrics["iou"].append(res["MEAN IOU"])
-        fold_metrics["soil"].append(res["soil"])
-        fold_metrics["weed"].append(res["weed"])
-        fold_metrics["crop"].append(res["crop"])
+        fold_metrics["iou"].append(res[0]["IOU Metric"])
+        fold_metrics["soil"].append(res[0]["Test Metric Summary - soil"])
+        fold_metrics["weed"].append(res[0]["Test Metric Summary - weed"])
+        fold_metrics["crop"].append(res[0]["Test Metric Summary - crop"])
 
     # Acess dict values of trainer after test and get metrics for average
     wandb.run.summary[f"Crossvalidation IOU - {baseline_name}"] = mean(fold_metrics["iou"])

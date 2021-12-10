@@ -109,11 +109,10 @@ class FinalSegSystem(pl.LightningModule):
 
         metric_semseg = metrics_semseg['mean_iou']
 
-
         scalar_logs = {
-            'metrics_test_summary/semseg': metric_semseg,
+            'Metric Summary': metric_semseg,
         }
-        scalar_logs.update({f'metrics_test_semseg/{k.replace(" ", "_")}': v for k, v in metrics_semseg.items()})
+        scalar_logs.update({f'Metric Summary - {k}': v for k, v in metrics_semseg.items()})
 
         self.log_dict(scalar_logs, on_step=False, on_epoch=True)
 

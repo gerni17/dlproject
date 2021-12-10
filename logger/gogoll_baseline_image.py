@@ -38,6 +38,7 @@ class GogollBaselineImageLogger(Callback):
 
         self.rgb_imgs = val_samples["source"]
         self.label_imgs = val_samples["source_segmentation"]
+        print(f"Dangerous shape: {self.label_imgs.shape}")
         self.label_imgs = prepare_semseg(self.label_imgs)
 
     def on_test_epoch_end(self, trainer, pl_module, *args):

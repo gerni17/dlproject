@@ -120,7 +120,7 @@ def evaluate_baseline(
         WandbLogger(
             project=project_name,
             name=run_name,
-            prefix=f"seg_final_baseline_{safe_baseline_name}",
+            prefix=f"{baseline_name} ",
         )
         if cfg.use_wandb
         else None
@@ -143,7 +143,7 @@ def evaluate_baseline(
         log_key=f"Segmentation (Final) - Train {baseline_name}",
     )
 
-    baseline_image_callback = GogollBaselineImageLogger(
+    baseline_image_callback = GogollSemsegImageLogger(
         test_datamodule,
         network="net",
         log_key=f"Segmentation (Final) - Baseline {baseline_name}",

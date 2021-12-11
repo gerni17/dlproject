@@ -236,9 +236,9 @@ def main():
 
     evaluate_ours(
         cfg,
+        project_name,
         cv_source,
         dm_easy_test,
-        project_name,
         run_name,
         log_path,
         n_cross_val_epochs,

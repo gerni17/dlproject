@@ -66,7 +66,7 @@ class GogollDataModule(pl.LightningDataModule):
     def prepare_data(self):
         self.rgb_paths = glob.glob(os.path.join(self.source_dir, "rgb", "*.png"))
         self.segmentation_paths = glob.glob(
-            os.path.join(self.data_dir, "semseg", "*.png")
+            os.path.join(self.source_dir, "semseg", "*.png")
         )
         self.target_paths = glob.glob(
             os.path.join(self.target_dir, "*.jpg")

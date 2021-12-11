@@ -1,30 +1,22 @@
 from logging import log
 from os import path
-from torch.utils import data
 import wandb
 import uuid
 
 from datetime import datetime
 from pytorch_lightning import Trainer
-from datasets.generated import GeneratedDataModule
-from datasets.mixed import MixedDataModule
 from datasets.labeled import LabeledDataModule
 from logger.gogoll_pipeline_image import GogollPipelineImageLogger
-from models.lightweight_semseg import LightweightSemsegModel
 from models.unet_light_semseg import UnetLight
 from preprocessing.seg_transforms import SegImageTransform
 from datasets.gogoll import GogollDataModule
 
-from logger.generated_image import GeneratedImageLogger
-from systems.final_seg_system import FinalSegSystem
 from systems.gogoll_seg_system import GogollSegSystem
 from utils.generate_targets_with_semantics import save_generated_dataset
 from utils.weight_initializer import init_weights
 from configs.gogoll_config import command_line_parser
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
-from systems.experiment_semseg import Semseg
-from models.semseg_model import ModelDeepLabV3Plus
 from models.discriminators import CycleGANDiscriminator
 from models.generators import CycleGANGenerator
 from logger.gogoll_semseg_image import GogollSemsegImageLogger
@@ -199,80 +191,25 @@ def main():
             cfg.gogoll_checkpoint_path, **gogoll_net_config
         )
 
+    generator = main_system.G_s2t
+
     # Image Generation & Saving  --------------------------------------------------------------
     if cfg.save_generated_images:
+        dm_source = LabeledDataModule(
+            path.join(data_dir, 'exp'), transform, batch_size=batch_size, split=True, max_imgs=200
+        )
         save_path = path.join(cfg.generated_dataset_save_root, run_name)
         # Generate fake target domain images and save them to a persistent folder (with the
         # same name as the current run)
         save_generated_dataset(
-            main_system,
-            path.join(data_dir, 'exp'),
-            transform,
+            generator,
+            dm_source,
             save_path,
             logger=seg_wandb_logger,
             max_images=cfg.max_generated_images_saved,
         )
 
-    # Source domain datamodule
-    source_dm = LabeledDataModule(path.join(data_dir, 'exp'), transform, batch_size=1, max_imgs=200)
-    # Generated images datamodule
-    generated_dm = GeneratedDataModule(
-        main_system.G_s2t, path.join(data_dir, 'exp'), transform, batch_size=1, max_imgs=200
-    )
-    # Mix both datamodules
-    mixed_dm = MixedDataModule(source_dm, generated_dm, batch_size=batch_size)
-    log_dm = MixedDataModule(source_dm, generated_dm, batch_size=batch_size)
-
-    # train the final segmentation net that we use to evaluate if our augmented dataset helps
-    # with training a segnet that is more robust to different domains/conditions
-    train_final_segnet(cfg, mixed_dm, log_dm, project_name, run_name, log_path)
-
     wandb.finish()
-
-
-def train_final_segnet(
-    cfg, datamodule, log_datamodule, project_name, run_name, log_path
-):
-    seg_lr = 0.0002
-
-    seg_net = UnetLight()
-
-    seg_system = FinalSegSystem(seg_net, lr=seg_lr)
-
-    # Logger  --------------------------------------------------------------
-    seg_wandb_logger = (
-        WandbLogger(project=project_name, name=run_name, prefix="seg_final")
-        if cfg.use_wandb
-        else None
-    )
-
-    # Callbacks  --------------------------------------------------------------
-    # save the model
-    segmentation_checkpoint_callback = ModelCheckpoint(
-        dirpath=path.join(log_path, "segmentation_final"),
-        save_last=False,
-        save_top_k=1,
-        verbose=False,
-        monitor="loss",
-        mode="min",
-    )
-
-    semseg_image_callback = GogollSemsegImageLogger(
-        log_datamodule, network="net", log_key="Segmentation (Final)"
-    )
-
-    trainer = Trainer(
-        max_epochs=10,
-        gpus=1 if cfg.gpu else 0,
-        reload_dataloaders_every_n_epochs=True,
-        num_sanity_val_steps=0,
-        logger=seg_wandb_logger,
-        callbacks=[segmentation_checkpoint_callback, semseg_image_callback,],
-    )
-
-    # train the segmentation network we use to evaluate how well our generated images help with the segmentation task
-    print("Fitting final segmentation network...", run_name)
-    trainer.fit(seg_system, datamodule=datamodule)
 
 
 if __name__ == "__main__":

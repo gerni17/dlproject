@@ -143,6 +143,7 @@ class SegImageTransform:
                 [
                     RandomHorizontalFlip(),
                     RandomVerticalFlip(),
+                    Resize((img_size*2, img_size*2)),
                     RandomRotate(degrees=[0, 45]),
                     RandomCrop(img_size),
                     # Resize((img_size, img_size)),

@@ -8,6 +8,8 @@ from datasets.generated import GeneratedDataModule
 from datasets.mixed import MixedDataModule
 from datasets.labeled import LabeledDataModule
 from datasets.crossval import CrossValidationDataModule
+from datasets.test import TestLabeledDataModule
+from logger.gogoll_baseline_image import GogollBaselineImageLogger
 from logger.gogoll_pipeline_image import GogollPipelineImageLogger
 from models.unet_light_semseg import UnetLight
 from preprocessing.seg_transforms import SegImageTransform
@@ -116,7 +118,6 @@ def main():
         if cfg.use_wandb
         else None
     )
-    wandb.login(key="969803cb62211763351a441ac5c9e96ce995f7eb")  # for aleks euler
 
     # Callbacks  --------------------------------------------------------------
     # save the model
@@ -196,48 +197,47 @@ def main():
             cfg.gogoll_checkpoint_path, **gogoll_net_config
         )
 
+    generator = main_system.G_s2t
+
     # Image Generation & Saving  --------------------------------------------------------------
     if cfg.save_generated_images:
+        dm_source = LabeledDataModule(
+            path.join(data_dir, 'exp'), transform, batch_size=batch_size, split=True, max_imgs=200
+        )
         save_path = path.join(cfg.generated_dataset_save_root, run_name)
         # Generate fake target domain images and save them to a persistent folder (with the
         # same name as the current run)
         save_generated_dataset(
-            main_system,
-            path.join(data_dir, 'exp'),
-            transform,
+            generator,
+            dm_source,
             save_path,
             logger=seg_wandb_logger,
             max_images=cfg.max_generated_images_saved,
         )
-
-    # Source domain datamodule
-    source_dm = LabeledDataModule(
-        path.join(data_dir, 'exp'), transform, batch_size=1, split=False, max_imgs=200
+    
+    # Train datamodules
+    dm_source = LabeledDataModule(
+        path.join(data_dir, 'exp'), transform, batch_size=batch_size, split=True, max_imgs=200
     )
-    # Generated images datamodule
-    generated_dm = GeneratedDataModule(
-        main_system.G_s2t, path.join(data_dir, 'exp'), transform, batch_size=1, split=False, max_imgs=200
+    dm_generated = GeneratedDataModule(generator, dm_source, batch_size=batch_size)
+    
+    # easy dataset with full dataset in test loader
+    dm_easy_test = TestLabeledDataModule(
+        path.join(data_dir, 'easy'), transform, batch_size=batch_size, max_imgs=200
     )
-    batch_size = 8
-    # Mix both datamodules
-    mixed_dm = MixedDataModule(source_dm, generated_dm, batch_size=batch_size)
 
-    # Mix both datamodules and do Cross Val
     n_splits = 5
-    cv_dm = CrossValidationDataModule(
-        mixed_dm, batch_size=batch_size, n_splits=n_splits
-    )
-    log_dm = CrossValidationDataModule(
-        mixed_dm, batch_size=batch_size, n_splits=n_splits
-    )
+
+    cv_source = CrossValidationDataModule(dm_generated, batch_size=batch_size, n_splits=n_splits)
 
     # train the final segmentation net that we use to evaluate if our augmented dataset helps
     # with training a segnet that is more robust to different domains/conditions
     n_cross_val_epochs = 10
-    cross_val_final_segnet(
+
+    evaluate_ours(
         cfg,
-        cv_dm,
-        log_dm,
+        cv_source,
+        dm_easy_test,
         project_name,
         run_name,
         log_path,
@@ -247,22 +247,28 @@ def main():
 
     wandb.finish()
 
-
-def cross_val_final_segnet(
+# evaluate segementation on our generated data
+def evaluate_ours(
     cfg,
-    datamodule,
-    log_datamodule,
     project_name,
+    train_datamodule,
+    test_datamodule,
     run_name,
     log_path,
     n_epochs,
     n_splits,
 ):
     # Cross Validation Run
-    fold_metrics = []
+    fold_metrics = {
+        "iou": [],
+        "soil": [],
+        "weed": [],
+        "crop": [],
+    }
+
     for i in range(n_splits):
+        # Cross Validation Run
         seg_lr = 0.0002
-        datamodule.set_active_split(i)
         seg_net = UnetLight()
         seg_system = FinalSegSystem(seg_net, lr=seg_lr)
 
@@ -271,7 +277,7 @@ def cross_val_final_segnet(
             WandbLogger(
                 project=project_name,
                 name=run_name,
-                prefix="seg_final_cv_fold{}".format(i + 1),
+                prefix=f"(Ours) ",
             )
             if cfg.use_wandb
             else None
@@ -280,17 +286,24 @@ def cross_val_final_segnet(
         # Callbacks  --------------------------------------------------------------
         # save the model
         segmentation_checkpoint_callback = ModelCheckpoint(
-            dirpath=path.join(log_path, "segmentation_final_cv_fold{}".format(i + 1)),
+            dirpath=path.join(log_path, f"segmentation_final_ours"),
             save_last=False,
             save_top_k=1,
             verbose=False,
             monitor="loss",
             mode="min",
         )
+
         semseg_image_callback = GogollSemsegImageLogger(
-            log_datamodule,
+            train_datamodule,
             network="net",
-            log_key="Segmentation (Final) Fold {}".format(i + 1),
+            log_key=f"Segmentation (Final - Ours) - Train",
+        )
+
+        baseline_image_callback = GogollBaselineImageLogger(
+            test_datamodule,
+            network="net",
+            log_key=f"Segmentation (Final - Ours)",
         )
 
         cv_trainer = Trainer(
@@ -299,14 +312,23 @@ def cross_val_final_segnet(
             reload_dataloaders_every_n_epochs=True,
             num_sanity_val_steps=0,
             logger=seg_wandb_logger,
-            callbacks=[segmentation_checkpoint_callback, semseg_image_callback,],
+            callbacks=[segmentation_checkpoint_callback, semseg_image_callback,baseline_image_callback],
         )
 
-        cv_trainer.fit(seg_system, datamodule=datamodule)
-        res = cv_trainer.test(seg_system, datamodule=datamodule)
+        cv_trainer.fit(seg_system, datamodule=train_datamodule)
+
+        res = cv_trainer.test(seg_system, datamodule=test_datamodule)
         # Acess dict values of trainer after test and get metrics for average
-        fold_metrics.append(res[0]["IOU Metric"])
-    wandb.run.summary["MEAN IOU"] = mean(fold_metrics)
+        fold_metrics["iou"].append(res[0]["IOU Metric"])
+        fold_metrics["soil"].append(res[0]["Test Metric Summary - soil"])
+        fold_metrics["weed"].append(res[0]["Test Metric Summary - weed"])
+        fold_metrics["crop"].append(res[0]["Test Metric Summary - crop"])
+
+    # Acess dict values of trainer after test and get metrics for average
+    wandb.run.summary[f"Crossvalidation IOU (Ours)"] = mean(fold_metrics["iou"])
+    wandb.run.summary[f"Crossvalidation IOU Soil (Ours)"] = mean(fold_metrics["soil"])
+    wandb.run.summary[f"Crossvalidation IOU Weed (Ours)"] = mean(fold_metrics["weed"])
+    wandb.run.summary[f"Crossvalidation IOU Crop (Ours)"] = mean(fold_metrics["crop"])
 
 
 if __name__ == "__main__":

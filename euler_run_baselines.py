@@ -14,8 +14,6 @@ from models.unet_light_semseg import UnetLight
 from preprocessing.seg_transforms import SegImageTransform
 
 from systems.final_seg_system import FinalSegSystem
-from systems.gogoll_seg_system import GogollSegSystem
-from utils.generate_targets_with_semantics import save_generated_dataset
 from utils.weight_initializer import init_weights
 from configs.gogoll_config import command_line_parser
 from pytorch_lightning.loggers import WandbLogger

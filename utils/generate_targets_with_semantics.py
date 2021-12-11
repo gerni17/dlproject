@@ -37,11 +37,11 @@ def undo_transform(image):
 
 
 def save_generated_dataset(
-    system, data_dir, transform, save_path, max_images=10, logger=None
+    generator, source_dm, save_path, max_images=10, logger=None
 ):
     print("Generating images...")
 
-    dm = GeneratedDataModule(system.G_s2t, data_dir, transform, batch_size=1)
+    dm = GeneratedDataModule(generator, source_dm, batch_size=1)
     dm.prepare_data()
     dm.setup()
     ds = dm.train_dataloader().dataset

@@ -1,10 +1,7 @@
-import math
 from typing import Optional
-from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 import pytorch_lightning as pl
 import torch
-import os, glob, random
 from sklearn.model_selection import train_test_split
 
 from utils.sanity import assert_matching_images
@@ -14,97 +11,71 @@ class GeneratedDataset(Dataset):
     def __init__(
         self,
         generator,
-        source_img_paths,
-        segmentation_img_paths,
-        transform,
-        phase="train",
+        dataset,
         max_imgs=200,
     ):
         self.generator = generator
-        self.source_img_paths = source_img_paths
-        self.segmentation_img_paths = segmentation_img_paths
-        self.transform = transform
-        self.phase = phase
+        self.dataset = dataset
+        
         self.raw_len = min(
-            [len(self.source_img_paths), len(self.segmentation_img_paths), max_imgs]
+            [len(self.dataset), max_imgs]
         )
-
-        self.source_img_paths.sort()
-        self.segmentation_img_paths.sort()
-        assert_matching_images(self.source_img_paths, self.segmentation_img_paths)
 
     def __len__(self):
         return self.raw_len
 
     def __getitem__(self, idx):
-        rgb_img = Image.open(self.source_img_paths[idx])
-        segmentation_img = Image.open(self.segmentation_img_paths[idx])
-        assert rgb_img.size == segmentation_img.size
+        d_item = self.dataset[idx]
 
-        img, segmentation = self.transform(rgb_img, segmentation_img, self.phase)
-        shape = img.shape
+        rgb_img = d_item['source']
+        segmentation_img = d_item['source_segmentation']
+
+        shape = rgb_img.shape
 
         with torch.no_grad():
             generated = self.generator(
-                torch.reshape(img, (1, shape[0], shape[1], shape[2]))
+                torch.reshape(rgb_img, (1, shape[0], shape[1], shape[2]))
             )
             generated = torch.reshape(
                 generated, (generated.shape[1], generated.shape[2], generated.shape[3])
             )
 
-        return {"id": idx, "source": generated, "source_segmentation": segmentation}
+        return {"id": idx, "source": generated, "source_segmentation": segmentation_img}
 
 
 # Data Module
 class GeneratedDataModule(pl.LightningDataModule):
     def __init__(
-        self, generator, data_dir, transform, batch_size, split=True, max_imgs=200
+        self, generator, datamodule, batch_size, max_imgs=200
     ):
         super(GeneratedDataModule, self).__init__()
         self.generator = generator
-        self.data_dir = data_dir
-        self.transform = transform
+        self.datamodule = datamodule
         self.batch_size = batch_size
-        self.split = split
         self.max_imgs = max_imgs
 
     def prepare_data(self):
-        self.rgb_paths = glob.glob(os.path.join(self.data_dir, "rgb", "*.png"))
-        self.segmentation_paths = glob.glob(
-            os.path.join(self.data_dir, "semseg", "*.png")
-        )
-
-        if self.split:
-            (
-                self.rgb_train,
-                self.rgb_val,
-                self.seg_train,
-                self.seg_val,
-            ) = train_test_split(self.rgb_paths, self.segmentation_paths, test_size=0.2)
-        else:
-            self.rgb_train = self.rgb_paths
-            self.rgb_val = []
-            self.seg_train = self.segmentation_paths
-            self.seg_val = []
+        self.datamodule.prepare_data()
 
     def setup(self, stage: Optional[str] = None):
+        self.datamodule.setup(stage)
         # Assign train/val datasets for use in dataloaders
         self.train_dataset = GeneratedDataset(
             self.generator,
-            self.rgb_train,
-            self.seg_train,
-            self.transform,
-            "test",
+            self.datamodule.train_dataloader().dataset,
             self.max_imgs,
         )
 
         self.val_dataset = GeneratedDataset(
             self.generator,
-            self.rgb_val,
-            self.seg_val,
-            self.transform,
-            "test",
-            math.ceil(self.max_imgs * 0.2),
+            self.datamodule.val_dataloader().dataset,
+            self.max_imgs,
+        )
+
+        self.test_dataset = GeneratedDataset(
+            self.generator,
+            self.datamodule.test_dataloader().dataset,
+            self.max_imgs,
         )
 
     def train_dataloader(self):
@@ -127,7 +98,7 @@ class GeneratedDataModule(pl.LightningDataModule):
 
     def test_dataloader(self):
         return DataLoader(
-            self.val_dataset,
+            self.test_dataset,
             batch_size=self.batch_size,
             shuffle=True,
             pin_memory=True,

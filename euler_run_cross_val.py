@@ -75,7 +75,7 @@ def main():
 
     # DataModule  -----------------------------------------------------------------
     dm = GogollDataModule(
-        path.join(data_dir, 'exp'), path.join(data_dir, 'other_domains', cfg.domain), transform, batch_size
+        path.join(data_dir, 'exp'), path.join(data_dir, 'easy', 'rgb'), transform, batch_size
     )  # used for training
 
     # Sub-Models  -----------------------------------------------------------------

@@ -32,6 +32,7 @@ class GogollSemsegImageLogger(Callback):
         if not data_module.has_setup_fit:
             data_module.setup()
             
+        print(f'Loading {data_module.__class__.__name__}')
         dataloader = data_module.val_dataloader()
 
         val_samples = next(iter(dataloader))

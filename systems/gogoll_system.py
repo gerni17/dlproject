@@ -120,8 +120,8 @@ class GogollSystem(pl.LightningModule):
 
         fake_source = self.G_t2s(target_img)
         fake_target = self.G_s2t(source_img)
-        cycled_source = self.G_t2s(self.G_s2t(fake_target))
-        cycled_target = self.G_s2t(self.G_t2s(target_img))
+        cycled_source = self.G_t2s(fake_target)
+        cycled_target = self.G_s2t(fake_source)
 
         if optimizer_idx == 0 or optimizer_idx == 1 or optimizer_idx == 4:
             # Train Generator

@@ -45,6 +45,7 @@ class GogollSystem(pl.LightningModule):
         self.mae = nn.L1Loss()
         self.generator_loss = nn.MSELoss()
         self.discriminator_loss = nn.MSELoss()
+        self.deep_loss = nn.MSELoss()
         self.semseg_loss = nn.CrossEntropyLoss()
         # self.semseg_loss = torchmetrics.IoU(3)
         self.losses = []
@@ -118,10 +119,11 @@ class GogollSystem(pl.LightningModule):
         valid = torch.ones(b, 1, 30, 30).cuda()
         fake = torch.zeros(b, 1, 30, 30).cuda()
 
-        fake_source = self.G_t2s(target_img)
-        fake_target = self.G_s2t(source_img)
-        cycled_source = self.G_t2s(fake_target)
-        cycled_target = self.G_s2t(fake_source)
+        deep=True
+        fake_source , deep_fake_source= self.G_t2s(target_img,deep)
+        fake_target,deep_fake_target = self.G_s2t(source_img,deep)
+        cycled_source,deep_cycled_source = self.G_t2s(fake_target,deep)
+        cycled_target,deep_cycled_target = self.G_s2t(fake_source,deep)
 
         if optimizer_idx == 0 or optimizer_idx == 1 or optimizer_idx == 4:
             # Train Generator
@@ -141,8 +143,13 @@ class GogollSystem(pl.LightningModule):
             id_target = self.mae(self.G_s2t(target_img), target_img)
             id_loss = (id_source + id_target) / 2
 
+            # Embedding loss
+            deep_loss_source=self.deep_loss(deep_fake_source,deep_cycled_source)
+            deep_loss_target=self.deep_loss(deep_fake_target,deep_cycled_target)
+            deep_loss = (deep_loss_source + deep_loss_target) / 2
+
             # Loss Weight
-            G_loss = val_loss + self.reconstr_w * reconstr_loss + self.id_w * id_loss
+            G_loss = val_loss + self.reconstr_w * reconstr_loss + self.id_w * id_loss + deep_loss
 
             # Segmentation
             y_seg_s = self.seg_s(cycled_source)
@@ -175,6 +182,8 @@ class GogollSystem(pl.LightningModule):
                 "loss_seg_b": loss_seg_b,
                 "loss_seg_c": loss_seg_c,
                 "loss_seg_d": loss_seg_d,
+                "deep_loss_source": deep_loss_source,
+                "deep_loss_target": deep_loss_target,
             }
 
             self.log_dict(

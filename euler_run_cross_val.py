@@ -62,6 +62,7 @@ def main():
             config=cfg,
             settings=wandb.Settings(start_method="fork"),
             entity="dlshared",
+            project="dlproject"
         )
     else:
         wandb.init(
@@ -69,6 +70,8 @@ def main():
             name=run_name,
             config=cfg,
             settings=wandb.Settings(start_method="fork"),
+            # entity="gerni",
+            project="dlproject"
         )
     # Data Preprocessing  -----------------------------------------------------------------
     transform = SegImageTransform(img_size=cfg.image_size)

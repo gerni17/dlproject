@@ -7,7 +7,7 @@ from torch.utils.data.dataloader import default_collate
 from torch import nn, optim
 from utils.metrics import MetricsSemseg
 from torchmetrics import IoU
-import torchvision.ops.focal_loss as focal_loss
+import torchvision.ops.sigmoid_focal_loss as focal_loss
 
 
 class Semseg(pl.LightningModule):

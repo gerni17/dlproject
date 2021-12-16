@@ -13,7 +13,7 @@ from torch import nn, optim
 import pytorch_lightning as pl
 from utils.metrics import MetricsSemseg
 from torchmetrics import IoU
-import torchvision.ops.focal_loss as focal_loss
+import torchvision.ops.sigmoid_focal_loss as focal_loss
 
 
 class FinalSegSystem(pl.LightningModule):

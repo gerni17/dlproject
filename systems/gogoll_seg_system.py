@@ -12,6 +12,7 @@ import torchmetrics
 from torchvision.utils import make_grid
 from torch import nn, optim
 import pytorch_lightning as pl
+import torchvision.ops.sigmoid_focal_loss as focal_loss
 
 
 class GogollSegSystem(pl.LightningModule):
@@ -41,7 +42,7 @@ class GogollSegSystem(pl.LightningModule):
 
         y_seg = self.net(source_img)
 
-        Seg_loss = self.semseg_loss(y_seg, segmentation_img)
+        Seg_loss = focal_loss(y_seg, segmentation_img)
 
         logs = {
             "loss": Seg_loss,

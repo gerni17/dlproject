@@ -12,7 +12,7 @@ import torchmetrics
 from torchvision.utils import make_grid
 from torch import nn, optim
 import pytorch_lightning as pl
-import torchvision.ops.focal_loss as focal_loss
+import torchvision.ops.sigmoid_focal_loss as focal_loss
 
 class GogollSystem(pl.LightningModule):
     def __init__(

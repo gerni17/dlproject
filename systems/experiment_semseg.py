@@ -7,6 +7,7 @@ from torch.utils.data.dataloader import default_collate
 from torch import nn, optim
 from utils.metrics import MetricsSemseg
 from torchmetrics import IoU
+import torchvision.ops.focal_loss as focal_loss
 
 
 class Semseg(pl.LightningModule):
@@ -36,7 +37,7 @@ class Semseg(pl.LightningModule):
         y_hat = self.net(rgb)
         # y_semseg_lbl=torch.clamp(y_semseg_lbl, min=0, max=2)
 
-        loss_semseg = self.loss_semseg(y_hat, y_semseg_lbl)
+        loss_semseg = focal_loss(y_hat, y_semseg_lbl)
 
         self.log_dict(
             {"loss_train/semseg": loss_semseg,},
@@ -73,7 +74,7 @@ class Semseg(pl.LightningModule):
         if torch.cuda.is_available() and self.cfg.gpu:
             y_semseg_lbl = y_semseg_lbl.cuda()
 
-        loss_val_semseg = self.loss_semseg(y_hat_semseg, y_semseg_lbl)
+        loss_val_semseg = focal_loss(y_hat_semseg, y_semseg_lbl)
 
         #  TODO
         self.metrics_semseg.update_batch(y_hat_semseg_lbl, y_semseg_lbl)

@@ -12,7 +12,7 @@ import torchmetrics
 from torchvision.utils import make_grid
 from torch import nn, optim
 import pytorch_lightning as pl
-
+import torchvision.ops.focal_loss as focal_loss
 
 class GogollSystem(pl.LightningModule):
     def __init__(
@@ -152,10 +152,10 @@ class GogollSystem(pl.LightningModule):
             y_seg_t_t = self.seg_t(target_img)
             y_seg_t_t_c = self.seg_t(cycled_target)
 
-            loss_seg_a = self.semseg_loss(y_seg_s, segmentation_img)
-            loss_seg_b = self.semseg_loss(y_seg_t, segmentation_img)
-            loss_seg_c = self.semseg_loss(y_seg_t_t, y_seg_t_s.argmax(dim=1).long())
-            loss_seg_d = self.semseg_loss(y_seg_t_t_c, y_seg_t_s.argmax(dim=1).long())
+            loss_seg_a = focal_loss(y_seg_s, segmentation_img)
+            loss_seg_b = focal_loss(y_seg_t, segmentation_img)
+            loss_seg_c = focal_loss(y_seg_t_t, y_seg_t_s.argmax(dim=1).long())
+            loss_seg_d = focal_loss(y_seg_t_t_c, y_seg_t_s.argmax(dim=1).long())
 
             Seg_loss = (loss_seg_a + loss_seg_b + loss_seg_c + loss_seg_d) / 4
 

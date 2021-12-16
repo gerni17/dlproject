@@ -13,8 +13,8 @@ from torch import nn, optim
 import pytorch_lightning as pl
 from utils.metrics import MetricsSemseg
 from torchmetrics import IoU
-import torchvision.ops.sigmoid_focal_loss as focal_loss
-
+from torchvision.ops import sigmoid_focal_loss as focal_loss
+import torch.nn.functional as F
 
 class FinalSegSystem(pl.LightningModule):
     def __init__(self, net, lr=0.0002):  # segmentation network
@@ -40,8 +40,9 @@ class FinalSegSystem(pl.LightningModule):
         source_img, segmentation_img = (batch["source"], batch["source_segmentation"])
 
         y_seg = self.net(source_img)
-
-        Seg_loss = focal_loss(y_seg, segmentation_img)
+        d=F.one_hot(segmentation_img,3)
+        r=torch.transpose(torch.transpose(d,3,2),2,1)
+        Seg_loss = focal_loss(y_seg, r)
 
         logs = {
             "loss": Seg_loss,
@@ -61,7 +62,9 @@ class FinalSegSystem(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         source_img, segmentation_img = (batch["source"], batch["source_segmentation"])
         y_hat = self.net(source_img)
-        loss_val_semseg = focal_loss(y_hat, segmentation_img)
+        d=F.one_hot(segmentation_img,3)
+        r=torch.transpose(torch.transpose(d,3,2),2,1)
+        loss_val_semseg = focal_loss(y_hat, r)
 
         y_hat_semseg_lbl = y_hat.argmax(dim=1)
         self.metrics_semseg.update_batch(y_hat_semseg_lbl, segmentation_img)

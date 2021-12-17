@@ -40,9 +40,9 @@ class FinalSegSystem(pl.LightningModule):
         source_img, segmentation_img = (batch["source"], batch["source_segmentation"])
 
         y_seg = self.net(source_img)
-        d=F.one_hot(segmentation_img,3)
+        d=F.one_hot(segmentation_img,3).float()
         r=torch.transpose(torch.transpose(d,3,2),2,1)
-        Seg_loss = focal_loss(y_seg, r)
+        Seg_loss = focal_loss(y_seg, r, reduction='mean')
 
         logs = {
             "loss": Seg_loss,
@@ -63,8 +63,8 @@ class FinalSegSystem(pl.LightningModule):
         source_img, segmentation_img = (batch["source"], batch["source_segmentation"])
         y_hat = self.net(source_img)
         d=F.one_hot(segmentation_img,3)
-        r=torch.transpose(torch.transpose(d,3,2),2,1)
-        loss_val_semseg = focal_loss(y_hat, r)
+        r=torch.transpose(torch.transpose(d,3,2),2,1).float()
+        loss_val_semseg = focal_loss(y_hat, r, reduction='mean')
 
         y_hat_semseg_lbl = y_hat.argmax(dim=1)
         self.metrics_semseg.update_batch(y_hat_semseg_lbl, segmentation_img)

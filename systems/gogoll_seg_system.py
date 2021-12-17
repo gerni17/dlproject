@@ -41,9 +41,9 @@ class GogollSegSystem(pl.LightningModule):
         )
 
         y_seg = self.net(source_img)
-        d=F.one_hot(segmentation_img,3)
+        d=F.one_hot(segmentation_img,3).float()
         r=torch.transpose(torch.transpose(d,3,2),2,1)
-        Seg_loss = focal_loss(y_seg, r)
+        Seg_loss = focal_loss(y_seg, r, reduction='mean')
 
         logs = {
             "loss": Seg_loss,

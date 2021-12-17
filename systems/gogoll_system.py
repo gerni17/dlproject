@@ -159,11 +159,11 @@ class GogollSystem(pl.LightningModule):
             # loss_seg_d = focal_loss(y_seg_t_t_c, y_seg_t_s.argmax(dim=1).long())
 
             d=F.one_hot(segmentation_img,3)
-            r=torch.transpose(torch.transpose(d,3,2),2,1)
-            loss_seg_a = focal_loss(y_seg_s, r)
-            loss_seg_b = focal_loss(y_seg_t, r)
-            loss_seg_c = focal_loss(y_seg_t_t, y_seg_t_s)
-            loss_seg_d = focal_loss(y_seg_t_t_c, y_seg_t_s)
+            r=torch.transpose(torch.transpose(d,3,2),2,1).float()
+            loss_seg_a = focal_loss(y_seg_s, r, reduction='mean')
+            loss_seg_b = focal_loss(y_seg_t, r, reduction='mean')
+            loss_seg_c = focal_loss(y_seg_t_t, y_seg_t_s.float(), reduction='mean')
+            loss_seg_d = focal_loss(y_seg_t_t_c, y_seg_t_s.float(), reduction='mean')
 
             Seg_loss = (loss_seg_a + loss_seg_b + loss_seg_c + loss_seg_d) / 4
 

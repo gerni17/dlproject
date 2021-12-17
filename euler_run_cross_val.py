@@ -107,6 +107,8 @@ def main():
         "reconstr_w": reconstr_w,
         "id_w": id_w,
         "seg_w": seg_w,
+        "weight": cfg.w_embed,
+        "loss": cfg.loss_type,
     }
     main_system = GogollSystem(**gogoll_net_config)
 

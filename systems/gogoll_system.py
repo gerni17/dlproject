@@ -27,6 +27,8 @@ class GogollSystem(pl.LightningModule):
         reconstr_w=10,  # reconstruction weighting
         id_w=2,  # identity weighting
         seg_w=1,
+        w_embed=1,
+        loss_type="L2",
     ):
         super(GogollSystem, self).__init__()
         self.G_s2t = G_s2t
@@ -41,11 +43,18 @@ class GogollSystem(pl.LightningModule):
         self.seg_w = seg_w
         self.cnt_train_step = 0
         self.step = 0
+        self.w_embed=w_embed
+        self.loss_type=loss_type
 
         self.mae = nn.L1Loss()
         self.generator_loss = nn.MSELoss()
         self.discriminator_loss = nn.MSELoss()
-        self.deep_loss = nn.MSELoss()
+        if loss_type=="L1":
+            self.deep_loss = nn.L1Loss()        
+        elif loss_type=="cosine":
+            self.deep_loss = nn.CosineSimilarity()
+        else:
+            self.deep_loss = nn.MSELoss()
         self.semseg_loss = nn.CrossEntropyLoss()
         # self.semseg_loss = torchmetrics.IoU(3)
         self.losses = []
@@ -149,7 +158,7 @@ class GogollSystem(pl.LightningModule):
             deep_loss = (deep_loss_source + deep_loss_target) / 2
 
             # Loss Weight
-            G_loss = val_loss + self.reconstr_w * reconstr_loss + self.id_w * id_loss + deep_loss
+            G_loss = val_loss + self.reconstr_w * reconstr_loss + self.id_w * id_loss + self.w_embed* deep_loss
 
             # Segmentation
             y_seg_s = self.seg_s(cycled_source)

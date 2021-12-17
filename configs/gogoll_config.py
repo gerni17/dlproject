@@ -123,6 +123,21 @@ def command_line_parser():
         help="Filters for the CycleGAN discriminator",
     )
 
+    parser.add_argument(
+        "--w_embed",
+        type=float,
+        default=1.0,
+        help="Weight of embedding loss",
+    )
+
+    parser.add_argument(
+        "--loss_type",
+        type=str,
+        default="L2",
+        choices=["L2", "L1","cosine"],
+        help="Type of loss function for embedding",
+    )
+
     # -------------------------- data settings --------------------------
     parser.add_argument(
         "--dataset_root", type=expandpath, default="./data", help="Path to dataset"

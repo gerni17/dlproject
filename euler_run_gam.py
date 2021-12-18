@@ -76,8 +76,8 @@ def main():
     # Sub-Models  -----------------------------------------------------------------
     G_basestyle = CycleGANGenerator(filter=cfg.generator_filters, in_channels=1, out_channels=3)
     G_stylebase = CycleGANGenerator(filter=cfg.generator_filters, in_channels=3, out_channels=1)
-    D_base = CycleGANDiscriminator(filter=cfg.discriminator_filters)
-    D_style = CycleGANDiscriminator(filter=cfg.discriminator_filters)
+    D_base = CycleGANDiscriminator(filter=cfg.discriminator_filters, in_channels=3)
+    D_style = CycleGANDiscriminator(filter=cfg.discriminator_filters, in_channels=1)
 
     # Init Weight  --------------------------------------------------------------
     for net in [G_basestyle, G_stylebase, D_base, D_style]:

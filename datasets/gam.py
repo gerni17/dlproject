@@ -11,9 +11,9 @@ from utils.sanity import assert_matching_images
 def SegToOneHot(x):
     hot_map = [(1, 0, 0), (0, 1, 0), (0, 0, 1)]
     encodings = torch.tensor(hot_map, dtype=torch.float32)
-    x = x.cpu().clone()  # N x H x W
-    x = encodings[x]  # N x H x W x 3
-    x = x.permute(0, 3, 1, 2)
+    x = x.cpu().clone()  # H x W
+    x = encodings[x]  # H x W x 3
+    x = x.permute(2, 0, 1)
     return x
 
 # Agriculture Dataset ---------------------------------------------------------------------------

@@ -201,9 +201,8 @@ def evaluate_ours(
 
     for i in range(n_splits):
         # Cross Validation Run
-        seg_lr = 0.0002
         seg_net = UnetLight()
-        seg_system = FinalSegSystem(seg_net, lr=seg_lr)
+        seg_system = FinalSegSystem(seg_net, cfg=cfg)
 
         # Logger  --------------------------------------------------------------
         seg_wandb_logger = (

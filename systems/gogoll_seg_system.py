@@ -16,10 +16,10 @@ from torch.optim.lr_scheduler import LambdaLR
 
 
 class GogollSegSystem(pl.LightningModule):
-    def __init__(self, net, lr=0.0002):  # segmentation network
+    def __init__(self, net, cfg):  # segmentation network
         super(GogollSegSystem, self).__init__()
         self.net = net
-        self.lr = lr
+        self.cfg = cfg
         self.step = 0
 
         self.semseg_loss = torch.nn.CrossEntropyLoss()
@@ -27,10 +27,10 @@ class GogollSegSystem(pl.LightningModule):
         self.losses = []
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=self.lr, betas=(0.5, 0.999),)
+        optimizer = optim.Adam(self.parameters(), lr=self.cfg.seg_lr, betas=(0.5, 0.999),)
         sched=LambdaLR(
             optimizer,
-            lambda ep: max(1e-6, (1 - ep / self.cfg.num_epochs) ** self.cfg.lr_scheduler_power))
+            lambda ep: max(1e-6, (1 - ep / self.cfg.num_epochs_seg) ** self.cfg.lr_scheduler_power))
         return [optimizer], [sched]
 
     def training_step(self, batch, batch_idx):

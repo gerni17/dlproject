@@ -4,6 +4,7 @@ import wandb
 
 from datetime import datetime
 from pytorch_lightning import Trainer
+from datasets.gam import GamDataModule
 from datasets.generated_gam import GeneratedGamDataModule
 from datasets.labeled import LabeledDataModule
 from datasets.crossval import CrossValidationDataModule
@@ -70,25 +71,25 @@ def main():
     transform = SegImageTransform(img_size=cfg.image_size)
 
     # DataModule  -----------------------------------------------------------------
-    dm = GogollDataModule(
+    dm = GamDataModule(
         path.join(data_dir, 'source'), path.join(data_dir, 'easy', 'rgb'), transform, batch_size
     )
 
     # Sub-Models  -----------------------------------------------------------------
-    G_basestyle = CycleGANGenerator(filter=cfg.generator_filters, in_channels=1, out_channels=3)
-    G_stylebase = CycleGANGenerator(filter=cfg.generator_filters, in_channels=3, out_channels=1)
+    G_se2ta = CycleGANGenerator(filter=cfg.generator_filters, in_channels=3, out_channels=3)
+    G_ta2se = CycleGANGenerator(filter=cfg.generator_filters, in_channels=3, out_channels=3)
     D_base = CycleGANDiscriminator(filter=cfg.discriminator_filters, in_channels=3)
-    D_style = CycleGANDiscriminator(filter=cfg.discriminator_filters, in_channels=1)
+    D_style = CycleGANDiscriminator(filter=cfg.discriminator_filters, in_channels=3)
 
     # Init Weight  --------------------------------------------------------------
-    for net in [G_basestyle, G_stylebase, D_base, D_style]:
+    for net in [G_se2ta, G_ta2se, D_base, D_style]:
         init_weights(net, init_type="normal")
 
     # LightningModule  --------------------------------------------------------------
 
     gogoll_net_config = {
-        "G_se2ta": G_basestyle,
-        "G_ta2se": G_stylebase,
+        "G_se2ta": G_se2ta,
+        "G_ta2se": G_ta2se,
         "D_ta": D_base,
         "D_se": D_style,
         "lr": lr,

@@ -45,8 +45,11 @@ class GamPipelineImageLogger(Callback):
         generated_target = G_se2ta(seg_imgs)
         cycled_segmentation = G_ta2se(G_se2ta(seg_imgs))
 
-        seg_imgs_display = prepare_semseg(seg_imgs)
-        cycled_segmentation_display = prepare_semseg(cycled_segmentation)
+        seg_imgs_display = prepare_semseg(seg_imgs.argmax(dim=1))
+        seg_imgs_display = seg_imgs_display.to(device=pl_module.device)
+
+        cycled_segmentation_display = prepare_semseg(cycled_segmentation.argmax(dim=1))
+        cycled_segmentation_display = cycled_segmentation_display.to(device=pl_module.device)
 
         plant_imgs = torch.cat([seg_imgs_display, cycled_segmentation_display, generated_target], dim=0)
 

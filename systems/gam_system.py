@@ -68,7 +68,7 @@ class GamSystem(pl.LightningModule):
             batch["target"],
         )
 
-        segmentation_img = torch.reshape(segmentation_img, (segmentation_img.shape[0], 1, segmentation_img.shape[1], segmentation_img.shape[2])).float()
+        segmentation_img = segmentation_img.float()
 
         b = target_img.size()[0]
 

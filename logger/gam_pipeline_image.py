@@ -51,12 +51,13 @@ class GamPipelineImageLogger(Callback):
         cycled_segmentation_display = prepare_semseg(cycled_segmentation.argmax(dim=1))
         cycled_segmentation_display = cycled_segmentation_display.to(device=pl_module.device)
 
-        plant_imgs = torch.cat([seg_imgs_display, cycled_segmentation_display, generated_target], dim=0)
-
+        plant_imgs = generated_target
         plant_imgs = plant_imgs * 0.5 + 0.5
         plant_imgs = plant_imgs * 255
 
-        joined_images_tensor = make_grid(plant_imgs, nrow=batch_size, padding=2)
+        imgs = torch.cat([seg_imgs_display, cycled_segmentation_display, plant_imgs], dim=0)
+
+        joined_images_tensor = make_grid(imgs, nrow=batch_size, padding=2)
 
         # Pipeline stacks the images like this:
         # - Segmentation domain

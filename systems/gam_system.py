@@ -16,7 +16,6 @@ class GamSystem(pl.LightningModule):
         D_se,
         lr,
         reconstr_w=10,  # reconstruction weighting
-        id_w=2,  # identity weighting
     ):
         super(GamSystem, self).__init__()
         self.G_se2ta = G_se2ta
@@ -25,7 +24,6 @@ class GamSystem(pl.LightningModule):
         self.D_se = D_se
         self.lr = lr
         self.reconstr_w = reconstr_w
-        self.id_w = id_w
         self.cnt_train_step = 0
         self.step = 0
 
@@ -95,13 +93,8 @@ class GamSystem(pl.LightningModule):
             reconstr_ta = self.mae(cycled_ta, target_img)
             reconstr_loss = (reconstr_se + reconstr_ta) / 2
 
-            # Identity
-            id_ta = self.mae(self.G_ta2se(segmentation_img), segmentation_img)
-            id_se = self.mae(self.G_se2ta(target_img), target_img)
-            id_loss = (id_ta + id_se) / 2
-
             # Loss Weight
-            G_loss = val_loss + self.reconstr_w * reconstr_loss + self.id_w * id_loss
+            G_loss = val_loss + self.reconstr_w * reconstr_loss
 
 
             logs = {
@@ -112,9 +105,6 @@ class GamSystem(pl.LightningModule):
                 "reconstr_ta": reconstr_ta,
                 "reconstr_se": reconstr_se,
                 "reconstr_loss": reconstr_loss,
-                "id_ta": id_ta,
-                "id_se": id_se,
-                "id_loss": id_loss
             }
 
             self.log_dict(

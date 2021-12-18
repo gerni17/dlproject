@@ -43,7 +43,7 @@ def main():
     )
 
     # DataModule  -----------------------------------------------------------------
-    dm = LabeledDataModule(data_dir, transform, batch_size,split=True,max_imgs=20)  # used for training
+    dm = LabeledDataModule(data_dir, transform, batch_size,split=True, max_imgs=3000)  # used for training
     vs = LabeledDataModule(
         data_dir, transform, batch_size
     )  # used for validation/progress visualization on wandb

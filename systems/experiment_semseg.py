@@ -86,7 +86,7 @@ class Semseg(pl.LightningModule):
         metrics_semseg = self.metrics_semseg.get_metrics_summary()
         self.metrics_semseg.reset()
 
-        metric_semseg = metrics_semseg["mean_iou"]
+        metric_semseg = metrics_semseg['MEAN IOU']
 
         scalar_logs = {
             "metrics_summary/semseg": metric_semseg,
@@ -120,7 +120,7 @@ class Semseg(pl.LightningModule):
         metrics_semseg = self.metrics_semseg.get_metrics_summary()
         self.metrics_semseg.reset()
 
-        metric_semseg = metrics_semseg['mean_iou']
+        metric_semseg = metrics_semseg['MEAN IOU']
 
 
         scalar_logs = {

@@ -12,13 +12,12 @@ class GeneratedDataset(Dataset):
         self,
         generator,
         dataset,
-        max_imgs=200,
     ):
         self.generator = generator
         self.dataset = dataset
         
         self.raw_len = min(
-            [len(self.dataset), max_imgs]
+            [len(self.dataset)]
         )
 
     def __len__(self):
@@ -46,13 +45,12 @@ class GeneratedDataset(Dataset):
 # Data Module
 class GeneratedDataModule(pl.LightningDataModule):
     def __init__(
-        self, generator, datamodule, batch_size, max_imgs=200
+        self, generator, datamodule, batch_size
     ):
         super(GeneratedDataModule, self).__init__()
         self.generator = generator
         self.datamodule = datamodule
         self.batch_size = batch_size
-        self.max_imgs = max_imgs
 
     def prepare_data(self):
         self.datamodule.prepare_data()
@@ -63,19 +61,16 @@ class GeneratedDataModule(pl.LightningDataModule):
         self.train_dataset = GeneratedDataset(
             self.generator,
             self.datamodule.train_dataloader().dataset,
-            self.max_imgs,
         )
 
         self.val_dataset = GeneratedDataset(
             self.generator,
             self.datamodule.val_dataloader().dataset,
-            self.max_imgs,
         )
 
         self.test_dataset = GeneratedDataset(
             self.generator,
             self.datamodule.test_dataloader().dataset,
-            self.max_imgs,
         )
 
     def train_dataloader(self):

@@ -40,16 +40,16 @@ def main():
 
     # Train datamodules
     dm_source = LabeledDataModule(
-        path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True, max_imgs=200
+        path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True
     )
     
     # easy dataset with a train/val/test split
     dm_easy_split = LabeledDataModule(
-        path.join(data_dir, 'easy'), transform, batch_size=batch_size, max_imgs=200
+        path.join(data_dir, 'easy'), transform, batch_size=batch_size
     )
     # easy dataset with full dataset in test loader
     dm_easy_test = TestLabeledDataModule(
-        path.join(data_dir, 'easy'), transform, batch_size=batch_size, max_imgs=200
+        path.join(data_dir, 'easy'), transform, batch_size=batch_size
     )
 
     n_splits = 5

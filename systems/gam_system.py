@@ -66,8 +66,8 @@ class GamSystem(pl.LightningModule):
 
     def training_step(self, batch, batch_idx, optimizer_idx):
         source_img, segmentation_img = (
-            batch["source"],
             batch["source_segmentation"],
+            batch["target"],
         )
 
         b = source_img.size()[0]

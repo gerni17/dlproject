@@ -4,9 +4,7 @@ import wandb
 
 from datetime import datetime
 from pytorch_lightning import Trainer
-from datasets.gam import GamDataModule
-from datasets.generated import GeneratedDataModule
-from datasets.mixed import MixedDataModule
+from datasets.generated_gam import GeneratedGamDataModule
 from datasets.labeled import LabeledDataModule
 from datasets.crossval import CrossValidationDataModule
 from datasets.test import TestLabeledDataModule
@@ -52,7 +50,6 @@ def main():
     epochs_gogoll = cfg.num_epochs_gogoll
     reconstr_w = cfg.reconstruction_weight
     id_w = cfg.identity_weight
-    seg_w = cfg.segmentation_weight
     if cfg.shared:
         wandb.init(
             reinit=True,
@@ -72,8 +69,8 @@ def main():
     transform = SegImageTransform(img_size=cfg.image_size)
 
     # DataModule  -----------------------------------------------------------------
-    dm = GamDataModule(
-        path.join(data_dir, 'easy'), transform, batch_size
+    dm = GogollDataModule(
+        path.join(data_dir, 'exp'), path.join(data_dir, 'easy', 'rgb'), transform, batch_size
     )
 
     # Sub-Models  -----------------------------------------------------------------
@@ -118,9 +115,6 @@ def main():
     )
 
     # save the generated images (from the validation data) after every epoch to wandb
-    semseg_s_image_callback = GogollSemsegImageLogger(
-        dm, network="net", log_key="Segmentation (Source)"
-    )
     pipeline_image_callback = GogollPipelineImageLogger(dm, log_key="Pipeline")
 
     # Trainer  --------------------------------------------------------------
@@ -150,13 +144,13 @@ def main():
 
     # Train datamodules
     dm_source = LabeledDataModule(
-        path.join(data_dir, 'exp'), transform, batch_size=batch_size, split=True, max_imgs=200
+        path.join(data_dir, 'exp'), transform, batch_size=batch_size, split=True
     )
-    dm_generated = GeneratedDataModule(generator, dm_source, batch_size=batch_size)
+    dm_generated = GeneratedGamDataModule(generator, dm_source, batch_size=batch_size)
     
     # easy dataset with full dataset in test loader
     dm_easy_test = TestLabeledDataModule(
-        path.join(data_dir, 'easy'), transform, batch_size=batch_size, max_imgs=200
+        path.join(data_dir, 'easy'), transform, batch_size=batch_size
     )
 
     n_splits = 5
@@ -176,6 +170,8 @@ def main():
         log_path,
         n_cross_val_epochs,
         n_splits,
+        "GAM",
+        "gam"
     )
 
     wandb.finish()
@@ -190,6 +186,8 @@ def evaluate_ours(
     log_path,
     n_epochs,
     n_splits,
+    experiment_name,
+    model_save_name
 ):
     # Cross Validation Run
     fold_metrics = {
@@ -210,7 +208,7 @@ def evaluate_ours(
             WandbLogger(
                 project=project_name,
                 name=run_name,
-                prefix=f"(Ours) ",
+                prefix=f"({experiment_name}) ",
             )
             if cfg.use_wandb
             else None
@@ -219,7 +217,7 @@ def evaluate_ours(
         # Callbacks  --------------------------------------------------------------
         # save the model
         segmentation_checkpoint_callback = ModelCheckpoint(
-            dirpath=path.join(log_path, f"segmentation_final_ours"),
+            dirpath=path.join(log_path, f"segmentation_final_{model_save_name}"),
             save_last=False,
             save_top_k=1,
             verbose=False,
@@ -230,13 +228,13 @@ def evaluate_ours(
         semseg_image_callback = GogollSemsegImageLogger(
             train_datamodule,
             network="net",
-            log_key=f"Segmentation (Final - Ours) - Train",
+            log_key=f"Segmentation (Final - {experiment_name}) - Train",
         )
 
         baseline_image_callback = GogollBaselineImageLogger(
             test_datamodule,
             network="net",
-            log_key=f"Segmentation (Final - Ours)",
+            log_key=f"Segmentation (Final - {experiment_name})",
         )
 
         cv_trainer = Trainer(
@@ -258,10 +256,10 @@ def evaluate_ours(
         fold_metrics["crop"].append(res[0]["Test Metric Summary - crop"])
 
     # Acess dict values of trainer after test and get metrics for average
-    wandb.run.summary[f"Crossvalidation IOU (Ours)"] = mean(fold_metrics["iou"])
-    wandb.run.summary[f"Crossvalidation IOU Soil (Ours)"] = mean(fold_metrics["soil"])
-    wandb.run.summary[f"Crossvalidation IOU Weed (Ours)"] = mean(fold_metrics["weed"])
-    wandb.run.summary[f"Crossvalidation IOU Crop (Ours)"] = mean(fold_metrics["crop"])
+    wandb.run.summary[f"Crossvalidation IOU ({experiment_name})"] = mean(fold_metrics["iou"])
+    wandb.run.summary[f"Crossvalidation IOU Soil ({experiment_name})"] = mean(fold_metrics["soil"])
+    wandb.run.summary[f"Crossvalidation IOU Weed ({experiment_name})"] = mean(fold_metrics["weed"])
+    wandb.run.summary[f"Crossvalidation IOU Crop ({experiment_name})"] = mean(fold_metrics["crop"])
 
 
 if __name__ == "__main__":

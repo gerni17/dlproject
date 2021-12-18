@@ -12,13 +12,12 @@ class GeneratedGamDataset(Dataset):
         self,
         generator,
         dataset,
-        max_imgs=200,
     ):
         self.generator = generator
         self.dataset = dataset
         
         self.raw_len = min(
-            [len(self.dataset), max_imgs]
+            [len(self.dataset)]
         )
 
     def __len__(self):
@@ -27,14 +26,13 @@ class GeneratedGamDataset(Dataset):
     def __getitem__(self, idx):
         d_item = self.dataset[idx]
 
-        rgb_img = d_item['source']
         segmentation_img = d_item['source_segmentation']
 
-        shape = rgb_img.shape
+        shape = segmentation_img.shape
 
         with torch.no_grad():
             generated = self.generator(
-                torch.reshape(rgb_img, (1, shape[0], shape[1], shape[2]))
+                torch.reshape(segmentation_img, (1, shape[0], shape[1]))
             )
             generated = torch.reshape(
                 generated, (generated.shape[1], generated.shape[2], generated.shape[3])
@@ -46,13 +44,12 @@ class GeneratedGamDataset(Dataset):
 # Data Module
 class GeneratedGamDataModule(pl.LightningDataModule):
     def __init__(
-        self, generator, datamodule, batch_size, max_imgs=200
+        self, generator, datamodule, batch_size
     ):
         super(GeneratedGamDataModule, self).__init__()
         self.generator = generator
         self.datamodule = datamodule
         self.batch_size = batch_size
-        self.max_imgs = max_imgs
 
     def prepare_data(self):
         self.datamodule.prepare_data()
@@ -63,19 +60,16 @@ class GeneratedGamDataModule(pl.LightningDataModule):
         self.train_dataset = GeneratedGamDataset(
             self.generator,
             self.datamodule.train_dataloader().dataset,
-            self.max_imgs,
         )
 
         self.val_dataset = GeneratedGamDataset(
             self.generator,
             self.datamodule.val_dataloader().dataset,
-            self.max_imgs,
         )
 
-        self.test_dataset = GeneratedDataset(
+        self.test_dataset = GeneratedGamDataset(
             self.generator,
             self.datamodule.test_dataloader().dataset,
-            self.max_imgs,
         )
 
     def train_dataloader(self):

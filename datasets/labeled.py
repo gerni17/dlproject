@@ -17,13 +17,11 @@ class LabeledDataset(Dataset):
         segmentation_img_paths,
         transform,
         phase="train",
-        max_imgs=200,
     ):
         self.source_img_paths = source_img_paths
         self.segmentation_img_paths = segmentation_img_paths
         self.transform = transform
         self.phase = phase
-        self.max_imgs = max_imgs
 
         self.source_img_paths.sort()
         self.segmentation_img_paths.sort()
@@ -34,7 +32,6 @@ class LabeledDataset(Dataset):
             [
                 len(self.source_img_paths),
                 len(self.segmentation_img_paths),
-                self.max_imgs,
             ]
         )
 
@@ -50,13 +47,12 @@ class LabeledDataset(Dataset):
 
 # Data Module
 class LabeledDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir, transform, batch_size, split=True, max_imgs=200):
+    def __init__(self, data_dir, transform, batch_size, split=True):
         super(LabeledDataModule, self).__init__()
         self.data_dir = data_dir
         self.transform = transform
         self.batch_size = batch_size
         self.split = split
-        self.max_imgs = max_imgs
 
     def prepare_data(self):
         self.rgb_paths = glob.glob(os.path.join(self.data_dir, "rgb", "*.png"))
@@ -87,20 +83,18 @@ class LabeledDataModule(pl.LightningDataModule):
 
     def setup(self, stage: Optional[str] = None):
         # Assign train/val datasets for use in dataloaders
-        self.train_dataset = LabeledDataset(self.rgb_train, self.seg_train, self.transform, "train", self.max_imgs)
+        self.train_dataset = LabeledDataset(self.rgb_train, self.seg_train, self.transform, "train")
         self.val_dataset = LabeledDataset(
             self.rgb_val,
             self.seg_val,
             self.transform,
             "test",
-            self.max_imgs,
         )
         self.test_dataset = LabeledDataset(
             self.rgb_test,
             self.seg_test,
             self.transform,
             "test",
-            self.max_imgs,
         )
 
     def train_dataloader(self):

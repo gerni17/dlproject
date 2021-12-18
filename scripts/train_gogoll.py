@@ -196,7 +196,7 @@ def main():
     # Image Generation & Saving  --------------------------------------------------------------
     if cfg.save_generated_images:
         dm_source = LabeledDataModule(
-            path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True, max_imgs=200
+            path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True
         )
         save_path = path.join(cfg.generated_dataset_save_root, run_name)
         # Generate fake target domain images and save them to a persistent folder (with the

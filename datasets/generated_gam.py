@@ -32,7 +32,7 @@ class GeneratedGamDataset(Dataset):
 
         with torch.no_grad():
             generated = self.generator(
-                torch.reshape(segmentation_img, (1, shape[0], shape[1]))
+                torch.reshape(segmentation_img, (1, 1, shape[0], shape[1]))
             )
             generated = torch.reshape(
                 generated, (generated.shape[1], generated.shape[2], generated.shape[3])

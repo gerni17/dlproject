@@ -70,6 +70,8 @@ class GamSystem(pl.LightningModule):
             batch["target"],
         )
 
+        segmentation_img = torch.reshape(segmentation_img, (1, segmentation_img.shape[0], segmentation_img.shape[1]))
+
         b = target_img.size()[0]
 
         valid = torch.ones(b, 1, 30, 30).cuda()

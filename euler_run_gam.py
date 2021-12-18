@@ -88,7 +88,7 @@ def main():
     gogoll_net_config = {
         "G_se2ta": G_basestyle,
         "G_ta2se": G_stylebase,
-        "D_so": D_base,
+        "D_ta": D_base,
         "D_se": D_style,
         "lr": lr,
         "reconstr_w": reconstr_w,

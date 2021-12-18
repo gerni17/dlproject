@@ -3,6 +3,7 @@ from torch.utils.data import DataLoader, Dataset
 import pytorch_lightning as pl
 import torch
 from sklearn.model_selection import train_test_split
+from datasets.gam import SegToOneHot
 
 from utils.sanity import assert_matching_images
 
@@ -26,13 +27,13 @@ class GeneratedGamDataset(Dataset):
     def __getitem__(self, idx):
         d_item = self.dataset[idx]
 
-        segmentation_img = d_item['source_segmentation']
+        segmentation_img = SegToOneHot(d_item['source_segmentation'])
 
         shape = segmentation_img.shape
 
         with torch.no_grad():
             generated = self.generator(
-                torch.reshape(segmentation_img, (1, 1, shape[0], shape[1])).float()
+                torch.reshape(segmentation_img, (1, shape[0], shape[1], shape[2])).float()
             )
             generated = torch.reshape(
                 generated, (generated.shape[1], generated.shape[2], generated.shape[3])

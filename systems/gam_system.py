@@ -10,18 +10,18 @@ import pytorch_lightning as pl
 class GamSystem(pl.LightningModule):
     def __init__(
         self,
-        G_se2so,  # generator source to target
-        G_so2se,  # generator target to source
-        D_so,
+        G_se2ta,  # generator segmentation to target
+        G_ta2se,  # generator target to segmentation
+        D_ta,
         D_se,
         lr,
         reconstr_w=10,  # reconstruction weighting
         id_w=2,  # identity weighting
     ):
         super(GamSystem, self).__init__()
-        self.G_se2so = G_se2so
-        self.G_so2se = G_so2se
-        self.D_so = D_so
+        self.G_se2ta = G_se2ta
+        self.G_ta2se = G_ta2se
+        self.D_ta = D_ta
         self.D_se = D_se
         self.lr = lr
         self.reconstr_w = reconstr_w
@@ -41,14 +41,14 @@ class GamSystem(pl.LightningModule):
         self.identity = []
 
     def configure_optimizers(self):
-        self.G_se2so_optimizer = optim.Adam(
-            self.G_se2so.parameters(), lr=self.lr["G"], betas=(0.5, 0.999)
+        self.G_se2ta_optimizer = optim.Adam(
+            self.G_se2ta.parameters(), lr=self.lr["G"], betas=(0.5, 0.999)
         )
-        self.G_so2se_optimizer = optim.Adam(
-            self.G_so2se.parameters(), lr=self.lr["G"], betas=(0.5, 0.999)
+        self.G_ta2se_optimizer = optim.Adam(
+            self.G_ta2se.parameters(), lr=self.lr["G"], betas=(0.5, 0.999)
         )
-        self.D_so_optimizer = optim.Adam(
-            self.D_so.parameters(), lr=self.lr["D"], betas=(0.5, 0.999)
+        self.D_ta_optimizer = optim.Adam(
+            self.D_ta.parameters(), lr=self.lr["D"], betas=(0.5, 0.999)
         )
         self.D_se_optimizer = optim.Adam(
             self.D_se.parameters(), lr=self.lr["D"], betas=(0.5, 0.999)
@@ -56,47 +56,47 @@ class GamSystem(pl.LightningModule):
 
         return (
             [
-                self.G_se2so_optimizer,
-                self.G_so2se_optimizer,
-                self.D_so_optimizer,
+                self.G_se2ta_optimizer,
+                self.G_ta2se_optimizer,
+                self.D_ta_optimizer,
                 self.D_se_optimizer,
             ],
             [],
         )
 
     def training_step(self, batch, batch_idx, optimizer_idx):
-        source_img, segmentation_img = (
+        segmentation_img, target_img = (
             batch["source_segmentation"],
             batch["target"],
         )
 
-        b = source_img.size()[0]
+        b = target_img.size()[0]
 
         valid = torch.ones(b, 1, 30, 30).cuda()
         fake = torch.zeros(b, 1, 30, 30).cuda()
 
-        fake_se = self.G_so2se(source_img)
-        fake_so = self.G_se2so(segmentation_img)
-        cycled_se = self.G_so2se(fake_so)
-        cycled_so = self.G_se2so(fake_se)
+        fake_se = self.G_ta2se(target_img)
+        fake_ta = self.G_se2ta(segmentation_img)
+        cycled_se = self.G_ta2se(fake_ta)
+        cycled_ta = self.G_se2ta(fake_se)
 
         if optimizer_idx == 0 or optimizer_idx == 1 or optimizer_idx == 4:
             # Train Generator
             # Validity
             # MSELoss
-            val_so = self.generator_loss(self.D_so(fake_so), valid)
+            val_ta = self.generator_loss(self.D_ta(fake_ta), valid)
             val_se = self.generator_loss(self.D_se(fake_se), valid)
-            val_loss = (val_so + val_se) / 2
+            val_loss = (val_ta + val_se) / 2
 
             # Reconstruction
             reconstr_se = self.mae(cycled_se, segmentation_img)
-            reconstr_so = self.mae(cycled_so, source_img)
-            reconstr_loss = (reconstr_se + reconstr_so) / 2
+            reconstr_ta = self.mae(cycled_ta, target_img)
+            reconstr_loss = (reconstr_se + reconstr_ta) / 2
 
             # Identity
-            id_so = self.mae(self.G_so2se(segmentation_img), segmentation_img)
-            id_se = self.mae(self.G_se2so(source_img), source_img)
-            id_loss = (id_so + id_se) / 2
+            id_ta = self.mae(self.G_ta2se(segmentation_img), segmentation_img)
+            id_se = self.mae(self.G_se2ta(target_img), target_img)
+            id_loss = (id_ta + id_se) / 2
 
             # Loss Weight
             G_loss = val_loss + self.reconstr_w * reconstr_loss + self.id_w * id_loss
@@ -104,13 +104,13 @@ class GamSystem(pl.LightningModule):
 
             logs = {
                 "G_loss": G_loss,
-                "val_so": val_so,
+                "val_ta": val_ta,
                 "val_se": val_se,
                 "val_loss": val_loss,
-                "reconstr_so": reconstr_so,
+                "reconstr_ta": reconstr_ta,
                 "reconstr_se": reconstr_se,
                 "reconstr_loss": reconstr_loss,
-                "id_so": id_so,
+                "id_ta": id_ta,
                 "id_se": id_se,
                 "id_loss": id_loss
             }
@@ -124,32 +124,32 @@ class GamSystem(pl.LightningModule):
         elif optimizer_idx == 2 or optimizer_idx == 3:
             # Train Discriminator
             # MSELoss
-            D_so_gen_loss = self.discriminator_loss(
-                self.D_so(fake_so), fake
+            D_ta_gen_loss = self.discriminator_loss(
+                self.D_ta(fake_ta), fake
             )
             D_se_gen_loss = self.discriminator_loss(
                 self.D_se(fake_se), fake
             )
-            D_so_valid_loss = self.discriminator_loss(
-                self.D_so(source_img), valid
+            D_ta_valid_loss = self.discriminator_loss(
+                self.D_ta(target_img), valid
             )
             D_se_valid_loss = self.discriminator_loss(
                 self.D_se(segmentation_img), valid
             )
 
-            D_gen_loss = (D_so_gen_loss + D_se_gen_loss) / 2
+            D_gen_loss = (D_ta_gen_loss + D_se_gen_loss) / 2
 
             # Loss Weight
-            D_loss = (D_gen_loss + D_so_valid_loss + D_se_valid_loss) / 3
+            D_loss = (D_gen_loss + D_ta_valid_loss + D_se_valid_loss) / 3
 
             # Count up
             self.cnt_train_step += 1
 
             logs = {
                 "D_loss": D_loss,
-                "D_so_gen_loss": D_so_gen_loss,
+                "D_ta_gen_loss": D_ta_gen_loss,
                 "D_se_gen_loss": D_se_gen_loss,
-                "D_so_valid_loss": D_so_valid_loss,
+                "D_ta_valid_loss": D_ta_valid_loss,
                 "D_se_valid_loss": D_se_valid_loss,
                 "D_gen_loss": D_gen_loss,
             }
@@ -166,4 +166,4 @@ class GamSystem(pl.LightningModule):
         return None
 
     def generate(self, inputs):
-        return self.G_se2so(inputs)
+        return self.G_se2ta(inputs)

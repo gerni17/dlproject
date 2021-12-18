@@ -86,8 +86,8 @@ def main():
     # LightningModule  --------------------------------------------------------------
 
     gogoll_net_config = {
-        "G_se2so": G_basestyle,
-        "G_so2se": G_stylebase,
+        "G_se2ta": G_basestyle,
+        "G_ta2se": G_stylebase,
         "D_so": D_base,
         "D_se": D_style,
         "lr": lr,
@@ -140,7 +140,7 @@ def main():
             cfg.gogoll_checkpoint_path, **gogoll_net_config
         )
 
-    generator = main_system.G_se2so
+    generator = main_system.G_se2ta
 
     # Train datamodules
     dm_source = LabeledDataModule(

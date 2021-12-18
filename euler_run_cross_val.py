@@ -46,10 +46,10 @@ def main():
     lr = {
         "G": 0.0002,
         "D": 0.0002,
-        "seg_s": 0.0002,
-        "seg_t": 0.0002,
+        "seg_s": 0.0001,
+        "seg_t": 0.0001,
     }
-    seg_s_lr = 0.0002
+    seg_s_lr = 0.0001
     epochs_seg = cfg.num_epochs_seg
     epochs_gogoll = cfg.num_epochs_gogoll
     reconstr_w = cfg.reconstruction_weight
@@ -202,7 +202,7 @@ def main():
     # Image Generation & Saving  --------------------------------------------------------------
     if cfg.save_generated_images:
         dm_source = LabeledDataModule(
-            path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True, max_imgs=200
+            path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True, max_imgs=3000
         )
         save_path = path.join(cfg.generated_dataset_save_root, run_name)
         # Generate fake target domain images and save them to a persistent folder (with the
@@ -214,16 +214,16 @@ def main():
             logger=seg_wandb_logger,
             max_images=cfg.max_generated_images_saved,
         )
-    
+
     # Train datamodules
     dm_source = LabeledDataModule(
-        path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True, max_imgs=200
+        path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True, max_imgs=3000
     )
     dm_generated = GeneratedDataModule(generator, dm_source, batch_size=batch_size)
     
     # easy dataset with full dataset in test loader
     dm_easy_test = TestLabeledDataModule(
-        path.join(data_dir, 'easy'), transform, batch_size=batch_size, max_imgs=200
+        path.join(data_dir, 'easy'), transform, batch_size=batch_size, max_imgs=3000
     )
 
     n_splits = 5

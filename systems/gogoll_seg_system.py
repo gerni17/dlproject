@@ -12,6 +12,7 @@ import torchmetrics
 from torchvision.utils import make_grid
 from torch import nn, optim
 import pytorch_lightning as pl
+from torch.optim.lr_scheduler import LambdaLR
 
 
 class GogollSegSystem(pl.LightningModule):
@@ -26,11 +27,11 @@ class GogollSegSystem(pl.LightningModule):
         self.losses = []
 
     def configure_optimizers(self):
-        self.global_optimizer = optim.Adam(
-            self.net.parameters(), lr=self.lr, betas=(0.5, 0.999),
-        )
-
-        return [self.global_optimizer,], []
+        optimizer = optim.Adam(self.parameters(), lr=self.lr, betas=(0.5, 0.999),)
+        sched=LambdaLR(
+            optimizer,
+            lambda ep: max(1e-6, (1 - ep / self.cfg.num_epochs) ** self.cfg.lr_scheduler_power))
+        return [optimizer], [sched]
 
     def training_step(self, batch, batch_idx):
         source_img, segmentation_img, target_img = (

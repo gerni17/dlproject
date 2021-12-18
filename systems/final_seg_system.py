@@ -13,6 +13,7 @@ from torch import nn, optim
 import pytorch_lightning as pl
 from utils.metrics import MetricsSemseg
 from torchmetrics import IoU
+from torch.optim.lr_scheduler import LambdaLR
 
 
 class FinalSegSystem(pl.LightningModule):
@@ -29,11 +30,11 @@ class FinalSegSystem(pl.LightningModule):
         self.metrics_semseg = MetricsSemseg(3, names)
 
     def configure_optimizers(self):
-        self.global_optimizer = optim.Adam(
-            self.net.parameters(), lr=self.lr, betas=(0.5, 0.999),
-        )
-
-        return [self.global_optimizer]
+        optimizer = optim.Adam(self.parameters(), lr=self.lr, betas=(0.5, 0.999),)
+        sched=LambdaLR(
+            optimizer,
+            lambda ep: max(1e-6, (1 - ep / self.cfg.num_epochs) ** self.cfg.lr_scheduler_power))
+        return [optimizer], [sched]
 
     def training_step(self, batch, batch_idx):
         source_img, segmentation_img = (batch["source"], batch["source_segmentation"])

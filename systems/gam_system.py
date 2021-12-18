@@ -28,6 +28,7 @@ class GamSystem(pl.LightningModule):
         self.step = 0
 
         self.mae = nn.L1Loss()
+        self.cse_loss = nn.CrossEntropyLoss()
         self.generator_loss = nn.MSELoss()
         self.discriminator_loss = nn.MSELoss()
         # self.semseg_loss = torchmetrics.IoU(3)
@@ -89,7 +90,7 @@ class GamSystem(pl.LightningModule):
             val_loss = (val_ta + val_se) / 2
 
             # Reconstruction
-            reconstr_se = self.mae(cycled_se, segmentation_img)
+            reconstr_se = self.cse_loss(cycled_se, segmentation_img)
             reconstr_ta = self.mae(cycled_ta, target_img)
             reconstr_loss = (reconstr_se + reconstr_ta) / 2
 

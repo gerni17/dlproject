@@ -30,7 +30,7 @@ class GamPipelineImageLogger(Callback):
 
         self.target_imgs = val_samples["target"]
         self.seg_imgs = val_samples["source_segmentation"]
-        self.seg_imgs = torch.reshape(self.seg_imgs, (self.seg_imgs.shape[0], 1, self.seg_imgs.shape[1], self.seg_imgs.shape[2])).float()
+        self.seg_imgs = self.seg_imgs.float()
 
     def on_train_epoch_end(self, trainer, pl_module, *args):
         target_imgs = self.target_imgs.to(device=pl_module.device)

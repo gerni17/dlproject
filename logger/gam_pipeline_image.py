@@ -30,13 +30,10 @@ class GamPipelineImageLogger(Callback):
 
         self.target_imgs = val_samples["target"]
         self.seg_imgs = val_samples["source_segmentation"]
-
-        self.label_imgs = prepare_semseg(self.seg_imgs)
         self.seg_imgs = torch.reshape(self.seg_imgs, (self.seg_imgs.shape[0], 1, self.seg_imgs.shape[1], self.seg_imgs.shape[2])).float()
 
     def on_train_epoch_end(self, trainer, pl_module, *args):
         target_imgs = self.target_imgs.to(device=pl_module.device)
-        labeled_imgs = self.label_imgs.to(device=pl_module.device)
         seg_imgs = self.seg_imgs.to(device=pl_module.device)
 
         batch_size = target_imgs.shape[0]
@@ -48,7 +45,7 @@ class GamPipelineImageLogger(Callback):
         generated_target = G_se2ta(seg_imgs)
         cycled_segmentation = G_ta2se(G_se2ta(seg_imgs))
 
-        plant_imgs = torch.cat([labeled_imgs, cycled_segmentation, generated_target], dim=0)
+        plant_imgs = torch.cat([prepare_semseg(seg_imgs), prepare_semseg(cycled_segmentation), generated_target], dim=0)
 
         plant_imgs = plant_imgs * 0.5 + 0.5
         plant_imgs = plant_imgs * 255

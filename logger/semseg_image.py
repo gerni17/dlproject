@@ -10,7 +10,7 @@ def prepare_semseg(img):
     assert (img.dim() == 3 or img.dim() == 4 and img.shape[1] == 1) and img.dtype in (
         torch.int,
         torch.long,
-    ), f"Expecting 4D tensor with semseg classes, got {img.shape}"
+    ), f"Expecting 4D tensor with semseg classes, got {img.shape} and type {img.dtype}"
     if img.dim() == 4:
         img = img.squeeze(1)
     semseg_color_map = [(0, 0, 0), (0, 200, 0), (200, 0, 0)]

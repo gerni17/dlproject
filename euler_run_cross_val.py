@@ -75,7 +75,7 @@ def main():
 
     # DataModule  -----------------------------------------------------------------
     dm = GogollDataModule(
-        path.join(data_dir, 'exp'), path.join(data_dir, 'easy', 'rgb'), transform, batch_size
+        path.join(data_dir, 'source'), path.join(data_dir, 'easy', 'rgb'), transform, batch_size
     )  # used for training
 
     # Sub-Models  -----------------------------------------------------------------
@@ -202,7 +202,7 @@ def main():
     # Image Generation & Saving  --------------------------------------------------------------
     if cfg.save_generated_images:
         dm_source = LabeledDataModule(
-            path.join(data_dir, 'exp'), transform, batch_size=batch_size, split=True
+            path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True
         )
         save_path = path.join(cfg.generated_dataset_save_root, run_name)
         # Generate fake target domain images and save them to a persistent folder (with the
@@ -217,7 +217,7 @@ def main():
     
     # Train datamodules
     dm_source = LabeledDataModule(
-        path.join(data_dir, 'exp'), transform, batch_size=batch_size, split=True
+        path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True
     )
     dm_generated = GeneratedDataModule(generator, dm_source, batch_size=batch_size)
     

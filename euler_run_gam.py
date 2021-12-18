@@ -70,7 +70,7 @@ def main():
 
     # DataModule  -----------------------------------------------------------------
     dm = GogollDataModule(
-        path.join(data_dir, 'exp'), path.join(data_dir, 'easy', 'rgb'), transform, batch_size
+        path.join(data_dir, 'source'), path.join(data_dir, 'easy', 'rgb'), transform, batch_size
     )
 
     # Sub-Models  -----------------------------------------------------------------
@@ -144,7 +144,7 @@ def main():
 
     # Train datamodules
     dm_source = LabeledDataModule(
-        path.join(data_dir, 'exp'), transform, batch_size=batch_size, split=True
+        path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True
     )
     dm_generated = GeneratedGamDataModule(generator, dm_source, batch_size=batch_size)
     

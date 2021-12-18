@@ -86,10 +86,10 @@ def main():
     # LightningModule  --------------------------------------------------------------
 
     gogoll_net_config = {
-        "G_s2t": G_basestyle,
-        "G_t2s": G_stylebase,
-        "D_source": D_base,
-        "D_target": D_style,
+        "G_se2so": G_basestyle,
+        "G_so2se": G_stylebase,
+        "D_so": D_base,
+        "D_se": D_style,
         "lr": lr,
         "reconstr_w": reconstr_w,
         "id_w": id_w,

@@ -8,6 +8,7 @@ from datasets.generated_gam import GeneratedGamDataModule
 from datasets.labeled import LabeledDataModule
 from datasets.crossval import CrossValidationDataModule
 from datasets.test import TestLabeledDataModule
+from logger.gam_pipeline_image import GamPipelineImageLogger
 from logger.gogoll_baseline_image import GogollBaselineImageLogger
 from logger.gogoll_pipeline_image import GogollPipelineImageLogger
 from models.unet_light_semseg import UnetLight
@@ -114,7 +115,7 @@ def main():
     )
 
     # save the generated images (from the validation data) after every epoch to wandb
-    pipeline_image_callback = GogollPipelineImageLogger(dm, log_key="Pipeline")
+    pipeline_image_callback = GamPipelineImageLogger(dm, log_key="Pipeline")
 
     # Trainer  --------------------------------------------------------------
     print("Start training", run_name)

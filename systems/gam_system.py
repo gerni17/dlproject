@@ -91,7 +91,7 @@ class GamSystem(pl.LightningModule):
             val_loss = (val_ta + val_se) / 2
 
             # Reconstruction
-            reconstr_se = self.cse_loss(cycled_se, segmentation_img_target)
+            reconstr_se = self.cse_loss(cycled_se, segmentation_img_target.argmax(dim=1))
             reconstr_ta = self.mae(cycled_ta, target_img)
             reconstr_loss = (reconstr_se + reconstr_ta) / 2
 

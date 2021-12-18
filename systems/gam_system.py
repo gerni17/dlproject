@@ -69,6 +69,7 @@ class GamSystem(pl.LightningModule):
             batch["target"],
         )
 
+        segmentation_img_target = segmentation_img.long()
         segmentation_img = segmentation_img.float()
 
         b = target_img.size()[0]
@@ -90,7 +91,7 @@ class GamSystem(pl.LightningModule):
             val_loss = (val_ta + val_se) / 2
 
             # Reconstruction
-            reconstr_se = self.cse_loss(cycled_se, segmentation_img)
+            reconstr_se = self.cse_loss(cycled_se, segmentation_img_target)
             reconstr_ta = self.mae(cycled_ta, target_img)
             reconstr_loss = (reconstr_se + reconstr_ta) / 2
 

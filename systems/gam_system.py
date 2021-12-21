@@ -71,6 +71,7 @@ class GamSystem(pl.LightningModule):
 
         segmentation_img_target = segmentation_img.long()
         segmentation_img = segmentation_img.float()
+        segmentation_img_noise = torch.randn(segmentation_img.shape) * 0.1 + 1
 
         b = target_img.size()[0]
 
@@ -78,7 +79,7 @@ class GamSystem(pl.LightningModule):
         fake = torch.zeros(b, 1, 30, 30).cuda()
 
         fake_se = self.G_ta2se(target_img)
-        fake_ta = self.G_se2ta(segmentation_img)
+        fake_ta = self.G_se2ta(segmentation_img * segmentation_img_noise)
         cycled_se = self.G_ta2se(fake_ta)
         cycled_ta = self.G_se2ta(fake_se)
 

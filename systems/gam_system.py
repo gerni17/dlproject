@@ -72,6 +72,7 @@ class GamSystem(pl.LightningModule):
         segmentation_img_target = segmentation_img.long()
         segmentation_img = segmentation_img.float()
         segmentation_img_noise = torch.randn(segmentation_img.shape) * 0.1 + 1
+        segmentation_img_noise = segmentation_img_noise.to(device=self.device)
 
         b = target_img.size()[0]
 

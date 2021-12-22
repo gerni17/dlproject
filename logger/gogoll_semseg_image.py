@@ -71,4 +71,4 @@ class GogollSemsegImageLogger(Callback):
                 {self.log_key: [wandb.Image(joined_images)]}, commit=False,
             )
         except BaseException as err:
-            print(f"Error occured while uploading image to wandb. {err=}, {type(err)=}")
+            print(f"Error occured while uploading image to wandb. {err}, {type(err)}")

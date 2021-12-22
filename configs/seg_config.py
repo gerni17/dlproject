@@ -64,7 +64,9 @@ def command_line_parser():
         default=None,
         help="Resume training from checkpoint, which can also be an AWS link s3://...",
     )
-
+    parser.add_argument(
+        '--lr_scheduler_power', type=float, default=0.9, help='Poly learning rate power')
+        
     # -------------------------- model settings --------------------------
 
     # -------------------------- data settings --------------------------

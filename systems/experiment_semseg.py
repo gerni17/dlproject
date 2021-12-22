@@ -7,6 +7,8 @@ from torch.utils.data.dataloader import default_collate
 from torch import nn, optim
 from utils.metrics import MetricsSemseg
 from torchmetrics import IoU
+from torch.optim.lr_scheduler import LambdaLR
+
 
 
 class Semseg(pl.LightningModule):
@@ -24,7 +26,10 @@ class Semseg(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.lr, betas=(0.5, 0.999),)
-        return [optimizer], []
+        sched=LambdaLR(
+            optimizer,
+            lambda ep: max(1e-6, (1 - ep / self.cfg.num_epochs) ** self.cfg.lr_scheduler_power))
+        return [optimizer], [sched]
 
     def training_step(self, batch, batch_nb):
         rgb, label = (batch["source"], batch["source_segmentation"])
@@ -86,7 +91,7 @@ class Semseg(pl.LightningModule):
         metrics_semseg = self.metrics_semseg.get_metrics_summary()
         self.metrics_semseg.reset()
 
-        metric_semseg = metrics_semseg["mean_iou"]
+        metric_semseg = metrics_semseg['MEAN IOU']
 
         scalar_logs = {
             "metrics_summary/semseg": metric_semseg,
@@ -120,7 +125,7 @@ class Semseg(pl.LightningModule):
         metrics_semseg = self.metrics_semseg.get_metrics_summary()
         self.metrics_semseg.reset()
 
-        metric_semseg = metrics_semseg['mean_iou']
+        metric_semseg = metrics_semseg['MEAN IOU']
 
 
         scalar_logs = {

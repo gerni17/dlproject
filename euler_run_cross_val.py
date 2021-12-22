@@ -46,10 +46,9 @@ def main():
     lr = {
         "G": 0.0002,
         "D": 0.0002,
-        "seg_s": 0.0002,
-        "seg_t": 0.0002,
+        "seg_s": cfg.seg_lr,
+        "seg_t": cfg.seg_lr,
     }
-    seg_s_lr = 0.0002
     epochs_seg = cfg.num_epochs_seg
     epochs_gogoll = cfg.num_epochs_gogoll
     reconstr_w = cfg.reconstruction_weight
@@ -91,7 +90,7 @@ def main():
         init_weights(net, init_type="normal")
 
     # LightningModule  --------------------------------------------------------------
-    seg_system = GogollSegSystem(seg_net_s, lr=seg_s_lr)
+    seg_system = GogollSegSystem(seg_net_s, cfg=cfg)
 
     gogoll_net_config = {
         "G_s2t": G_basestyle,
@@ -214,7 +213,7 @@ def main():
             logger=seg_wandb_logger,
             max_images=cfg.max_generated_images_saved,
         )
-    
+
     # Train datamodules
     dm_source = LabeledDataModule(
         path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True
@@ -268,9 +267,8 @@ def evaluate_ours(
 
     for i in range(n_splits):
         # Cross Validation Run
-        seg_lr = 0.0002
         seg_net = UnetLight()
-        seg_system = FinalSegSystem(seg_net, lr=seg_lr)
+        seg_system = FinalSegSystem(seg_net, cfg=cfg)
 
         # Logger  --------------------------------------------------------------
         seg_wandb_logger = (

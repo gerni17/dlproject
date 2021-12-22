@@ -24,13 +24,12 @@ def main():
 
     project_name = cfg.project
     run_name = f"{cfg.name}_{timestamp}_{str(uuid.uuid4())[:2]}"
-    log_path = f"logs/{run_name}/"
-
+    log_path = f"{cfg.log_dir}/{run_name}/"
     data_dir = cfg.dataset_root
 
     # Config  -----------------------------------------------------------------
     batch_size = cfg.batch_size
-    lr = 0.0002
+    lr = 0.0001
     epoch = cfg.num_epochs
 
     # Data Preprocessing  -----------------------------------------------------------------
@@ -62,10 +61,10 @@ def main():
     checkpoint_callback = ModelCheckpoint(
         dirpath=log_path,
         save_last=False,
-        save_top_k=2,
+        save_top_k=3,
         verbose=False,
-        monitor="loss_train/semseg",
-        mode="max",
+        monitor="loss_val/semseg",
+        mode="min",
     )
 
     # save the generated images (from the validation data) after every epoch to wandb

@@ -85,7 +85,7 @@ def main():
         init_weights(net, init_type="normal")
 
     # LightningModule  --------------------------------------------------------------
-    seg_system = GogollSegSystem(seg_net_s, lr=seg_s_lr)
+    seg_system = GogollSegSystem(seg_net_s, cfg=cfg)
 
     gogoll_net_config = {
         "G_s2t": G_basestyle,

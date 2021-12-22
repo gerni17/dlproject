@@ -107,9 +107,8 @@ def evaluate_baseline(
     }
     for i in range(n_splits):
         # Cross Validation Run
-        seg_lr = 0.0002
         seg_net = UnetLight()
-        seg_system = FinalSegSystem(seg_net, lr=seg_lr)
+        seg_system = FinalSegSystem(seg_net, cfg=cfg)
         safe_baseline_name = baseline_name.replace(' ', '_').replace('(', '').replace(')', '').replace('<>', 'to').lower()
 
         # Logger  --------------------------------------------------------------

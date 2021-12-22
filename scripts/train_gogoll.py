@@ -98,12 +98,13 @@ def main():
         "reconstr_w": reconstr_w,
         "id_w": id_w,
         "seg_w": seg_w,
+        "cfg": cfg,
     }
     main_system = GogollSystem(**gogoll_net_config)
 
     # Logger  --------------------------------------------------------------
     seg_wandb_logger = (
-        WandbLogger(project=project_name, name=run_name, prefix="seg")
+        WandbLogger(project=project_name, name=run_name, prefix="source_seg")
         if cfg.use_wandb
         else None
     )

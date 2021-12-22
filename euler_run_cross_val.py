@@ -103,12 +103,13 @@ def main():
         "reconstr_w": reconstr_w,
         "id_w": id_w,
         "seg_w": seg_w,
+        "cfg": cfg,
     }
     main_system = GogollSystem(**gogoll_net_config)
 
     # Logger  --------------------------------------------------------------
     seg_wandb_logger = (
-        WandbLogger(project=project_name, name=run_name, prefix="seg")
+        WandbLogger(project=project_name, name=run_name, prefix="source_seg")
         if cfg.use_wandb
         else None
     )
@@ -231,7 +232,7 @@ def main():
 
     # train the final segmentation net that we use to evaluate if our augmented dataset helps
     # with training a segnet that is more robust to different domains/conditions
-    n_cross_val_epochs = 10
+    n_cross_val_epochs = cfg.num_epochs_seg
 
     evaluate_ours(
         cfg,
@@ -275,7 +276,6 @@ def evaluate_ours(
             WandbLogger(
                 project=project_name,
                 name=run_name,
-                prefix=f"(Ours) ",
             )
             if cfg.use_wandb
             else None
@@ -284,7 +284,7 @@ def evaluate_ours(
         # Callbacks  --------------------------------------------------------------
         # save the model
         segmentation_checkpoint_callback = ModelCheckpoint(
-            dirpath=path.join(log_path, f"segmentation_final_ours"),
+            dirpath=path.join(log_path, f"segmentation_final"),
             save_last=False,
             save_top_k=1,
             verbose=False,
@@ -295,13 +295,13 @@ def evaluate_ours(
         semseg_image_callback = GogollSemsegImageLogger(
             train_datamodule,
             network="net",
-            log_key=f"Segmentation (Final - Ours) - Train",
+            log_key=f"Segmentation (Final) - Train",
         )
 
         baseline_image_callback = GogollBaselineImageLogger(
             test_datamodule,
             network="net",
-            log_key=f"Segmentation (Final - Ours)",
+            log_key=f"Segmentation (Final)",
         )
 
         cv_trainer = Trainer(
@@ -323,10 +323,10 @@ def evaluate_ours(
         fold_metrics["crop"].append(res[0]["Test Metric Summary - crop"])
 
     # Acess dict values of trainer after test and get metrics for average
-    wandb.run.summary[f"Crossvalidation IOU (Ours)"] = mean(fold_metrics["iou"])
-    wandb.run.summary[f"Crossvalidation IOU Soil (Ours)"] = mean(fold_metrics["soil"])
-    wandb.run.summary[f"Crossvalidation IOU Weed (Ours)"] = mean(fold_metrics["weed"])
-    wandb.run.summary[f"Crossvalidation IOU Crop (Ours)"] = mean(fold_metrics["crop"])
+    wandb.run.summary[f"Crossvalidation IOU"] = mean(fold_metrics["iou"])
+    wandb.run.summary[f"Crossvalidation IOU Soil"] = mean(fold_metrics["soil"])
+    wandb.run.summary[f"Crossvalidation IOU Weed"] = mean(fold_metrics["weed"])
+    wandb.run.summary[f"Crossvalidation IOU Crop"] = mean(fold_metrics["crop"])
 
 
 if __name__ == "__main__":

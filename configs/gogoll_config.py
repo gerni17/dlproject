@@ -111,6 +111,13 @@ def command_line_parser():
         '--lr_scheduler_power', type=float, default=0.9, help='Poly learning rate power')
 
     parser.add_argument(
+        "--lr_ratio",
+        type=float,
+        default=3,
+        help="Ratio for the learing rate of the target segmentation network in the gogol net",
+    )
+
+    parser.add_argument(
         '--seg_lr', type=float, default=0.0001, help='Poly learning rate power')
 
     # -------------------------- model settings --------------------------

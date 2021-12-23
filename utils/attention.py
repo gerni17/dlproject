@@ -12,3 +12,7 @@ def toZeroThreshold(x, t=0.1):
 def clamp(x):
 	ones = Tensor(x.float().shape).fill_(1.0)
 	return torch.where(x.float() <= 1.0, x.float(), ones)
+
+def extractClass(x, c=2.0):
+	zeros = Tensor(x.float().shape).fill_(0.0)
+	return torch.where(x.float() == c, x.float(), zeros)

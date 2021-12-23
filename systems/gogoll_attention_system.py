@@ -12,7 +12,7 @@ import torchmetrics
 from torchvision.utils import make_grid
 from torch import nn, optim
 import pytorch_lightning as pl
-from utils.attention import toZeroThreshold, clamp
+from utils.attention import toZeroThreshold, clamp, extractClass
 
 
 class GogollAttentionSystem(pl.LightningModule):
@@ -133,7 +133,9 @@ class GogollAttentionSystem(pl.LightningModule):
 
         #Do the attention thing
         # S --> S'' 
-        attnMapS = toZeroThreshold(self.A_s(source_img))
+        seg_mask = extractClass(torch.unsqueeze(segmentation_img, axis=1))
+        seg_mask = clamp(seg_mask)
+        attnMapS = clamp(toZeroThreshold(self.A_s(source_img))+seg_mask)
         fgS = attnMapS * source_img
         bgS = (1 - attnMapS) * source_img
         genT = self.G_s2t(fgS) 

@@ -232,7 +232,7 @@ class GogollAttentionSystem(pl.LightningModule):
                 logs, on_step=False, on_epoch=True, prog_bar=True, logger=True
             )
 
-            return G_loss + Seg_loss
+            return 4*G_loss + Seg_loss
 
         elif optimizer_idx == 2 or optimizer_idx == 3:
             # Train Discriminator

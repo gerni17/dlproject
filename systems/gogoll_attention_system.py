@@ -133,8 +133,7 @@ class GogollAttentionSystem(pl.LightningModule):
 
         #Do the attention thing
         # S --> S'' 
-        seg_mask = clamp(torch.unsqueeze(segmentation_img, axis=1))
-        attnMapS = clamp(toZeroThreshold(self.A_s(source_img))+seg_mask)
+        attnMapS = toZeroThreshold(self.A_s(source_img))
         fgS = attnMapS * source_img
         bgS = (1 - attnMapS) * source_img
         genT = self.G_s2t(fgS) 
@@ -231,7 +230,7 @@ class GogollAttentionSystem(pl.LightningModule):
                 logs, on_step=False, on_epoch=True, prog_bar=True, logger=True
             )
 
-            return 4 * G_loss + Seg_loss
+            return G_loss + Seg_loss
 
         elif optimizer_idx == 2 or optimizer_idx == 3:
             # Train Discriminator

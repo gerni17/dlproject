@@ -133,7 +133,8 @@ class GogollAttentionSystem(pl.LightningModule):
 
         #Do the attention thing
         # S --> S'' 
-        attnMapS = clamp(torch.unsqueeze(segmentation_img, axis=1))
+        seg_mask = clamp(torch.unsqueeze(segmentation_img, axis=1))
+        attnMapS = clamp(toZeroThreshold(self.A_s(source_img))+seg_mask)
         fgS = attnMapS * source_img
         bgS = (1 - attnMapS) * source_img
         genT = self.G_s2t(fgS) 

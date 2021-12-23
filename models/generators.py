@@ -1,5 +1,5 @@
 from torch import nn
-from models.layers import Downsample, Upsample
+from models.layers import Downsample, Upsample, ResBlock
 
 
 class CycleGANGenerator(nn.Module):

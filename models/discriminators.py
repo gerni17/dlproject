@@ -1,5 +1,7 @@
+import torch
 from torch import nn
 from models.layers import Downsample
+import torch.nn.functional as F
 
 
 class CycleGANDiscriminator(nn.Module):
@@ -25,7 +27,7 @@ class AttentionDiscriminator(nn.Module):
     
 
     def __init__(self, input_nc=3):
-        super(Dis, self).__init__()
+        super(AttentionDiscriminator, self).__init__()
 
         model = [   nn.Conv2d(input_nc, 64, 4, stride=2, padding=1),
                     nn.LeakyReLU(0.2, inplace=True) ]

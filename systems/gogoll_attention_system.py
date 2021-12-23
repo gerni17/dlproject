@@ -133,24 +133,24 @@ class GogollAttentionSystem(pl.LightningModule):
 
         #Do the attention thing
         # S --> S'' 
-        attnMapS = toZeroThreshold(self.A_s(source_img), t=0.5)
+        attnMapS = toZeroThreshold(self.A_s(source_img))
         fgS = attnMapS * source_img
         bgS = (1 - attnMapS) * source_img
         genT = self.G_s2t(fgS) 
         fakeT = (attnMapS * genT) + bgS
-        attnMapfakeT = toZeroThreshold(self.A_t(fakeT), t=0.5)
+        attnMapfakeT = toZeroThreshold(self.A_t(fakeT))
         fgfakeT = attnMapfakeT * fakeT
         bgfakeT = (1 - attnMapfakeT) * fakeT
         genS_ = self.G_t2s(fgfakeT)
         S_ = (attnMapfakeT * genS_) + bgfakeT
 
         # T --> T''
-        attnMapT = toZeroThreshold(self.A_t(target_img), t=0.5)
+        attnMapT = toZeroThreshold(self.A_t(target_img))
         fgT = attnMapT * target_img
         bgT = (1 - attnMapT) * target_img
         genS = self.G_t2s(fgT) 
         fakeS = (attnMapT * genS) + bgT
-        attnMapfakeS = toZeroThreshold(self.A_s(fakeS), t=0.5)
+        attnMapfakeS = toZeroThreshold(self.A_s(fakeS))
         fgfakeS = attnMapfakeS * fakeS
         bgfakeS = (1 - attnMapfakeS) * fakeS
         genT_ = self.G_s2t(fgfakeS)

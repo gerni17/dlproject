@@ -29,6 +29,8 @@ from systems.gogoll_system import GogollSystem
 
 from models.attention_model import AttentionNet
 from systems.gogoll_attention_system import GogollAttentionSystem
+from models.discriminators import AttentionDiscriminator
+from models.generators import AttentionGenerator
 
 from numpy import mean
 
@@ -69,10 +71,10 @@ def main():
     # Sub-Models  -----------------------------------------------------------------
     seg_net_s = UnetLight()
     seg_net_t = UnetLight()
-    G_basestyle = CycleGANGenerator(filter=cfg.generator_filters)
-    G_stylebase = CycleGANGenerator(filter=cfg.generator_filters)
-    D_base = CycleGANDiscriminator(filter=cfg.discriminator_filters)
-    D_style = CycleGANDiscriminator(filter=cfg.discriminator_filters)
+    G_basestyle = AttentionGenerator()
+    G_stylebase = AttentionGenerator()
+    D_base = AttentionDiscriminator()
+    D_style = AttentionDiscriminator()
     A_base = AttentionNet()
     A_style = AttentionNet()
 

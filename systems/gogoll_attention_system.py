@@ -12,7 +12,7 @@ import torchmetrics
 from torchvision.utils import make_grid
 from torch import nn, optim
 import pytorch_lightning as pl
-from utils.attention import toZeroThreshold, clamp, extractClass
+from utils.attention import toZeroThreshold, clamp
 
 
 class GogollAttentionSystem(pl.LightningModule):
@@ -133,26 +133,24 @@ class GogollAttentionSystem(pl.LightningModule):
 
         #Do the attention thing
         # S --> S'' 
-        seg_mask = extractClass(torch.unsqueeze(segmentation_img, axis=1))
-        seg_mask = clamp(seg_mask)
-        attnMapS = clamp(toZeroThreshold(self.A_s(source_img))+seg_mask)
+        attnMapS = toZeroThreshold(self.A_s(source_img), t=0.5)
         fgS = attnMapS * source_img
         bgS = (1 - attnMapS) * source_img
         genT = self.G_s2t(fgS) 
         fakeT = (attnMapS * genT) + bgS
-        attnMapfakeT = toZeroThreshold(self.A_t(fakeT))
+        attnMapfakeT = toZeroThreshold(self.A_t(fakeT), t=0.5)
         fgfakeT = attnMapfakeT * fakeT
         bgfakeT = (1 - attnMapfakeT) * fakeT
         genS_ = self.G_t2s(fgfakeT)
         S_ = (attnMapfakeT * genS_) + bgfakeT
 
         # T --> T''
-        attnMapT = toZeroThreshold(self.A_t(target_img))
+        attnMapT = toZeroThreshold(self.A_t(target_img), t=0.5)
         fgT = attnMapT * target_img
         bgT = (1 - attnMapT) * target_img
         genS = self.G_t2s(fgT) 
         fakeS = (attnMapT * genS) + bgT
-        attnMapfakeS = toZeroThreshold(self.A_s(fakeS))
+        attnMapfakeS = toZeroThreshold(self.A_s(fakeS), t=0.5)
         fgfakeS = attnMapfakeS * fakeS
         bgfakeS = (1 - attnMapfakeS) * fakeS
         genT_ = self.G_s2t(fgfakeS)
@@ -232,7 +230,7 @@ class GogollAttentionSystem(pl.LightningModule):
                 logs, on_step=False, on_epoch=True, prog_bar=True, logger=True
             )
 
-            return 4*G_loss + Seg_loss
+            return 4 * G_loss + Seg_loss
 
         elif optimizer_idx == 2 or optimizer_idx == 3:
             # Train Discriminator

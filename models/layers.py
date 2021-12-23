@@ -100,3 +100,28 @@ class DoubleConv(nn.Module):
 
     def forward(self, x):
         return self.double_conv(x)
+
+class ResBlock(nn.Module):
+    
+
+    def __init__(self, in_features, norm=False):
+        super(ResBlock, self).__init__()
+
+        block = [  nn.ReflectionPad2d(1),
+                nn.Conv2d(in_features, in_features, 3),
+                # nn.InstanceNorm2d(in_features),
+                nn.ReLU(inplace=True),
+                nn.ReflectionPad2d(1),
+                nn.Conv2d(in_features, in_features, 3),
+                # nn.InstanceNorm2d(in_features)
+                ]
+
+        if norm:
+            block.insert(2,  nn.InstanceNorm2d(in_features))
+            block.insert(6,  nn.InstanceNorm2d(in_features))
+
+
+        self.model = nn.Sequential(*block)
+
+    def forward(self, x):
+        return x + self.model(x)

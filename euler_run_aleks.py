@@ -27,8 +27,10 @@ from models.generators import CycleGANGenerator
 from logger.gogoll_semseg_image import GogollSemsegImageLogger
 from systems.gogoll_system import GogollSystem
 
-from numpy import mean
+from models.attention_model import AttentionNet
+from systems.gogoll_attention_system import GogollAttentionSystem
 
+from numpy import mean
 
 def main():
     cfg = command_line_parser()
@@ -71,9 +73,11 @@ def main():
     G_stylebase = CycleGANGenerator(filter=cfg.generator_filters)
     D_base = CycleGANDiscriminator(filter=cfg.discriminator_filters)
     D_style = CycleGANDiscriminator(filter=cfg.discriminator_filters)
+    A_base = AttentionNet()
+    A_style = AttentionNet()
 
     # Init Weight  --------------------------------------------------------------
-    for net in [G_basestyle, G_stylebase, D_base, D_style]:
+    for net in [G_basestyle, G_stylebase, D_base, D_style, A_base, A_style]:
         init_weights(net, init_type="normal")
 
     # LightningModule  --------------------------------------------------------------
@@ -84,6 +88,8 @@ def main():
         "G_t2s": G_stylebase,
         "D_source": D_base,
         "D_target": D_style,
+        "A_s": A_base,
+        "A_t": A_style,
         "seg_s": seg_net_s,
         "seg_t": seg_net_t,
         "lr": lr,
@@ -91,7 +97,7 @@ def main():
         "id_w": id_w,
         "seg_w": seg_w,
     }
-    main_system = GogollSystem(**gogoll_net_config)
+    main_system = GogollAttentionSystem(**gogoll_net_config)
 
     # Logger  --------------------------------------------------------------
     seg_wandb_logger = (

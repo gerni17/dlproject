@@ -111,7 +111,7 @@ class GogollSystem(pl.LightningModule):
                 # self.d_optimizer,
                 # self.seg_optimizer,
             ],
-            [None, None, None, None, sched],
+            [sched],
         )
 
     def training_step(self, batch, batch_idx, optimizer_idx):

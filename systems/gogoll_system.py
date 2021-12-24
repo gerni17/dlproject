@@ -45,6 +45,7 @@ class GogollSystem(pl.LightningModule):
         self.cnt_train_step = 0
         self.step = 0
         self.cfg = cfg
+        self.initial_epoch = 9999999
 
         self.seg_t.load_state_dict(self.seg_s.state_dict())
 
@@ -92,7 +93,7 @@ class GogollSystem(pl.LightningModule):
             self.seg_t.parameters(), lr=self.lr["seg_t"]/self.cfg.lr_ratio, betas=(0.5, 0.999)
         )
 
-        # sched = LambdaLR(self.seg_t_optimizer, lambda ep: max(1e-6, (1 - ep / self.cfg.num_epochs_seg) ** self.cfg.lr_scheduler_power))
+        sched = LambdaLR(self.seg_t_optimizer, lambda ep: max(1e-6, (1 - (ep - self.initial_epoch) / self.cfg.num_epochs_seg) ** self.cfg.lr_scheduler_power))
 
         # self.g_optimizer = optim.Adam(chain(self.G_s2t.parameters(), self.G_t2s.parameters()), lr=self.lr["G"], betas=(0.5, 0.999))
         # self.d_optimizer = optim.Adam(chain(self.D_source.parameters(), self.D_target.parameters()), lr=self.lr["D"], betas=(0.5, 0.999))
@@ -111,10 +112,13 @@ class GogollSystem(pl.LightningModule):
                 # self.d_optimizer,
                 # self.seg_optimizer,
             ],
-            [],
+            [sched],
         )
 
     def training_step(self, batch, batch_idx, optimizer_idx):
+        if self.current_epoch > self.initial_epoch:
+            self.initial_epoch = self.current_epoch
+
         source_img, segmentation_img, target_img = (
             batch["source"],
             batch["source_segmentation"],

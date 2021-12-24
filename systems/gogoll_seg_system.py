@@ -46,7 +46,7 @@ class GogollSegSystem(pl.LightningModule):
 
         y_seg = self.net(source_img)
 
-        Seg_loss = self.semseg_loss(y_seg, segmentation_img)
+        Seg_loss = self.semseg_loss(y_seg, segmentation_img.long())
 
         logs = {
             "loss": Seg_loss,

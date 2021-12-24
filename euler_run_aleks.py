@@ -88,8 +88,6 @@ def main():
         "G_t2s": G_stylebase,
         "D_source": D_base,
         "D_target": D_style,
-        "A_s": A_base,
-        "A_t": A_style,
         "seg_s": seg_net_s,
         "seg_t": seg_net_t,
         "lr": lr,
@@ -97,7 +95,7 @@ def main():
         "id_w": id_w,
         "seg_w": seg_w,
     }
-    main_system = GogollAttentionSystem(**gogoll_net_config)
+    main_system = GogollSystem(**gogoll_net_config)
 
     # Logger  --------------------------------------------------------------
     seg_wandb_logger = (

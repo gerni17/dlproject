@@ -41,7 +41,7 @@ class FinalSegSystem(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         source_img, segmentation_img = (batch["source"], batch["source_segmentation"])
-        segmentation_img = extractClass(segmentation_img, c=1.0)
+        segmentation_img = extractClass(segmentation_img, c=2.0)
 
         y_seg = self.net(source_img)
 
@@ -64,7 +64,7 @@ class FinalSegSystem(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         source_img, segmentation_img = (batch["source"], batch["source_segmentation"])
-        segmentation_img = extractClass(segmentation_img, c=1.0)
+        segmentation_img = extractClass(segmentation_img, c=2.0)
 
         y_hat = self.net(source_img)
         loss_val_semseg = self.semseg_loss(y_hat, segmentation_img.long())
@@ -86,7 +86,7 @@ class FinalSegSystem(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         source_img, segmentation_img = (batch["source"], batch["source_segmentation"])
-        segmentation_img = extractClass(segmentation_img, c=1.0)
+        segmentation_img = extractClass(segmentation_img, c=2.0)
 
         y_seg = self.net(source_img)
 

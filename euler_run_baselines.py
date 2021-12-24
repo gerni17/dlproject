@@ -125,7 +125,7 @@ def evaluate_baseline(
         # Callbacks  --------------------------------------------------------------
         # save the model
         segmentation_checkpoint_callback = ModelCheckpoint(
-            dirpath=path.join(log_path, f"segmentation_final_{safe_baseline_name}"),
+            dirpath=path.join(log_path, f"segmentation_final_{safe_baseline_name}_{i}"),
             save_last=False,
             save_top_k=1,
             verbose=False,

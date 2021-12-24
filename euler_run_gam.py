@@ -217,7 +217,7 @@ def evaluate_ours(
         # Callbacks  --------------------------------------------------------------
         # save the model
         segmentation_checkpoint_callback = ModelCheckpoint(
-            dirpath=path.join(log_path, f"segmentation_final_{model_save_name}"),
+            dirpath=path.join(log_path, f"segmentation_final_{model_save_name}_{i}"),
             save_last=False,
             save_top_k=1,
             verbose=False,

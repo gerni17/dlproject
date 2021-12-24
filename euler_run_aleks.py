@@ -68,8 +68,8 @@ def main():
     )  # used for training
 
     # Sub-Models  -----------------------------------------------------------------
-    seg_net_s = UnetLight(n_classes=2)
-    seg_net_t = UnetLight(n_classes=2)
+    seg_net_s = UnetLight()
+    seg_net_t = UnetLight()
     G_basestyle = CycleGANGenerator(filter=cfg.generator_filters)
     G_stylebase = CycleGANGenerator(filter=cfg.generator_filters)
     D_base = CycleGANDiscriminator(filter=cfg.discriminator_filters)
@@ -89,6 +89,8 @@ def main():
         "G_t2s": G_stylebase,
         "D_source": D_base,
         "D_target": D_style,
+        "A_s": A_base, # Attention network for source mask
+        "A_t": A_style, # Attention network for target mask
         "seg_s": seg_net_s,
         "seg_t": seg_net_t,
         "lr": lr,
@@ -96,7 +98,7 @@ def main():
         "id_w": id_w,
         "seg_w": seg_w,
     }
-    main_system = GogollExpertSystem(**gogoll_net_config)
+    main_system = GogollAttentionSystem(**gogoll_net_config)
 
     # Logger  --------------------------------------------------------------
     seg_wandb_logger = (
@@ -261,7 +263,7 @@ def evaluate_ours(
     for i in range(n_splits):
         # Cross Validation Run
         seg_lr = 0.0002
-        seg_net = UnetLight(n_classes=2)
+        seg_net = UnetLight()
         seg_system = FinalSegSystem(seg_net, lr=seg_lr)
 
         # Logger  --------------------------------------------------------------

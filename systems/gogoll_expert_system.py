@@ -13,7 +13,7 @@ from torchvision.utils import make_grid
 from torch import nn, optim
 import pytorch_lightning as pl
 
-from utils.attention import extractClass
+from utils.attention import extractClass, clampToValue
 
 
 class GogollExpertSystem(pl.LightningModule):
@@ -115,6 +115,7 @@ class GogollExpertSystem(pl.LightningModule):
             batch["target"],
         )
         segmentation_img = extractClass(segmentation_img, c=2.0)
+        segmentation_img = clampToValue(segmentation_img, value=1.0)
         b = source_img.size()[0]
 
         valid = torch.ones(b, 1, 30, 30).cuda()

@@ -14,7 +14,7 @@ from torch import nn, optim
 import pytorch_lightning as pl
 from torch.optim.lr_scheduler import LambdaLR
 
-from utils.attention import extractClass
+from utils.attention import extractClass, clampToValue
 
 
 class GogollSegSystem(pl.LightningModule):
@@ -43,6 +43,7 @@ class GogollSegSystem(pl.LightningModule):
             batch["source_segmentation"],
         )
         segmentation_img = extractClass(segmentation_img, c=2.0)
+        segmentation_img = clampToValue(segmentation_img, value=1.0)
 
         y_seg = self.net(source_img)
 

@@ -114,8 +114,7 @@ class GogollExpertSystem(pl.LightningModule):
             batch["source_segmentation"],
             batch["target"],
         )
-        segmentation_img = extractClass(segmentation_img, c=2.0)
-        segmentation_img = clampToValue(segmentation_img, value=1.0)
+        segmentation_img = extractClass(segmentation_img, c=1.0)
         b = source_img.size()[0]
 
         valid = torch.ones(b, 1, 30, 30).cuda()

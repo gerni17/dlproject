@@ -42,8 +42,7 @@ class GogollSegSystem(pl.LightningModule):
             batch["source"],
             batch["source_segmentation"],
         )
-        segmentation_img = extractClass(segmentation_img, c=2.0)
-        segmentation_img = clampToValue(segmentation_img, value=1.0)
+        segmentation_img = extractClass(segmentation_img, c=1.0)
 
         y_seg = self.net(source_img)
 

@@ -261,7 +261,7 @@ def evaluate_ours(
     for i in range(n_splits):
         # Cross Validation Run
         seg_lr = 0.0002
-        seg_net = UnetLight()
+        seg_net = UnetLight(n_classes=2)
         seg_system = FinalSegSystem(seg_net, lr=seg_lr)
 
         # Logger  --------------------------------------------------------------

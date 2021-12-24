@@ -128,8 +128,8 @@ class GogollAttentionSystem(pl.LightningModule):
 
         b = source_img.size()[0]
 
-        valid = torch.ones(b, 1).cuda()
-        fake = torch.zeros(b, 1).cuda()
+        valid = torch.ones(b, 1, 30, 30).cuda()
+        fake = torch.zeros(b, 1, 30, 30).cuda()
 
         #Do the attention thing
         # S --> S'' 

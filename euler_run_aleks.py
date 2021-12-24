@@ -71,10 +71,10 @@ def main():
     # Sub-Models  -----------------------------------------------------------------
     seg_net_s = UnetLight()
     seg_net_t = UnetLight()
-    G_basestyle = AttentionGenerator()
-    G_stylebase = AttentionGenerator()
-    D_base = AttentionDiscriminator()
-    D_style = AttentionDiscriminator()
+    G_basestyle = CycleGANGenerator(filter=cfg.generator_filters)
+    G_stylebase = CycleGANGenerator(filter=cfg.generator_filters)
+    D_base = CycleGANDiscriminator(filter=cfg.discriminator_filters)
+    D_style = CycleGANDiscriminator(filter=cfg.discriminator_filters)
     A_base = AttentionNet()
     A_style = AttentionNet()
 

@@ -160,7 +160,7 @@ def main():
 
     # train the final segmentation net that we use to evaluate if our augmented dataset helps
     # with training a segnet that is more robust to different domains/conditions
-    n_cross_val_epochs = 10
+    n_cross_val_epochs = cfg.num_epochs_seg
 
     evaluate_ours(
         cfg,

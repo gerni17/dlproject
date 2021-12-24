@@ -29,8 +29,6 @@ from systems.gogoll_system import GogollSystem
 
 from models.attention_model import AttentionNet
 from systems.gogoll_attention_system import GogollAttentionSystem
-from models.discriminators import AttentionDiscriminator
-from models.generators import AttentionGenerator
 
 from numpy import mean
 

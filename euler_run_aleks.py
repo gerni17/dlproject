@@ -29,6 +29,7 @@ from systems.gogoll_system import GogollSystem
 
 from models.attention_model import AttentionNet
 from systems.gogoll_attention_system import GogollAttentionSystem
+from systems.gogoll_expert_system import GogollExpertSystem
 
 from numpy import mean
 
@@ -67,8 +68,8 @@ def main():
     )  # used for training
 
     # Sub-Models  -----------------------------------------------------------------
-    seg_net_s = UnetLight()
-    seg_net_t = UnetLight()
+    seg_net_s = UnetLight(n_classes=2)
+    seg_net_t = UnetLight(n_classes=2)
     G_basestyle = CycleGANGenerator(filter=cfg.generator_filters)
     G_stylebase = CycleGANGenerator(filter=cfg.generator_filters)
     D_base = CycleGANDiscriminator(filter=cfg.discriminator_filters)
@@ -95,7 +96,7 @@ def main():
         "id_w": id_w,
         "seg_w": seg_w,
     }
-    main_system = GogollSystem(**gogoll_net_config)
+    main_system = GogollExpertSystem(**gogoll_net_config)
 
     # Logger  --------------------------------------------------------------
     seg_wandb_logger = (

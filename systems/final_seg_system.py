@@ -15,6 +15,8 @@ from utils.metrics import MetricsSemseg
 from torchmetrics import IoU
 from torch.optim.lr_scheduler import LambdaLR
 
+from utils.attention import extractClass
+
 
 class FinalSegSystem(pl.LightningModule):
     def __init__(self, net, cfg):  # segmentation network
@@ -39,10 +41,11 @@ class FinalSegSystem(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         source_img, segmentation_img = (batch["source"], batch["source_segmentation"])
+        segmentation_img = extractClass(segmentation_img, c=1.0)
 
         y_seg = self.net(source_img)
 
-        Seg_loss = self.semseg_loss(y_seg, segmentation_img)
+        Seg_loss = self.semseg_loss(y_seg, segmentation_img.long())
 
         logs = {
             "loss": Seg_loss,
@@ -61,11 +64,13 @@ class FinalSegSystem(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         source_img, segmentation_img = (batch["source"], batch["source_segmentation"])
+        segmentation_img = extractClass(segmentation_img, c=1.0)
+
         y_hat = self.net(source_img)
-        loss_val_semseg = self.semseg_loss(y_hat, segmentation_img)
+        loss_val_semseg = self.semseg_loss(y_hat, segmentation_img.long())
 
         y_hat_semseg_lbl = y_hat.argmax(dim=1)
-        self.metrics_semseg.update_batch(y_hat_semseg_lbl, segmentation_img)
+        self.metrics_semseg.update_batch(y_hat_semseg_lbl, segmentation_img.long())
 
         self.log_dict(
             {"loss_val/semseg": loss_val_semseg,}, on_step=False, on_epoch=True
@@ -81,12 +86,13 @@ class FinalSegSystem(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         source_img, segmentation_img = (batch["source"], batch["source_segmentation"])
+        segmentation_img = extractClass(segmentation_img, c=1.0)
 
         y_seg = self.net(source_img)
 
         y_hat_semseg_lbl = y_seg.argmax(dim=1)
         
-        self.metrics_semseg.update_batch(y_hat_semseg_lbl, segmentation_img)
+        self.metrics_semseg.update_batch(y_hat_semseg_lbl, segmentation_img.long())
 
         jaccard_index = self.iou_metric(y_seg, segmentation_img.int())
 

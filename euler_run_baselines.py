@@ -38,6 +38,22 @@ def main():
 
     batch_size = 8
 
+    if cfg.shared:
+        wandb.init(
+            reinit=True,
+            name=run_name,
+            config=cfg,
+            settings=wandb.Settings(start_method="fork"),
+            entity="dlshared",
+        )
+    else:
+        wandb.init(
+            reinit=True,
+            name=run_name,
+            config=cfg,
+            settings=wandb.Settings(start_method="fork"),
+        )
+
     # Train datamodules
     dm_source = LabeledDataModule(
         path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True

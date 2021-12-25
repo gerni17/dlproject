@@ -77,6 +77,10 @@ def main():
         path.join(data_dir, 'source'), path.join(data_dir, 'easy', 'rgb'), transform, batch_size
     )  # used for training
 
+    seg_dm = LabeledDataModule(
+        path.join(data_dir, 'source'), transform, batch_size
+    )
+
     # Sub-Models  -----------------------------------------------------------------
     seg_net_s = UnetLight()
     seg_net_t = UnetLight()
@@ -181,7 +185,7 @@ def main():
     # Train
     if not cfg.seg_checkpoint_path:
         print("Fitting segmentation network...", run_name)
-        seg_trainer.fit(seg_system, datamodule=dm)
+        seg_trainer.fit(seg_system, datamodule=seg_dm)
     else:
         print("Loading segmentation net from checkpoint...")
         seg_system = GogollSegSystem.load_from_checkpoint(
@@ -232,7 +236,7 @@ def main():
 
     # train the final segmentation net that we use to evaluate if our augmented dataset helps
     # with training a segnet that is more robust to different domains/conditions
-    n_cross_val_epochs = cfg.num_epochs_seg
+    n_cross_val_epochs = cfg.num_epochs_final
 
     evaluate_ours(
         cfg,

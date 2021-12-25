@@ -85,7 +85,7 @@ def main():
         },
     ]
 
-    n_epochs = cfg.num_epochs_seg
+    n_epochs = cfg.num_epochs_final
 
     for baseline in baselines:
         evaluate_baseline(

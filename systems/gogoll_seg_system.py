@@ -34,10 +34,9 @@ class GogollSegSystem(pl.LightningModule):
         return [optimizer], [sched]
 
     def training_step(self, batch, batch_idx):
-        source_img, segmentation_img, target_img = (
+        source_img, segmentation_img = (
             batch["source"],
             batch["source_segmentation"],
-            batch["target"],
         )
 
         y_seg = self.net(source_img)

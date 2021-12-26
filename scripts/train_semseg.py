@@ -31,7 +31,7 @@ def main():
     # Config  -----------------------------------------------------------------
     batch_size = cfg.batch_size
     lr = cfg.seg_lr
-    epoch = cfg.num_epochs
+    epoch = cfg.num_epochs_seg
 
     # Data Preprocessing  -----------------------------------------------------------------
     transform = SegImageTransform(img_size=cfg.image_size)

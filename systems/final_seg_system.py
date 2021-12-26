@@ -32,15 +32,12 @@ class FinalSegSystem(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.cfg.seg_lr, betas=(0.5, 0.999),)
-        # sched=LambdaLR(
-        #     optimizer,
-        #     lambda ep: max(1e-6, (1 - (ep - self.initial_epoch) / self.cfg.num_epochs_seg) ** self.cfg.lr_scheduler_power))
-        return [optimizer], []
+        sched=LambdaLR(
+            optimizer,
+            lambda ep: max(1e-6, (1 - ep / self.cfg.num_epochs_final) ** self.cfg.lr_scheduler_power))
+        return [optimizer], [sched]
 
     def training_step(self, batch, batch_idx):
-        if self.current_epoch > self.initial_epoch:
-            self.initial_epoch = self.current_epoch
-
         source_img, segmentation_img = (batch["source"], batch["source_segmentation"])
 
         y_seg = self.net(source_img)

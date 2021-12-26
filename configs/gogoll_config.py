@@ -50,7 +50,8 @@ def command_line_parser():
     parser.add_argument(
         "--shared", type=str2bool, default=False, help="Push to shared wandb project"
     )
-
+    parser.add_argument(
+        '--sched', type=bool, default=True, help='Using scheduler')
     # -------------------------- training settings --------------------------
     parser.add_argument(
         "--num_epochs_seg",

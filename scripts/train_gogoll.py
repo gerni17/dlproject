@@ -85,7 +85,7 @@ def main():
         init_weights(net, init_type="normal")
 
     # LightningModule  --------------------------------------------------------------
-    seg_system = GogollSegSystem(seg_net_s, lr=seg_s_lr)
+    seg_system = GogollSegSystem(seg_net_s, cfg=cfg)
 
     gogoll_net_config = {
         "G_s2t": G_basestyle,
@@ -98,12 +98,13 @@ def main():
         "reconstr_w": reconstr_w,
         "id_w": id_w,
         "seg_w": seg_w,
+        "cfg": cfg,
     }
     main_system = GogollSystem(**gogoll_net_config)
 
     # Logger  --------------------------------------------------------------
     seg_wandb_logger = (
-        WandbLogger(project=project_name, name=run_name, prefix="seg")
+        WandbLogger(project=project_name, name=run_name, prefix="source_seg")
         if cfg.use_wandb
         else None
     )
@@ -196,7 +197,7 @@ def main():
     # Image Generation & Saving  --------------------------------------------------------------
     if cfg.save_generated_images:
         dm_source = LabeledDataModule(
-            path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True, max_imgs=200
+            path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True
         )
         save_path = path.join(cfg.generated_dataset_save_root, run_name)
         # Generate fake target domain images and save them to a persistent folder (with the

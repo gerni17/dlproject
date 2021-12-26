@@ -3,11 +3,11 @@ from models.layers import Downsample, Upsample
 
 
 class CycleGANGenerator(nn.Module):
-    def __init__(self, filter=64):
+    def __init__(self, filter=64, in_channels=3, out_channels=3):
         super(CycleGANGenerator, self).__init__()
         self.downsamples = nn.ModuleList(
             [
-                Downsample(3, filter, kernel_size=4, apply_instancenorm=False),
+                Downsample(in_channels, filter, kernel_size=4, apply_instancenorm=False),
                 Downsample(filter, filter * 2),
                 Downsample(filter * 2, filter * 4),
                 Downsample(filter * 4, filter * 8),
@@ -29,7 +29,7 @@ class CycleGANGenerator(nn.Module):
         )
 
         self.last = nn.Sequential(
-            nn.ConvTranspose2d(filter * 2, 3, kernel_size=4, stride=2, padding=1),
+            nn.ConvTranspose2d(filter * 2, out_channels, kernel_size=4, stride=2, padding=1),
             nn.Tanh(),
         )
 

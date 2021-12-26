@@ -61,8 +61,10 @@ def main():
     # LightningModule  --------------------------------------------------------------
     model = Semseg(net,cfg)
     # Logger  --------------------------------------------------------------
-    wandb_logger = (
-        WandbLogger(project=project_name, name=run_name) if cfg.use_wandb else None
+    seg_wandb_logger = (
+        WandbLogger(project=project_name, name=run_name, prefix="source_seg")
+        if cfg.use_wandb
+        else None
     )
 
     # Callbacks  --------------------------------------------------------------
@@ -88,7 +90,7 @@ def main():
         gpus=1,
         reload_dataloaders_every_n_epochs=True,
         num_sanity_val_steps=0,
-        logger=wandb_logger if cfg.use_wandb else None,
+        logger=seg_wandb_logger if cfg.use_wandb else None,
         callbacks=[checkpoint_callback, semseg_s_image_callback],
         # Uncomment the following options if you want to try out framework changes without training too long
         # limit_train_batches=2,

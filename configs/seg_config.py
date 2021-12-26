@@ -39,7 +39,7 @@ def command_line_parser():
         "--log_dir", type=expandpath, required=True, help="Place for artifacts and logs"
     )
     parser.add_argument(
-        "--use_wandb", type=str2bool, default=False, help="Use WandB for logging"
+        "--use_wandb", type=str2bool, default=True, help="Use WandB for logging"
     )
     parser.add_argument(
         "--shared", type=str2bool, default=False, help="Push to shared wandb project"

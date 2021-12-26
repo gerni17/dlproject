@@ -12,12 +12,11 @@ from torch.optim.lr_scheduler import LambdaLR
 
 
 class Semseg(pl.LightningModule):
-    def __init__(self, cfg, net, lr):
+    def __init__(self, net,cfg):
         super(Semseg, self).__init__()
         self.cfg = cfg
         self.save_hyperparameters(self.cfg)
         self.net = net
-        self.lr = lr
 
         self.loss_semseg = torch.nn.CrossEntropyLoss()
         names = ["soil", "crop", "weed"]
@@ -25,10 +24,12 @@ class Semseg(pl.LightningModule):
         self.iou_metric = IoU(num_classes=3)
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=self.lr, betas=(0.5, 0.999),)
-        # sched=LambdaLR(
-        #     optimizer,
-        #     lambda ep: max(1e-6, (1 - ep / self.cfg.num_epochs) ** self.cfg.lr_scheduler_power))
+        optimizer = optim.Adam(self.parameters(), lr=self.cfg.seg_lr, betas=(0.5, 0.999),)
+        if self.cfg.sched:
+            sched=LambdaLR(
+                optimizer,
+                lambda ep: max(1e-6, (1 - ep / self.cfg.num_epochs_seg) ** self.cfg.lr_scheduler_power))
+            return [optimizer], [sched]
         return [optimizer], []
 
     def training_step(self, batch, batch_nb):

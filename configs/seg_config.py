@@ -41,10 +41,12 @@ def command_line_parser():
     parser.add_argument(
         "--use_wandb", type=str2bool, default=False, help="Use WandB for logging"
     )
-
+    parser.add_argument(
+        "--shared", type=str2bool, default=False, help="Push to shared wandb project"
+    )
     # -------------------------- training settings --------------------------
     parser.add_argument(
-        "--num_epochs", type=int, default=16, help="Number of training epochs"
+        "--num_epochs_seg", type=int, default=16, help="Number of training epochs"
     )
     parser.add_argument(
         "--batch_size",
@@ -65,8 +67,12 @@ def command_line_parser():
         help="Resume training from checkpoint, which can also be an AWS link s3://...",
     )
     parser.add_argument(
+        '--seg_lr', type=float, default=0.0001, help='Poly learning rate power')
+    parser.add_argument(
         '--lr_scheduler_power', type=float, default=0.9, help='Poly learning rate power')
-        
+
+    parser.add_argument(
+        '--sched', type=bool, default=True, help='Usin scheduler')
     # -------------------------- model settings --------------------------
 
     # -------------------------- data settings --------------------------

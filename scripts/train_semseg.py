@@ -14,6 +14,7 @@ from configs.seg_config import command_line_parser
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from systems.experiment_semseg import Semseg
+from systems.gogoll_seg_system import GogollSegSystem
 from models.unet_light_semseg import UnetLight
 
 
@@ -29,28 +30,36 @@ def main():
 
     # Config  -----------------------------------------------------------------
     batch_size = cfg.batch_size
-    lr = 0.0001
+    lr = cfg.seg_lr
     epoch = cfg.num_epochs
 
     # Data Preprocessing  -----------------------------------------------------------------
     transform = SegImageTransform(img_size=cfg.image_size)
-    wandb.init(
-        reinit=True,
-        name=run_name,
-        config=cfg,
-        settings=wandb.Settings(start_method="fork"),
-    )
+    if cfg.shared:
+        wandb.init(
+            reinit=True,
+            name=run_name,
+            config=cfg,
+            settings=wandb.Settings(start_method="fork"),
+            entity="dlshared",
+            project=project_name,
+        )
+    else:
+        wandb.init(
+            reinit=True,
+            name=run_name,
+            config=cfg,
+            settings=wandb.Settings(start_method="fork"),
+        )
 
     # DataModule  -----------------------------------------------------------------
     dm = LabeledDataModule(data_dir, transform, batch_size,split=True)  # used for training
-    vs = LabeledDataModule(
-        data_dir, transform, batch_size
-    )  # used for validation/progress visualization on wandb
+
 
     net = UnetLight()
 
     # LightningModule  --------------------------------------------------------------
-    model = Semseg(cfg, net, lr)
+    model = Semseg(net,cfg)
     # Logger  --------------------------------------------------------------
     wandb_logger = (
         WandbLogger(project=project_name, name=run_name) if cfg.use_wandb else None
@@ -68,8 +77,8 @@ def main():
     )
 
     # save the generated images (from the validation data) after every epoch to wandb
-    semseg_image_callback = GogollSemsegImageLogger(
-        vs, network="net", log_key="Segmentation",
+    semseg_s_image_callback = GogollSemsegImageLogger(
+        dm, network="net", log_key="Segmentation (Source)"
     )
 
     # Trainer  --------------------------------------------------------------
@@ -80,7 +89,7 @@ def main():
         reload_dataloaders_every_n_epochs=True,
         num_sanity_val_steps=0,
         logger=wandb_logger if cfg.use_wandb else None,
-        callbacks=[checkpoint_callback, semseg_image_callback],
+        callbacks=[checkpoint_callback, semseg_s_image_callback],
         # Uncomment the following options if you want to try out framework changes without training too long
         # limit_train_batches=2,
         # limit_val_batches=2,

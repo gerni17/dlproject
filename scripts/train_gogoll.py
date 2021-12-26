@@ -1,7 +1,6 @@
-from logging import log
 from os import path
-import wandb
 import uuid
+import wandb
 
 from datetime import datetime
 from pytorch_lightning import Trainer
@@ -39,10 +38,9 @@ def main():
     lr = {
         "G": 0.0002,
         "D": 0.0002,
-        "seg_s": 0.0002,
-        "seg_t": 0.0002,
+        "seg_s": cfg.seg_lr,
+        "seg_t": cfg.seg_lr,
     }
-    seg_s_lr = 0.0002
     epochs_seg = cfg.num_epochs_seg
     epochs_gogoll = cfg.num_epochs_gogoll
     reconstr_w = cfg.reconstruction_weight
@@ -53,7 +51,7 @@ def main():
             reinit=True,
             name=run_name,
             config=cfg,
-            # settings=wandb.Settings(start_method="fork"),
+            settings=wandb.Settings(start_method="fork"),
             entity="dlshared",
         )
     else:
@@ -61,16 +59,19 @@ def main():
             reinit=True,
             name=run_name,
             config=cfg,
-            # settings=wandb.Settings(start_method="fork"),
+            settings=wandb.Settings(start_method="fork"),
         )
-
     # Data Preprocessing  -----------------------------------------------------------------
     transform = SegImageTransform(img_size=cfg.image_size)
 
     # DataModule  -----------------------------------------------------------------
     dm = GogollDataModule(
-        path.join(data_dir, 'source'), path.join(data_dir, 'other_domains', cfg.domain), transform, batch_size
+        path.join(data_dir, 'source'), path.join(data_dir, 'easy', 'rgb'), transform, batch_size
     )  # used for training
+
+    seg_dm = LabeledDataModule(
+        path.join(data_dir, 'source'), transform, batch_size
+    )
 
     # Sub-Models  -----------------------------------------------------------------
     seg_net_s = UnetLight()
@@ -176,9 +177,9 @@ def main():
     # Train
     if not cfg.seg_checkpoint_path:
         print("Fitting segmentation network...", run_name)
-        seg_trainer.fit(seg_system, datamodule=dm)
+        seg_trainer.fit(seg_system, datamodule=seg_dm)
     else:
-        print(f"Loading segmentation net from checkpoint...")
+        print("Loading segmentation net from checkpoint...")
         seg_system = GogollSegSystem.load_from_checkpoint(
             cfg.seg_checkpoint_path, net=seg_net_s
         )
@@ -187,7 +188,7 @@ def main():
         print("Fitting gogoll system...", run_name)
         trainer.fit(main_system, datamodule=dm)
     else:
-        print(f"Loading gogol net from checkpoint...")
+        print("Loading gogol net from checkpoint...")
         main_system = GogollSystem.load_from_checkpoint(
             cfg.gogoll_checkpoint_path, **gogoll_net_config
         )

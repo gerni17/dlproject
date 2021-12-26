@@ -26,10 +26,10 @@ class Semseg(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = optim.Adam(self.parameters(), lr=self.lr, betas=(0.5, 0.999),)
-        sched=LambdaLR(
-            optimizer,
-            lambda ep: max(1e-6, (1 - ep / self.cfg.num_epochs) ** self.cfg.lr_scheduler_power))
-        return [optimizer], [sched]
+        # sched=LambdaLR(
+        #     optimizer,
+        #     lambda ep: max(1e-6, (1 - ep / self.cfg.num_epochs) ** self.cfg.lr_scheduler_power))
+        return [optimizer], []
 
     def training_step(self, batch, batch_nb):
         rgb, label = (batch["source"], batch["source_segmentation"])

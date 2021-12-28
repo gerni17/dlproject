@@ -105,7 +105,7 @@ def command_line_parser():
     parser.add_argument(
         "--segmentation_weight",
         type=float,
-        default=0.8,
+        default=0.5,
         help="Weight assigned to the segmentation loss",
     )
     parser.add_argument(

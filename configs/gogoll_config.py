@@ -45,7 +45,7 @@ def command_line_parser():
         help="Place for artifacts and logs",
     )
     parser.add_argument(
-        "--use_wandb", type=str2bool, default=False, help="Use WandB for logging"
+        "--use_wandb", type=str2bool, default=True, help="Use WandB for logging"
     )
     parser.add_argument(
         "--shared", type=str2bool, default=False, help="Push to shared wandb project"
@@ -105,7 +105,7 @@ def command_line_parser():
     parser.add_argument(
         "--segmentation_weight",
         type=float,
-        default=0.8,
+        default=0.5,
         help="Weight assigned to the segmentation loss",
     )
     parser.add_argument(
@@ -116,11 +116,13 @@ def command_line_parser():
     )
     parser.add_argument(
         '--lr_scheduler_power', type=float, default=0.9, help='Poly learning rate power')
+    parser.add_argument(
+        '--lr_scheduler_power_final', type=float, default=0.95, help='Poly learning rate power')
 
     parser.add_argument(
         "--lr_ratio",
         type=float,
-        default=3,
+        default=1,
         help="Ratio for the learing rate of the target segmentation network in the gogol net",
     )
 
@@ -204,7 +206,7 @@ def command_line_parser():
     parser.add_argument(
         "--workers_validation",
         type=int,
-        default=2,
+        default=4,
         help="Number of worker threads fetching validation data",
     )
 

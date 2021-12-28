@@ -27,7 +27,6 @@ class GogollSystem(pl.LightningModule):
         seg_t,  # segmentation target
         lr,
         reconstr_w=10,  # reconstruction weighting
-        seg_w=1,
         cfg=None
     ):
         super(GogollSystem, self).__init__()

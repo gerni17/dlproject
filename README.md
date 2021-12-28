@@ -13,7 +13,7 @@ bsub -n 2 -R "rusage[scratch=1000,mem=15000,ngpus_excl_p=1]" -oo /cluster/scratc
 To add commandline arguiments you can add them in the bash file run.sh e.g.:
 
 ```sh
-python -m scripts.train_cross_val --name whole_pipeline_test --log_dir /cluster/scratch/$USER/logs --dataset_root /cluster/scratch/$USER/dat/data --use_wandb True  --seg_checkpoint_path /cluster/scratch/gerni/logs/whole_pipeline_test_1201-1709_34/segmentation/'epoch=15-step=847.ckpt' --gogoll_checkpoint_path /cluster/scratch/gerni/logs/whole_pipeline_test_1201-1709_34/gogoll/'epoch=73-step=3921.ckpt'
+python -m scripts.train_cross_val --name whole_pipeline_test --log_dir /cluster/scratch/$USER/logs --dataset_root /cluster/scratch/$USER/dat/data --use_wandb True  --seg_checkpoint_path /cluster/scratch/$USER/logs/whole_pipeline_test_1201-1709_34/segmentation/'epoch=15-step=847.ckpt' --gogoll_checkpoint_path /cluster/scratch/$USER/logs/whole_pipeline_test_1201-1709_34/gogoll/'epoch=73-step=3921.ckpt'
 ```
 
 ## Folder structure

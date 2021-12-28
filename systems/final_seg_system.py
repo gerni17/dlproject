@@ -34,7 +34,7 @@ class FinalSegSystem(pl.LightningModule):
         optimizer = optim.Adam(self.parameters(), lr=self.cfg.seg_lr, betas=(0.5, 0.999),)
         sched=LambdaLR(
             optimizer,
-            lambda ep: max(1e-6, (1 - ep / self.cfg.num_epochs_final) ** self.cfg.lr_scheduler_power))
+            lambda ep: max(1e-6, (1 - ep / self.cfg.num_epochs_final) ** self.cfg.lr_scheduler_power_final))
         return [optimizer], [sched]
 
     def training_step(self, batch, batch_idx):

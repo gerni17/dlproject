@@ -5,11 +5,11 @@ import wandb
 from datetime import datetime
 from pytorch_lightning import Trainer
 from datasets.gam import GamDataModule
-from datasets.generated import GeneratedDataModule
-from datasets.mixed import MixedDataModule
+from datasets.generated_gam import GeneratedGamDataModule
 from datasets.labeled import LabeledDataModule
 from datasets.crossval import CrossValidationDataModule
 from datasets.test import TestLabeledDataModule
+from logger.gam_pipeline_image import GamPipelineImageLogger
 from logger.gogoll_baseline_image import GogollBaselineImageLogger
 from logger.gogoll_pipeline_image import GogollPipelineImageLogger
 from models.unet_light_semseg import UnetLight
@@ -52,7 +52,6 @@ def main():
     epochs_gogoll = cfg.num_epochs_gogoll
     reconstr_w = cfg.reconstruction_weight
     id_w = cfg.identity_weight
-    seg_w = cfg.segmentation_weight
     if cfg.shared:
         wandb.init(
             reinit=True,
@@ -73,29 +72,28 @@ def main():
 
     # DataModule  -----------------------------------------------------------------
     dm = GamDataModule(
-        path.join(data_dir, 'easy'), transform, batch_size
+        path.join(data_dir, 'source'), path.join(data_dir, 'easy', 'rgb'), transform, batch_size
     )
 
     # Sub-Models  -----------------------------------------------------------------
-    G_basestyle = CycleGANGenerator(filter=cfg.generator_filters)
-    G_stylebase = CycleGANGenerator(filter=cfg.generator_filters)
-    D_base = CycleGANDiscriminator(filter=cfg.discriminator_filters)
-    D_style = CycleGANDiscriminator(filter=cfg.discriminator_filters)
+    G_se2ta = CycleGANGenerator(filter=cfg.generator_filters, in_channels=3, out_channels=3)
+    G_ta2se = CycleGANGenerator(filter=cfg.generator_filters, in_channels=3, out_channels=3)
+    D_base = CycleGANDiscriminator(filter=cfg.discriminator_filters, in_channels=3)
+    D_style = CycleGANDiscriminator(filter=cfg.discriminator_filters, in_channels=3)
 
     # Init Weight  --------------------------------------------------------------
-    for net in [G_basestyle, G_stylebase, D_base, D_style]:
+    for net in [G_se2ta, G_ta2se, D_base, D_style]:
         init_weights(net, init_type="normal")
 
     # LightningModule  --------------------------------------------------------------
 
     gogoll_net_config = {
-        "G_s2t": G_basestyle,
-        "G_t2s": G_stylebase,
-        "D_source": D_base,
-        "D_target": D_style,
+        "G_se2ta": G_se2ta,
+        "G_ta2se": G_ta2se,
+        "D_ta": D_base,
+        "D_se": D_style,
         "lr": lr,
-        "reconstr_w": reconstr_w,
-        "id_w": id_w,
+        "reconstr_w": reconstr_w
     }
     main_system = GamSystem(**gogoll_net_config)
 
@@ -118,10 +116,7 @@ def main():
     )
 
     # save the generated images (from the validation data) after every epoch to wandb
-    semseg_s_image_callback = GogollSemsegImageLogger(
-        dm, network="net", log_key="Segmentation (Source)"
-    )
-    pipeline_image_callback = GogollPipelineImageLogger(dm, log_key="Pipeline")
+    pipeline_image_callback = GamPipelineImageLogger(dm, log_key="Pipeline")
 
     # Trainer  --------------------------------------------------------------
     print("Start training", run_name)
@@ -146,17 +141,17 @@ def main():
             cfg.gogoll_checkpoint_path, **gogoll_net_config
         )
 
-    generator = main_system.G_se2so
+    generator = main_system.G_se2ta
 
     # Train datamodules
     dm_source = LabeledDataModule(
-        path.join(data_dir, 'exp'), transform, batch_size=batch_size, split=True, max_imgs=200
+        path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True
     )
-    dm_generated = GeneratedDataModule(generator, dm_source, batch_size=batch_size)
+    dm_generated = GeneratedGamDataModule(generator, dm_source, batch_size=batch_size)
     
     # easy dataset with full dataset in test loader
     dm_easy_test = TestLabeledDataModule(
-        path.join(data_dir, 'easy'), transform, batch_size=batch_size, max_imgs=200
+        path.join(data_dir, 'easy'), transform, batch_size=batch_size
     )
 
     n_splits = 5
@@ -165,7 +160,7 @@ def main():
 
     # train the final segmentation net that we use to evaluate if our augmented dataset helps
     # with training a segnet that is more robust to different domains/conditions
-    n_cross_val_epochs = 10
+    n_cross_val_epochs = cfg.num_epochs_final
 
     evaluate_ours(
         cfg,
@@ -176,6 +171,8 @@ def main():
         log_path,
         n_cross_val_epochs,
         n_splits,
+        "GAM",
+        "gam"
     )
 
     wandb.finish()
@@ -190,6 +187,8 @@ def evaluate_ours(
     log_path,
     n_epochs,
     n_splits,
+    experiment_name,
+    model_save_name
 ):
     # Cross Validation Run
     fold_metrics = {
@@ -201,16 +200,15 @@ def evaluate_ours(
 
     for i in range(n_splits):
         # Cross Validation Run
-        seg_lr = 0.0002
         seg_net = UnetLight()
-        seg_system = FinalSegSystem(seg_net, lr=seg_lr)
+        seg_system = FinalSegSystem(seg_net, cfg=cfg)
 
         # Logger  --------------------------------------------------------------
         seg_wandb_logger = (
             WandbLogger(
                 project=project_name,
                 name=run_name,
-                prefix=f"(Ours) ",
+                prefix=f"({experiment_name}) ",
             )
             if cfg.use_wandb
             else None
@@ -219,7 +217,7 @@ def evaluate_ours(
         # Callbacks  --------------------------------------------------------------
         # save the model
         segmentation_checkpoint_callback = ModelCheckpoint(
-            dirpath=path.join(log_path, f"segmentation_final_ours"),
+            dirpath=path.join(log_path, f"segmentation_final_{model_save_name}_{i}"),
             save_last=False,
             save_top_k=1,
             verbose=False,
@@ -230,13 +228,13 @@ def evaluate_ours(
         semseg_image_callback = GogollSemsegImageLogger(
             train_datamodule,
             network="net",
-            log_key=f"Segmentation (Final - Ours) - Train",
+            log_key=f"Segmentation (Final - {experiment_name}) - Train",
         )
 
         baseline_image_callback = GogollBaselineImageLogger(
             test_datamodule,
             network="net",
-            log_key=f"Segmentation (Final - Ours)",
+            log_key=f"Segmentation (Final - {experiment_name})",
         )
 
         cv_trainer = Trainer(
@@ -258,10 +256,10 @@ def evaluate_ours(
         fold_metrics["crop"].append(res[0]["Test Metric Summary - crop"])
 
     # Acess dict values of trainer after test and get metrics for average
-    wandb.run.summary[f"Crossvalidation IOU (Ours)"] = mean(fold_metrics["iou"])
-    wandb.run.summary[f"Crossvalidation IOU Soil (Ours)"] = mean(fold_metrics["soil"])
-    wandb.run.summary[f"Crossvalidation IOU Weed (Ours)"] = mean(fold_metrics["weed"])
-    wandb.run.summary[f"Crossvalidation IOU Crop (Ours)"] = mean(fold_metrics["crop"])
+    wandb.run.summary[f"Crossvalidation IOU ({experiment_name})"] = mean(fold_metrics["iou"])
+    wandb.run.summary[f"Crossvalidation IOU Soil ({experiment_name})"] = mean(fold_metrics["soil"])
+    wandb.run.summary[f"Crossvalidation IOU Weed ({experiment_name})"] = mean(fold_metrics["weed"])
+    wandb.run.summary[f"Crossvalidation IOU Crop ({experiment_name})"] = mean(fold_metrics["crop"])
 
 
 if __name__ == "__main__":

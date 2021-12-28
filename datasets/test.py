@@ -13,12 +13,11 @@ from utils.sanity import assert_matching_images
 
 # Data Module
 class TestLabeledDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir, transform, batch_size, max_imgs=200):
+    def __init__(self, data_dir, transform, batch_size):
         super(TestLabeledDataModule, self).__init__()
         self.data_dir = data_dir
         self.transform = transform
         self.batch_size = batch_size
-        self.max_imgs = max_imgs
 
     def prepare_data(self):
         self.rgb_paths = glob.glob(os.path.join(self.data_dir, "rgb", "*.png"))
@@ -26,7 +25,7 @@ class TestLabeledDataModule(pl.LightningDataModule):
 
     def setup(self, stage: Optional[str] = None):
         # Assign full dataset to all loaders
-        self.full_dataset = LabeledDataset(self.rgb_paths, self.segmentation_paths, self.transform, "test", self.max_imgs)
+        self.full_dataset = LabeledDataset(self.rgb_paths, self.segmentation_paths, self.transform, "test")
 
     def test_dataloader(self):
         return DataLoader(

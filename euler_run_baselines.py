@@ -38,18 +38,34 @@ def main():
 
     batch_size = 8
 
+    if cfg.shared:
+        wandb.init(
+            reinit=True,
+            name=run_name,
+            config=cfg,
+            settings=wandb.Settings(start_method="fork"),
+            entity="dlshared",
+        )
+    else:
+        wandb.init(
+            reinit=True,
+            name=run_name,
+            config=cfg,
+            settings=wandb.Settings(start_method="fork"),
+        )
+
     # Train datamodules
     dm_source = LabeledDataModule(
-        path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True, max_imgs=200
+        path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True
     )
     
     # easy dataset with a train/val/test split
     dm_easy_split = LabeledDataModule(
-        path.join(data_dir, 'easy'), transform, batch_size=batch_size, max_imgs=200
+        path.join(data_dir, 'easy'), transform, batch_size=batch_size
     )
     # easy dataset with full dataset in test loader
     dm_easy_test = TestLabeledDataModule(
-        path.join(data_dir, 'easy'), transform, batch_size=batch_size, max_imgs=200
+        path.join(data_dir, 'easy'), transform, batch_size=batch_size
     )
 
     n_splits = 5
@@ -69,7 +85,7 @@ def main():
         },
     ]
 
-    n_epochs = 16
+    n_epochs = cfg.num_epochs_final
 
     for baseline in baselines:
         evaluate_baseline(
@@ -107,9 +123,8 @@ def evaluate_baseline(
     }
     for i in range(n_splits):
         # Cross Validation Run
-        seg_lr = 0.0002
         seg_net = UnetLight()
-        seg_system = FinalSegSystem(seg_net, lr=seg_lr)
+        seg_system = FinalSegSystem(seg_net, cfg=cfg)
         safe_baseline_name = baseline_name.replace(' ', '_').replace('(', '').replace(')', '').replace('<>', 'to').lower()
 
         # Logger  --------------------------------------------------------------
@@ -126,7 +141,7 @@ def evaluate_baseline(
         # Callbacks  --------------------------------------------------------------
         # save the model
         segmentation_checkpoint_callback = ModelCheckpoint(
-            dirpath=path.join(log_path, f"segmentation_final_{safe_baseline_name}"),
+            dirpath=path.join(log_path, f"segmentation_final_{safe_baseline_name}_{i}"),
             save_last=False,
             save_top_k=1,
             verbose=False,

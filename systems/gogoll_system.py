@@ -40,6 +40,8 @@ class GogollSystem(pl.LightningModule):
         self.reconstr_w = reconstr_w
         self.id_w = cfg.identity_weight
         self.seg_w = cfg.segmentation_weight
+        self.w_embed=cfg.w_embed
+        
         self.cnt_train_step = 0
         self.step = 0
         self.cfg = cfg

@@ -62,7 +62,7 @@ def command_line_parser():
     parser.add_argument(
         "--num_epochs_final",
         type=int,
-        default=16,
+        default=55,
         help="Number of training epochs for the final segmentation net",
     )
     parser.add_argument(

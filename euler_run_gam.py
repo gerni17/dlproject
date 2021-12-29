@@ -93,7 +93,8 @@ def main():
         "D_ta": D_base,
         "D_se": D_style,
         "lr": lr,
-        "reconstr_w": reconstr_w
+        "reconstr_w": reconstr_w,
+        "cfg": cfg,
     }
     main_system = GamSystem(**gogoll_net_config)
 

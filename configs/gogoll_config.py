@@ -109,6 +109,12 @@ def command_line_parser():
         help="Weight assigned to the segmentation loss",
     )
     parser.add_argument(
+        "--gan_noise",
+        type=float,
+        default=0.7,
+        help="Noise used to generate images",
+    )
+    parser.add_argument(
         "--resume",
         type=str,
         default=None,

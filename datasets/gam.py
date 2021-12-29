@@ -37,7 +37,7 @@ class GamDataset(Dataset):
         assert_matching_images(self.source_img_paths, self.segmentation_img_paths)
 
     def __len__(self):
-        return min(
+        return max(
             [
                 len(self.source_img_paths),
                 len(self.segmentation_img_paths),
@@ -46,9 +46,9 @@ class GamDataset(Dataset):
         )
 
     def __getitem__(self, idx):
-        rgb_img = Image.open(self.source_img_paths[idx])
-        segmentation_img = Image.open(self.segmentation_img_paths[idx])
-        target_img = Image.open(self.target_img_paths[idx])
+        rgb_img = Image.open(self.source_img_paths[idx % len(self.source_img_paths)])
+        segmentation_img = Image.open(self.segmentation_img_paths[idx % len(self.segmentation_img_paths)])
+        target_img = Image.open(self.target_img_paths[idx % len(self.target_img_paths)])
         assert rgb_img.size == segmentation_img.size
 
         img, segmentation = self.transform(rgb_img, segmentation_img, self.phase)

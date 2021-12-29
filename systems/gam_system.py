@@ -18,6 +18,7 @@ class GamSystem(pl.LightningModule):
         D_se,
         lr,
         reconstr_w=10,  # reconstruction weighting
+        cfg=None,
     ):
         super(GamSystem, self).__init__()
         self.G_se2ta = G_se2ta
@@ -28,6 +29,7 @@ class GamSystem(pl.LightningModule):
         self.reconstr_w = reconstr_w
         self.cnt_train_step = 0
         self.step = 0
+        self.cfg = cfg
 
         self.mae = nn.L1Loss()
         self.cse_loss = nn.CrossEntropyLoss()
@@ -73,7 +75,7 @@ class GamSystem(pl.LightningModule):
 
         segmentation_img_target = segmentation_img.long()
         segmentation_img = segmentation_img.float()
-        segmentation_img_noise = torch.randn(segmentation_img.shape) * 0.5 + 1
+        segmentation_img_noise = torch.rand(segmentation_img.shape) * self.cfg.gan_noise
         segmentation_img_noise = segmentation_img_noise.to(device=self.device)
 
         b = target_img.size()[0]
@@ -82,7 +84,7 @@ class GamSystem(pl.LightningModule):
         fake = torch.zeros(b, 1, 30, 30).cuda()
 
         fake_se = self.G_ta2se(target_img)
-        fake_ta = self.G_se2ta(segmentation_img * segmentation_img_noise)
+        fake_ta = self.G_se2ta(segmentation_img + segmentation_img_noise)
         cycled_se = self.G_ta2se(fake_ta)
         cycled_ta = self.G_se2ta(fake_se)
 

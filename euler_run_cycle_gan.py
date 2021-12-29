@@ -6,6 +6,7 @@ from datetime import datetime
 from pytorch_lightning import Trainer
 from datasets.full_gan import FullGanDataModule
 from datasets.gam import GamDataModule
+from datasets.generated import GeneratedDataModule
 from datasets.generated_gam import GeneratedGamDataModule
 from datasets.labeled import LabeledDataModule
 from datasets.crossval import CrossValidationDataModule
@@ -135,7 +136,7 @@ def main():
     dm_source = LabeledDataModule(
         path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True
     )
-    dm_generated = GeneratedGamDataModule(generator, dm_source, batch_size=batch_size)
+    dm_generated = GeneratedDataModule(generator, dm_source, batch_size=batch_size)
     
     # easy dataset with full dataset in test loader
     dm_easy_test = TestLabeledDataModule(

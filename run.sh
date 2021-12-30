@@ -13,7 +13,10 @@ module load eth_proxy
 
 # python -m scripts.train_semseg --name segmentation_test_16_sched --log_dir /cluster/scratch/$USER/logs --dataset_root /cluster/scratch/$USER/dl_data/data/source --sched True --num_epochs_seg 16 --batch_size 8
 
-python -m euler_run_cross_val --name entire_pipe_segw_5 --log_dir /cluster/scratch/$USER/logs --dataset_root /cluster/scratch/$USER/dl_data/data --segmentation_weight 0.5 --shared True
-python -m euler_run_cross_val --name entire_pipe_segw_6 --log_dir /cluster/scratch/$USER/logs --dataset_root /cluster/scratch/$USER/dl_data/data --segmentation_weight 0.6 --shared True
-python -m euler_run_cross_val --name entire_pipe_segw_8 --log_dir /cluster/scratch/$USER/logs --dataset_root /cluster/scratch/$USER/dl_data/data --segmentation_weight 0.8 --shared True
+python -m euler_run_cross_val --name label_stacking --log_dir /cluster/scratch/$USER/logs --dataset_root /cluster/scratch/$USER/dl_data/data --segmentation_weight 0.5 --shared False
+
+python -m euler_run_cross_val --name label_stacking --log_dir /cluster/scratch/$USER/logs --dataset_root /cluster/scratch/$USER/dl_data/data --segmentation_weight 0.5 --shared False
+
+#python -m euler_run_cross_val --name entire_pipe_segw_6 --log_dir /cluster/scratch/$USER/logs --dataset_root /cluster/scratch/$USER/dl_data/data --segmentation_weight 0.6 --shared True
+#python -m euler_run_cross_val --name entire_pipe_segw_8 --log_dir /cluster/scratch/$USER/logs --dataset_root /cluster/scratch/$USER/dl_data/data --segmentation_weight 0.8 --shared True
 

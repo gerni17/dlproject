@@ -129,8 +129,8 @@ class GogollSystem(pl.LightningModule):
         target_segmentation_hat = self.seg_t(target_img).detach()
         
 
-        input_source_img = torch.stack([source_img, source_segmentation_hat],1)
-        input_target_img = torch.stack([target_img, target_segmentation_hat],1)
+        input_source_img = torch.cat([source_img, source_segmentation_hat],1)
+        input_target_img = torch.cat([target_img, target_segmentation_hat],1)
 
         b = source_img.size()[0]
 
@@ -140,8 +140,8 @@ class GogollSystem(pl.LightningModule):
         fake_source = self.G_t2s(input_target_img)
         fake_target = self.G_s2t(input_source_img)
 
-        input_fake_source = torch.stack([fake_source, self.seg_s(fake_source)],1) 
-        input_fake_target = torch.stack([fake_target, self.seg_t(fake_target)],1)
+        input_fake_source = torch.cat([fake_source, self.seg_s(fake_source)],1) 
+        input_fake_target = torch.cat([fake_target, self.seg_t(fake_target)],1)
 
         cycled_source = self.G_t2s(input_fake_target)
         cycled_target = self.G_s2t(input_fake_source)
@@ -275,5 +275,5 @@ class GogollSystem(pl.LightningModule):
 
     def generate(self, inputs):
         source_segmentation_hat = self.seg_s(inputs)
-        input_source_img = torch.stack([inputs, source_segmentation_hat],1)
+        input_source_img = torch.cat([inputs, source_segmentation_hat],1)
         return self.G_s2t(input_source_img)

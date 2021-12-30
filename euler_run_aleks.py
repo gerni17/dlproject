@@ -180,23 +180,11 @@ def main():
     )
 
     # Train
-    if not cfg.seg_checkpoint_path:
-        print("Fitting segmentation network...", run_name)
-        seg_trainer.fit(seg_system, datamodule=dm)
-    else:
-        print("Loading segmentation net from checkpoint...")
-        seg_system = GogollSegSystem.load_from_checkpoint(
-            cfg.seg_checkpoint_path, net=seg_net_s
-        )
+    print("Fitting segmentation network...", run_name)
+    seg_trainer.fit(seg_system, datamodule=dm)
 
-    if not cfg.gogoll_checkpoint_path:
-        print("Fitting gogoll system...", run_name)
-        trainer.fit(main_system, datamodule=dm)
-    else:
-        print("Loading gogol net from checkpoint...")
-        main_system = GogollSystem.load_from_checkpoint(
-            cfg.gogoll_checkpoint_path, **gogoll_net_config
-        )
+    print("Fitting gogoll system...", run_name)
+    trainer.fit(main_system, datamodule=dm)
 
     generator = main_system.G_s2t
 

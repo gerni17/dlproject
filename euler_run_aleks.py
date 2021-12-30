@@ -180,8 +180,14 @@ def main():
     )
 
     # Train
-    print("Fitting segmentation network...", run_name)
-    seg_trainer.fit(seg_system, datamodule=seg_dm)
+    if not cfg.seg_checkpoint_path:
+        print("Fitting segmentation network...", run_name)
+        seg_trainer.fit(seg_system, datamodule=seg_dm)
+    else:
+        print("Loading segmentation net from checkpoint...")
+        seg_system = GogollSegSystem.load_from_checkpoint(
+            cfg.seg_checkpoint_path, net=seg_net_s
+        )
 
     print("Fitting gogoll system...", run_name)
     trainer.fit(main_system, datamodule=dm)

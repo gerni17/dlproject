@@ -1,5 +1,7 @@
 import warnings
 
+from torch.optim.lr_scheduler import LambdaLR
+
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
 import glob
@@ -30,6 +32,7 @@ class GogollAttentionSystem(pl.LightningModule):
         reconstr_w=10,  # reconstruction weighting
         id_w=2,  # identity weighting
         seg_w=1,
+        cfg=None
     ):
         super(GogollAttentionSystem, self).__init__()
         self.G_s2t = G_s2t
@@ -46,6 +49,10 @@ class GogollAttentionSystem(pl.LightningModule):
         self.seg_w = seg_w
         self.cnt_train_step = 0
         self.step = 0
+        self.cfg = cfg
+        self.initial_epoch = 9999999
+
+        self.seg_t.load_state_dict(self.seg_s.state_dict())
 
         self.mae = nn.L1Loss()
         self.generator_loss = nn.MSELoss()
@@ -88,7 +95,7 @@ class GogollAttentionSystem(pl.LightningModule):
             self.seg_s.parameters(), lr=self.lr["seg_s"], betas=(0.5, 0.999)
         )
         self.seg_t_optimizer = optim.Adam(
-            self.seg_t.parameters(), lr=self.lr["seg_t"], betas=(0.5, 0.999)
+            self.seg_t.parameters(), lr=self.lr["seg_t"]/self.cfg.lr_ratio, betas=(0.5, 0.999)
         )
         self.a_s_optimizer = optim.Adam(
             self.A_s.parameters(), lr=self.lr["G"], betas=(0.5, 0.999)
@@ -120,6 +127,9 @@ class GogollAttentionSystem(pl.LightningModule):
         )
 
     def training_step(self, batch, batch_idx, optimizer_idx):
+        if self.current_epoch > self.initial_epoch:
+            self.initial_epoch = self.current_epoch
+        
         source_img, segmentation_img, target_img = (
             batch["source"],
             batch["source_segmentation"],
@@ -230,7 +240,7 @@ class GogollAttentionSystem(pl.LightningModule):
                 logs, on_step=False, on_epoch=True, prog_bar=True, logger=True
             )
 
-            return 4 * G_loss + Seg_loss
+            return 4 * G_loss + Seg_loss * self.seg_w
 
         elif optimizer_idx == 2 or optimizer_idx == 3:
             # Train Discriminator
@@ -270,7 +280,7 @@ class GogollAttentionSystem(pl.LightningModule):
             )
 
             return D_loss
-
+            
     def training_epoch_end(self, outputs):
         self.step += 1
 

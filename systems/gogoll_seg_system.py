@@ -14,8 +14,6 @@ from torch import nn, optim
 import pytorch_lightning as pl
 from torch.optim.lr_scheduler import LambdaLR
 
-from utils.attention import extractClass, clampToValue
-
 
 class GogollSegSystem(pl.LightningModule):
     def __init__(self, net, cfg):  # segmentation network
@@ -42,11 +40,10 @@ class GogollSegSystem(pl.LightningModule):
             batch["source"],
             batch["source_segmentation"],
         )
-        segmentation_img = extractClass(segmentation_img, c=2.0)
 
         y_seg = self.net(source_img)
 
-        Seg_loss = self.semseg_loss(y_seg, segmentation_img.long())
+        Seg_loss = self.semseg_loss(y_seg, segmentation_img)
 
         logs = {
             "loss": Seg_loss,

@@ -186,7 +186,7 @@ def main():
     else:
         print("Loading segmentation net from checkpoint...")
         seg_system = GogollSegSystem.load_from_checkpoint(
-            cfg.seg_checkpoint_path, net=seg_net_s
+            cfg.seg_checkpoint_path, net=seg_net_s, cfg=cfg
         )
 
     print("Fitting gogoll system...", run_name)

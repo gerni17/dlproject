@@ -84,8 +84,8 @@ def main():
     # Sub-Models  -----------------------------------------------------------------
     seg_net_s = UnetLight()
     seg_net_t = UnetLight()
-    G_basestyle = CycleGANGenerator(filter=cfg.generator_filters)
-    G_stylebase = CycleGANGenerator(filter=cfg.generator_filters)
+    G_basestyle = CycleGANGenerator(filter=cfg.generator_filters,in_channels=6)
+    G_stylebase = CycleGANGenerator(filter=cfg.generator_filters,in_channels=6)
     D_base = CycleGANDiscriminator(filter=cfg.discriminator_filters)
     D_style = CycleGANDiscriminator(filter=cfg.discriminator_filters)
 
@@ -189,7 +189,7 @@ def main():
     else:
         print("Loading segmentation net from checkpoint...")
         seg_system = GogollSegSystem.load_from_checkpoint(
-            cfg.seg_checkpoint_path, net=seg_net_s
+            cfg.seg_checkpoint_path, net=seg_net_s,cfg=cfg
         )
 
     if not cfg.gogoll_checkpoint_path:

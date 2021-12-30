@@ -124,16 +124,28 @@ class GogollSystem(pl.LightningModule):
             batch["source_segmentation"],
             batch["target"],
         )
+        source_segmentation_hat = self.seg_s(source_img)
+        # for param in self.seg_t.parameters():
+        #         param.requires_grad=False
+        target_segmentation_hat = self.seg_t(target_img)
+        
+
+        input_source_img = torch.stack([source_img, source_segmentation_hat],1)
+        input_target_img = torch.stack([target_img, target_segmentation_hat],1)
 
         b = source_img.size()[0]
 
         valid = torch.ones(b, 1, 30, 30).cuda()
         fake = torch.zeros(b, 1, 30, 30).cuda()
 
-        fake_source = self.G_t2s(target_img)
-        fake_target = self.G_s2t(source_img)
-        cycled_source = self.G_t2s(fake_target)
-        cycled_target = self.G_s2t(fake_source)
+        fake_source = self.G_t2s(input_target_img)
+        fake_target = self.G_s2t(input_source_img)
+
+        input_fake_source = torch.stack([fake_source, self.seg_s(fake_source)],1) 
+        input_fake_target = torch.stack([fake_target, self.seg_t(fake_target)],1)
+
+        cycled_source = self.G_t2s(input_fake_target)
+        cycled_target = self.G_s2t(input_fake_source)
 
         if optimizer_idx == 0 or optimizer_idx == 1 or optimizer_idx == 4:
             # Train Generator
@@ -149,8 +161,8 @@ class GogollSystem(pl.LightningModule):
             reconstr_loss = (reconstr_source + reconstr_target) / 2
 
             # Identity
-            id_source = self.mae(self.G_t2s(source_img), source_img)
-            id_target = self.mae(self.G_s2t(target_img), target_img)
+            id_source = self.mae(self.G_t2s(input_source_img), source_img)
+            id_target = self.mae(self.G_s2t(input_target_img), target_img)
             id_loss = (id_source + id_target) / 2
 
             # Loss Weight
@@ -263,4 +275,6 @@ class GogollSystem(pl.LightningModule):
         return None
 
     def generate(self, inputs):
-        return self.G_s2t(inputs)
+        source_segmentation_hat = self.seg_s(inputs)
+        input_source_img = torch.stack([inputs, source_segmentation_hat],1)
+        return self.G_s2t(input_source_img)

@@ -12,6 +12,7 @@ class GeneratedDataset(Dataset):
         self,
         generator,
         dataset,
+        seg_net,
     ):
         self.generator = generator
         self.dataset = dataset
@@ -19,6 +20,7 @@ class GeneratedDataset(Dataset):
         self.raw_len = min(
             [len(self.dataset)]
         )
+        self.seg_net=seg_net
 
     def __len__(self):
         return self.raw_len
@@ -33,7 +35,7 @@ class GeneratedDataset(Dataset):
 
         with torch.no_grad():
             generated = self.generator(
-                torch.reshape(rgb_img, (1, shape[0], shape[1], shape[2]))
+                torch.reshape(rgb_img, (1, shape[0], shape[1], shape[2]),network=self.seg_net)
             )
             generated = torch.reshape(
                 generated, (generated.shape[1], generated.shape[2], generated.shape[3])
@@ -45,12 +47,13 @@ class GeneratedDataset(Dataset):
 # Data Module
 class GeneratedDataModule(pl.LightningDataModule):
     def __init__(
-        self, generator, datamodule, batch_size
+        self, generator, datamodule, batch_size,seg_net
     ):
         super(GeneratedDataModule, self).__init__()
         self.generator = generator
         self.datamodule = datamodule
         self.batch_size = batch_size
+        self.seg_net=seg_net
 
     def prepare_data(self):
         self.datamodule.prepare_data()
@@ -61,16 +64,20 @@ class GeneratedDataModule(pl.LightningDataModule):
         self.train_dataset = GeneratedDataset(
             self.generator,
             self.datamodule.train_dataloader().dataset,
+            self.seg_net,
         )
 
         self.val_dataset = GeneratedDataset(
             self.generator,
             self.datamodule.val_dataloader().dataset,
+            self.seg_net
+
         )
 
         self.test_dataset = GeneratedDataset(
             self.generator,
             self.datamodule.test_dataloader().dataset,
+            self.seg_net
         )
 
     def train_dataloader(self):

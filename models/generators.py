@@ -1,4 +1,5 @@
 from torch import nn
+import torch
 from models.layers import Downsample, Upsample
 
 
@@ -33,8 +34,11 @@ class CycleGANGenerator(nn.Module):
             nn.Tanh(),
         )
 
-    def forward(self, x):
+    def forward(self, x, network=None):
         skips = []
+        if network is not None:
+            seg_hat=network(x).detach()
+            x = torch.cat([x, seg_hat],1)
         for l in self.downsamples:
             x = l(x)
             skips.append(x)

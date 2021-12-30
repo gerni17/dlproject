@@ -217,13 +217,14 @@ def main():
             save_path,
             logger=seg_wandb_logger,
             max_images=cfg.max_generated_images_saved,
+            seg_net=seg_net_s
         )
 
     # Train datamodules
     dm_source = LabeledDataModule(
         path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True
     )
-    dm_generated = GeneratedDataModule(generator, dm_source, batch_size=batch_size)
+    dm_generated = GeneratedDataModule(generator, dm_source, batch_size=batch_size,seg_net=seg_net_s)
     
     # easy dataset with full dataset in test loader
     dm_easy_test = TestLabeledDataModule(

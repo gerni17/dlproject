@@ -55,7 +55,7 @@ class GogollSystem(pl.LightningModule):
         if self.cfg.loss_type=="L1":
             self.deep_loss = nn.L1Loss()        
         elif self.cfg.loss_type=="cosine":
-            self.deep_loss = nn.CosineSimilarity()
+            self.deep_loss = nn.CosineSimilarity(dim=2)
         else:
             self.deep_loss = nn.MSELoss()
         self.semseg_loss = nn.CrossEntropyLoss()
@@ -161,9 +161,15 @@ class GogollSystem(pl.LightningModule):
             id_loss = (id_source + id_target) / 2
 
             # Embedding loss
-            deep_loss_source=self.deep_loss(deep_fake_source,deep_cycled_source)
-            deep_loss_target=self.deep_loss(deep_fake_target,deep_cycled_target)
-            deep_loss = (deep_loss_source + deep_loss_target) / 2
+            deep_loss=0
+            if self.cfg.loss_type=="cosine":
+                deep_loss_source=self.deep_loss(torch.flatten(deep_fake_source,start_dim=2),torch.flatten(deep_cycled_source,start_dim=2),)
+                deep_loss_target=self.deep_loss(torch.flatten(deep_fake_target,start_dim=2),torch.flatten(deep_cycled_target,start_dim=2),)
+                deep_loss = (deep_loss_source + deep_loss_target) / 2
+            else:
+                deep_loss_source=self.deep_loss(deep_fake_source,deep_cycled_source)
+                deep_loss_target=self.deep_loss(deep_fake_target,deep_cycled_target)
+                deep_loss = (deep_loss_source + deep_loss_target) / 2
 
             # Loss Weight
             G_loss = val_loss + self.reconstr_w * reconstr_loss + self.id_w * id_loss + self.w_embed* deep_loss

@@ -181,7 +181,7 @@ def main():
 
     # Train
     print("Fitting segmentation network...", run_name)
-    seg_trainer.fit(seg_system, datamodule=dm)
+    seg_trainer.fit(seg_system, datamodule=seg_dm)
 
     print("Fitting gogoll system...", run_name)
     trainer.fit(main_system, datamodule=dm)

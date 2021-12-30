@@ -35,7 +35,7 @@ class GeneratedDataset(Dataset):
 
         with torch.no_grad():
             generated = self.generator(
-                torch.reshape(rgb_img, (1, shape[0], shape[1], shape[2]),network=self.seg_net)
+                torch.reshape(rgb_img, (1, shape[0], shape[1], shape[2])),network=self.seg_net
             )
             generated = torch.reshape(
                 generated, (generated.shape[1], generated.shape[2], generated.shape[3])

@@ -124,10 +124,9 @@ class GogollSystem(pl.LightningModule):
             batch["source_segmentation"],
             batch["target"],
         )
-        source_segmentation_hat = self.seg_s(source_img)
-        # for param in self.seg_t.parameters():
-        #         param.requires_grad=False
-        target_segmentation_hat = self.seg_t(target_img)
+        source_segmentation_hat = self.seg_s(source_img).detach()
+
+        target_segmentation_hat = self.seg_t(target_img).detach()
         
 
         input_source_img = torch.stack([source_img, source_segmentation_hat],1)

@@ -44,8 +44,8 @@ class GogollPipelineImageLogger(Callback):
         seg_s = getattr(pl_module, "seg_s")
         seg_t = getattr(pl_module, "seg_t")
 
-        generated_target = G_s2t(input_imgs)
-        cycled_input = G_t2s(G_s2t(input_imgs))
+        generated_target = G_s2t(input_imgs,seg_s)
+        cycled_input = G_t2s(G_s2t(input_imgs,seg_t),seg_s)
 
         plant_imgs = torch.cat([input_imgs, cycled_input, generated_target], dim=0)
 

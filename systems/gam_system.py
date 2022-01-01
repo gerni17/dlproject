@@ -83,23 +83,19 @@ class GamSystem(pl.LightningModule):
         valid = torch.ones(b, 1, 30, 30).cuda()
         fake = torch.zeros(b, 1, 30, 30).cuda()
 
-        fake_se = self.G_ta2se(target_img)
         fake_ta = self.G_se2ta(segmentation_img + segmentation_img_noise)
         cycled_se = self.G_ta2se(fake_ta)
-        cycled_ta = self.G_se2ta(fake_se)
 
         if optimizer_idx == 0 or optimizer_idx == 1 or optimizer_idx == 4:
             # Train Generator
             # Validity
             # MSELoss
             val_ta = self.generator_loss(self.D_ta(fake_ta), valid)
-            val_se = self.generator_loss(self.D_se(fake_se), valid)
-            val_loss = (val_ta + val_se) / 2
+            val_loss = val_ta
 
             # Reconstruction
             reconstr_se = self.cse_loss(cycled_se, segmentation_img_target.argmax(dim=1))
-            reconstr_ta = self.mae(cycled_ta, target_img)
-            reconstr_loss = (reconstr_se + reconstr_ta) / 2
+            reconstr_loss = reconstr_se
 
             # Loss Weight
             G_loss = val_loss + self.reconstr_w * reconstr_loss
@@ -108,9 +104,7 @@ class GamSystem(pl.LightningModule):
             logs = {
                 "G_loss": G_loss,
                 "val_ta": val_ta,
-                "val_se": val_se,
                 "val_loss": val_loss,
-                "reconstr_ta": reconstr_ta,
                 "reconstr_se": reconstr_se,
                 "reconstr_loss": reconstr_loss,
             }
@@ -127,9 +121,6 @@ class GamSystem(pl.LightningModule):
             D_ta_gen_loss = self.discriminator_loss(
                 self.D_ta(fake_ta), fake
             )
-            D_se_gen_loss = self.discriminator_loss(
-                self.D_se(fake_se), fake
-            )
             D_ta_valid_loss = self.discriminator_loss(
                 self.D_ta(target_img), valid
             )
@@ -137,7 +128,7 @@ class GamSystem(pl.LightningModule):
                 self.D_se(segmentation_img), valid
             )
 
-            D_gen_loss = (D_ta_gen_loss + D_se_gen_loss) / 2
+            D_gen_loss = D_ta_gen_loss
 
             # Loss Weight
             D_loss = (D_gen_loss + D_ta_valid_loss + D_se_valid_loss) / 3
@@ -148,7 +139,6 @@ class GamSystem(pl.LightningModule):
             logs = {
                 "D_loss": D_loss,
                 "D_ta_gen_loss": D_ta_gen_loss,
-                "D_se_gen_loss": D_se_gen_loss,
                 "D_ta_valid_loss": D_ta_valid_loss,
                 "D_se_valid_loss": D_se_valid_loss,
                 "D_gen_loss": D_gen_loss,

@@ -1,6 +1,5 @@
 from os import path
 import uuid
-from scipy.sparse import base
 import wandb
 
 from datetime import datetime
@@ -13,7 +12,7 @@ from models.unet_light_semseg import UnetLight
 from preprocessing.seg_transforms import SegImageTransform
 
 from systems.final_seg_system import FinalSegSystem
-from configs.gogoll_config import command_line_parser
+from configs.baseline_config import command_line_parser
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from logger.validation_set_seg_image import ValidationSetSegmentationImageLogger
@@ -34,7 +33,7 @@ def main():
 
     transform = SegImageTransform(img_size=cfg.image_size)
 
-    batch_size = 8
+    batch_size = cfg.batch_size
 
     if cfg.shared:
         wandb.init(

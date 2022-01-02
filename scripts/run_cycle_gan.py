@@ -17,7 +17,7 @@ from systems.cycle_gan_system import CycleGanSystem
 
 from systems.final_seg_system import FinalSegSystem
 from utils.weight_initializer import init_weights
-from configs.gogoll_config import command_line_parser
+from configs.cyclegan_config import command_line_parser
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from models.discriminators import CycleGANDiscriminator
@@ -44,7 +44,7 @@ def main():
         "G": 0.0002,
         "D": 0.0002,
     }
-    epochs_gogoll = cfg.num_epochs_gogoll
+    epochs_cyclegan = cfg.num_epochs_cyclegan
     reconstr_w = cfg.reconstruction_weight
     id_w = cfg.identity_weight
     if cfg.shared:
@@ -109,7 +109,7 @@ def main():
     print(f"Gpu {cfg.gpu}")
 
     trainer = Trainer(
-        max_epochs=epochs_gogoll,
+        max_epochs=epochs_cyclegan,
         gpus=1 if cfg.gpu else 0,
         reload_dataloaders_every_n_epochs=True,
         num_sanity_val_steps=0,

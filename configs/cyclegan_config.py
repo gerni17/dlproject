@@ -25,7 +25,10 @@ def command_line_parser():
 
     # -------------------------- wandb settings --------------------------
     parser.add_argument(
-        "--project", type=str, help="Name for your run to wandb project.",
+        "--project",
+        type=str,
+        default="CycleGAN",
+        help="Name for your run to wandb project.",
     )
     parser.add_argument(
         "--name",
@@ -36,15 +39,44 @@ def command_line_parser():
 
     # -------------------------- logging settings --------------------------
     parser.add_argument(
-        "--log_dir", type=expandpath, default="/cluster/scratch/$USER/logs", help="Place for artifacts and logs"
+        "--log_dir",
+        type=expandpath,
+        default="/cluster/scratch/$USER/logs",
+        help="Place for artifacts and logs",
     )
     parser.add_argument(
-        "--use_wandb", type=str2bool, default=False, help="Use WandB for logging"
+        "--use_wandb", type=str2bool, default=True, help="Use WandB for logging"
     )
-
+    parser.add_argument(
+        "--shared", type=str2bool, default=False, help="Push to shared wandb project"
+    )
+    parser.add_argument(
+        '--sched', type=bool, default=True, help='Using scheduler')
     # -------------------------- training settings --------------------------
     parser.add_argument(
-        "--num_epochs", type=int, default=16, help="Number of training epochs"
+        "--num_epochs_seg",
+        type=int,
+        default=55,
+        help="Number of training epochs for the segmentation net",
+    )
+    parser.add_argument(
+        "--num_epochs_final",
+        type=int,
+        default=55,
+        help="Number of training epochs for the final segmentation net",
+    )
+    parser.add_argument(
+        "--num_epochs_cyclegan", type=int, default=50, help="Number of training epochs"
+    )
+    parser.add_argument(
+        "--seg_checkpoint_path",
+        type=expandpath,
+        help="Path to the source segmentation net's checkpoint (leave empty if should be trained)",
+    )
+    parser.add_argument(
+        "--checkpoint_path",
+        type=expandpath,
+        help="Path to the CycleGAN net's checkpoint (leave empty if should be trained)",
     )
     parser.add_argument(
         "--batch_size",
@@ -71,11 +103,31 @@ def command_line_parser():
         help="Weight assigned to the identity loss",
     )
     parser.add_argument(
+        "--segmentation_weight",
+        type=float,
+        default=0.5,
+        help="Weight assigned to the segmentation loss",
+    )
+    parser.add_argument(
         "--resume",
         type=str,
         default=None,
         help="Resume training from checkpoint, which can also be an AWS link s3://...",
     )
+    parser.add_argument(
+        '--lr_scheduler_power', type=float, default=0.9, help='Poly learning rate power')
+    parser.add_argument(
+        '--lr_scheduler_power_final', type=float, default=0.95, help='Poly learning rate power')
+
+    parser.add_argument(
+        "--lr_ratio",
+        type=float,
+        default=1,
+        help="Ratio for the learing rate of the target segmentation network in the gogol net",
+    )
+
+    parser.add_argument(
+        '--seg_lr', type=float, default=0.0001, help='Poly learning rate power')
 
     # -------------------------- model settings --------------------------
     parser.add_argument(
@@ -94,14 +146,7 @@ def command_line_parser():
 
     # -------------------------- data settings --------------------------
     parser.add_argument(
-        "--dataset_root", type=expandpath, default="/cluster/scratch/$USER/dl_data/data", help="Path to dataset", 
-    )
-    parser.add_argument(
-        "--domain",
-        type=str,
-        default="domainA",
-        choices=["domainA", "domainB"],
-        help="Type of the target domain",
+        "--dataset_root", type=expandpath, default="/cluster/scratch/$USER/dl_data/data", help="Path to dataset",
     )
     parser.add_argument(
         "--image_size",
@@ -115,13 +160,13 @@ def command_line_parser():
     parser.add_argument(
         "--workers",
         type=int,
-        default=1,
+        default=4,
         help="Number of worker threads fetching training data",
     )
     parser.add_argument(
         "--workers_validation",
         type=int,
-        default=1,
+        default=4,
         help="Number of worker threads fetching validation data",
     )
 

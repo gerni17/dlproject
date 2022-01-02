@@ -27,7 +27,7 @@ def command_line_parser():
     parser.add_argument(
         "--project",
         type=str,
-        default="Gogoll",
+        default="LabelToTarget",
         help="Name for your run to wandb project.",
     )
     parser.add_argument(
@@ -50,15 +50,7 @@ def command_line_parser():
     parser.add_argument(
         "--shared", type=str2bool, default=False, help="Push to shared wandb project"
     )
-    parser.add_argument(
-        '--sched', type=bool, default=True, help='Using scheduler')
     # -------------------------- training settings --------------------------
-    parser.add_argument(
-        "--num_epochs_seg",
-        type=int,
-        default=55,
-        help="Number of training epochs for the segmentation net",
-    )
     parser.add_argument(
         "--num_epochs_final",
         type=int,
@@ -66,17 +58,12 @@ def command_line_parser():
         help="Number of training epochs for the final segmentation net",
     )
     parser.add_argument(
-        "--num_epochs_gogoll", type=int, default=100, help="Number of training epochs"
+        "--num_epochs_labeltotarget", type=int, default=500, help="Number of training epochs"
     )
     parser.add_argument(
-        "--seg_checkpoint_path",
+        "--checkpoint_path",
         type=expandpath,
-        help="Path to the source segmentation net's checkpoint (leave empty if should be trained)",
-    )
-    parser.add_argument(
-        "--gogoll_checkpoint_path",
-        type=expandpath,
-        help="Path to the gogol net's checkpoint (leave empty if should be trained)",
+        help="Path to the LabelToTarget net's checkpoint (leave empty if should be trained)",
     )
     parser.add_argument(
         "--batch_size",
@@ -97,37 +84,13 @@ def command_line_parser():
         help="Weight assigned to the reconstruction loss",
     )
     parser.add_argument(
-        "--identity_weight",
+        "--gan_noise",
         type=float,
-        default=2,
-        help="Weight assigned to the identity loss",
+        default=0.7,
+        help="Noise used to generate images",
     )
-    parser.add_argument(
-        "--segmentation_weight",
-        type=float,
-        default=0.5,
-        help="Weight assigned to the segmentation loss",
-    )
-    parser.add_argument(
-        "--resume",
-        type=str,
-        default=None,
-        help="Resume training from checkpoint, which can also be an AWS link s3://...",
-    )
-    parser.add_argument(
-        '--lr_scheduler_power', type=float, default=0.9, help='Poly learning rate power')
     parser.add_argument(
         '--lr_scheduler_power_final', type=float, default=0.95, help='Poly learning rate power')
-
-    parser.add_argument(
-        "--lr_ratio",
-        type=float,
-        default=1,
-        help="Ratio for the learing rate of the target segmentation network in the gogol net",
-    )
-
-    parser.add_argument(
-        '--seg_lr', type=float, default=0.0001, help='Poly learning rate power')
 
     # -------------------------- model settings --------------------------
     parser.add_argument(
@@ -154,7 +117,7 @@ def command_line_parser():
         default=256,
         help="Size training images should be scaled to",
     )
-
+    
     # -------------------------- hardware settings --------------------------
     parser.add_argument("--gpu", type=str2bool, default=True, help="GPU usage")
     parser.add_argument(

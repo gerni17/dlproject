@@ -17,7 +17,7 @@ from preprocessing.seg_transforms import SegImageTransform
 from systems.final_seg_system import FinalSegSystem
 from systems.labeltotarget_system import LabelToTargetSystem
 from utils.weight_initializer import init_weights
-from configs.gogoll_config import command_line_parser
+from configs.labeltotarget_config import command_line_parser
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from models.discriminators import CycleGANDiscriminator
@@ -44,7 +44,7 @@ def main():
         "G": 0.0002,
         "D": 0.0002,
     }
-    epochs_gogoll = cfg.num_epochs_gogoll
+    epochs_labeltotarget = cfg.num_epochs_labeltotarget
     reconstr_w = cfg.reconstruction_weight
     id_w = cfg.identity_weight
     if cfg.shared:
@@ -119,7 +119,7 @@ def main():
     print(f"Gpu {cfg.gpu}")
 
     trainer = Trainer(
-        max_epochs=epochs_gogoll,
+        max_epochs=epochs_labeltotarget,
         gpus=1 if cfg.gpu else 0,
         reload_dataloaders_every_n_epochs=True,
         num_sanity_val_steps=0,
@@ -128,13 +128,13 @@ def main():
     )
 
     # Train
-    if not cfg.gogoll_checkpoint_path:
+    if not cfg.checkpoint_path:
         print("Fitting LabelToTarget system...", run_name)
         trainer.fit(main_system, datamodule=dm)
     else:
         print("Loading LabelToTarget net from checkpoint...")
         main_system = LabelToTargetSystem.load_from_checkpoint(
-            cfg.gogoll_checkpoint_path, **gogoll_net_config
+            cfg.checkpoint_path, **gogoll_net_config
         )
 
     generator = main_system.G_se2ta

@@ -7,14 +7,11 @@ from logger.validation_set_seg_image import ValidationSetSegmentationImageLogger
 from preprocessing.seg_transforms import SegImageTransform
 from datasets.labeled import LabeledDataModule
 
-from logger.generated_image import GeneratedImageLogger
-
 # from utils.weight_initializer import init_weights
 from configs.seg_config import command_line_parser
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from systems.experiment_semseg import Semseg
-from systems.gogoll_seg_system import GogollSegSystem
 from models.unet_light_semseg import UnetLight
 
 

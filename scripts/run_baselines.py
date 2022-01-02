@@ -6,7 +6,6 @@ import wandb
 from datetime import datetime
 from pytorch_lightning import Trainer
 from datasets.crossval import CrossValidationDataModule
-from datasets.mixed import MixedDataModule
 from datasets.labeled import LabeledDataModule
 from datasets.test import TestLabeledDataModule
 from logger.test_set_seg_image import TestSetSegmentationImageLogger
@@ -14,7 +13,6 @@ from models.unet_light_semseg import UnetLight
 from preprocessing.seg_transforms import SegImageTransform
 
 from systems.final_seg_system import FinalSegSystem
-from utils.weight_initializer import init_weights
 from configs.gogoll_config import command_line_parser
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint

@@ -1,15 +1,22 @@
+import warnings
+
+from torch.optim.lr_scheduler import LambdaLR
+
+warnings.simplefilter(action="ignore", category=FutureWarning)
+
 import glob
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
-
+from itertools import chain
 import torch
+import torchmetrics
 from torchvision.utils import make_grid
 from torch import nn, optim
 import pytorch_lightning as pl
 
 
-class CycleGANSystem(pl.LightningModule):
+class CycleGanSystem(pl.LightningModule):
     def __init__(
         self,
         G_s2t,  # generator source to target
@@ -17,22 +24,22 @@ class CycleGANSystem(pl.LightningModule):
         D_source,
         D_target,
         lr,
-        transform,  # preprocessing transformation
         reconstr_w=10,  # reconstruction weighting
         id_w=2,  # identity weighting
-        viz_set=None,
+        cfg=None
     ):
-        super(CycleGANSystem, self).__init__()
+        super(CycleGanSystem, self).__init__()
         self.G_s2t = G_s2t
         self.G_t2s = G_t2s
         self.D_source = D_source
         self.D_target = D_target
         self.lr = lr
-        self.transform = transform
         self.reconstr_w = reconstr_w
         self.id_w = id_w
         self.cnt_train_step = 0
         self.step = 0
+        self.cfg = cfg
+        self.initial_epoch = 9999999
 
         self.mae = nn.L1Loss()
         self.generator_loss = nn.MSELoss()
@@ -69,28 +76,32 @@ class CycleGANSystem(pl.LightningModule):
         )
 
     def training_step(self, batch, batch_idx, optimizer_idx):
-        source_img, target_img = (batch["source"], batch["target"])
+        source_img, target_img = (
+            batch["source"],
+            batch["target"],
+        )
 
         b = source_img.size()[0]
 
-        valid = torch.ones(b, 1, 30, 30)
-        fake = torch.zeros(b, 1, 30, 30)
+        valid = torch.ones(b, 1, 30, 30).cuda()
+        fake = torch.zeros(b, 1, 30, 30).cuda()
 
-        # Train Generator
-        if optimizer_idx == 0 or optimizer_idx == 1:
+        fake_source = self.G_t2s(target_img)
+        fake_target = self.G_s2t(source_img)
+        cycled_source = self.G_t2s(fake_target)
+        cycled_target = self.G_s2t(fake_source)
+
+        if optimizer_idx == 0 or optimizer_idx == 1 or optimizer_idx == 4:
+            # Train Generator
             # Validity
             # MSELoss
-            val_source = self.generator_loss(
-                self.D_source(self.G_t2s(target_img)), valid
-            )
-            val_target = self.generator_loss(
-                self.D_target(self.G_s2t(source_img)), valid
-            )
+            val_source = self.generator_loss(self.D_source(fake_source), valid)
+            val_target = self.generator_loss(self.D_target(fake_target), valid)
             val_loss = (val_source + val_target) / 2
 
             # Reconstruction
-            reconstr_source = self.mae(self.G_t2s(self.G_s2t(source_img)), source_img)
-            reconstr_target = self.mae(self.G_s2t(self.G_t2s(target_img)), target_img)
+            reconstr_source = self.mae(cycled_source, source_img)
+            reconstr_target = self.mae(cycled_target, target_img)
             reconstr_loss = (reconstr_source + reconstr_target) / 2
 
             # Identity
@@ -118,21 +129,16 @@ class CycleGANSystem(pl.LightningModule):
                 logs, on_step=False, on_epoch=True, prog_bar=True, logger=True
             )
 
-            return {
-                "loss": G_loss,
-                "validity": val_loss,
-                "reconstr": reconstr_loss,
-                "identity": id_loss,
-            }
+            return G_loss
 
-        # Train Discriminator
         elif optimizer_idx == 2 or optimizer_idx == 3:
+            # Train Discriminator
             # MSELoss
             D_source_gen_loss = self.discriminator_loss(
-                self.D_source(self.G_t2s(target_img)), fake
+                self.D_source(fake_source), fake
             )
             D_target_gen_loss = self.discriminator_loss(
-                self.D_target(self.G_s2t(source_img)), fake
+                self.D_target(fake_target), fake
             )
             D_source_valid_loss = self.discriminator_loss(
                 self.D_source(source_img), valid
@@ -162,54 +168,10 @@ class CycleGANSystem(pl.LightningModule):
                 logs, on_step=False, on_epoch=True, prog_bar=True, logger=True
             )
 
-            return {"loss": D_loss}
+            return D_loss
 
     def training_epoch_end(self, outputs):
         self.step += 1
-
-        avg_loss = sum(
-            [
-                torch.stack([x["loss"] for x in outputs[i]]).mean().item() / 4
-                for i in range(4)
-            ]
-        )
-        G_mean_loss = sum(
-            [
-                torch.stack([x["loss"] for x in outputs[i]]).mean().item() / 2
-                for i in [0, 1]
-            ]
-        )
-        D_mean_loss = sum(
-            [
-                torch.stack([x["loss"] for x in outputs[i]]).mean().item() / 2
-                for i in [2, 3]
-            ]
-        )
-        validity = sum(
-            [
-                torch.stack([x["validity"] for x in outputs[i]]).mean().item() / 2
-                for i in [0, 1]
-            ]
-        )
-        reconstr = sum(
-            [
-                torch.stack([x["reconstr"] for x in outputs[i]]).mean().item() / 2
-                for i in [0, 1]
-            ]
-        )
-        identity = sum(
-            [
-                torch.stack([x["identity"] for x in outputs[i]]).mean().item() / 2
-                for i in [0, 1]
-            ]
-        )
-
-        self.losses.append(avg_loss)
-        self.G_mean_losses.append(G_mean_loss)
-        self.D_mean_losses.append(D_mean_loss)
-        self.validity.append(validity)
-        self.reconstr.append(reconstr)
-        self.identity.append(identity)
 
         return None
 

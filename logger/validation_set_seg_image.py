@@ -7,7 +7,7 @@ import wandb
 from logger.semseg_image import prepare_semseg
 
 
-class GogollSemsegImageLogger(Callback):
+class ValidationSetSegmentationImageLogger(Callback):
     """
     Callback which at the end of every training epoch will log some generated images to wandb.
 
@@ -32,7 +32,6 @@ class GogollSemsegImageLogger(Callback):
         if not data_module.has_setup_fit:
             data_module.setup()
             
-        print(f'Loading {data_module.__class__.__name__}')
         dataloader = data_module.val_dataloader()
 
         val_samples = next(iter(dataloader))
@@ -71,4 +70,4 @@ class GogollSemsegImageLogger(Callback):
                 {self.log_key: [wandb.Image(joined_images)]}, commit=False,
             )
         except BaseException as err:
-            print(f"Error occured while uploading image to wandb. {err=}, {type(err)=}")
+            print(f"Error occured while uploading image to wandb. {err}, {type(err)}")

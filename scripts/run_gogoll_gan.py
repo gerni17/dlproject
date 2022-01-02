@@ -4,12 +4,17 @@ import wandb
 
 from datetime import datetime
 from pytorch_lightning import Trainer
+from datasets.generated import GeneratedDataModule
 from datasets.labeled import LabeledDataModule
+from datasets.crossval import CrossValidationDataModule
+from datasets.test import TestLabeledDataModule
+from logger.test_set_seg_image import TestSetSegmentationImageLogger
 from logger.gogoll_pipeline_image import GogollPipelineImageLogger
 from models.unet_light_semseg import UnetLight
 from preprocessing.seg_transforms import SegImageTransform
 from datasets.gogoll import GogollDataModule
 
+from systems.final_seg_system import FinalSegSystem
 from systems.gogoll_seg_system import GogollSegSystem
 from utils.generate_targets_with_semantics import save_generated_dataset
 from utils.weight_initializer import init_weights
@@ -18,8 +23,10 @@ from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from models.discriminators import CycleGANDiscriminator
 from models.generators import CycleGANGenerator
-from logger.gogoll_semseg_image import GogollSemsegImageLogger
+from logger.validation_set_seg_image import ValidationSetSegmentationImageLogger
 from systems.gogoll_system import GogollSystem
+
+from numpy import mean
 
 
 def main():
@@ -136,7 +143,7 @@ def main():
     )
 
     # save the generated images (from the validation data) after every epoch to wandb
-    semseg_s_image_callback = GogollSemsegImageLogger(
+    semseg_s_image_callback = ValidationSetSegmentationImageLogger(
         dm, network="net", log_key="Segmentation (Source)"
     )
     pipeline_image_callback = GogollPipelineImageLogger(dm, log_key="Pipeline")
@@ -195,23 +202,118 @@ def main():
 
     generator = main_system.G_s2t
 
-    # Image Generation & Saving  --------------------------------------------------------------
-    if cfg.save_generated_images:
-        dm_source = LabeledDataModule(
-            path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True
-        )
-        save_path = path.join(cfg.generated_dataset_save_root, run_name)
-        # Generate fake target domain images and save them to a persistent folder (with the
-        # same name as the current run)
-        save_generated_dataset(
-            generator,
-            dm_source,
-            save_path,
-            logger=seg_wandb_logger,
-            max_images=cfg.max_generated_images_saved,
-        )
+    # Train datamodules
+    dm_source = LabeledDataModule(
+        path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True
+    )
+    dm_generated = GeneratedDataModule(generator, dm_source, batch_size=batch_size)
+    
+    # easy dataset with full dataset in test loader
+    dm_easy_test = TestLabeledDataModule(
+        path.join(data_dir, 'easy'), transform, batch_size=batch_size
+    )
+
+    n_splits = 5
+
+    cv_source = CrossValidationDataModule(dm_generated, batch_size=batch_size, n_splits=n_splits)
+
+    # train the final segmentation net that we use to evaluate if our augmented dataset helps
+    # with training a segnet that is more robust to different domains/conditions
+    n_cross_val_epochs = cfg.num_epochs_final
+
+    evaluate_ours(
+        cfg,
+        project_name,
+        cv_source,
+        dm_easy_test,
+        run_name,
+        log_path,
+        n_cross_val_epochs,
+        n_splits,
+    )
 
     wandb.finish()
+
+# evaluate segementation on our generated data
+def evaluate_ours(
+    cfg,
+    project_name,
+    train_datamodule,
+    test_datamodule,
+    run_name,
+    log_path,
+    n_epochs,
+    n_splits,
+):
+    # Cross Validation Run
+    fold_metrics = {
+        "iou": [],
+        "soil": [],
+        "weed": [],
+        "crop": [],
+    }
+
+    for i in range(n_splits):
+        # Cross Validation Run
+        seg_net = UnetLight()
+        seg_system = FinalSegSystem(seg_net, cfg=cfg)
+
+        # Logger  --------------------------------------------------------------
+        seg_wandb_logger = (
+            WandbLogger(
+                project=project_name,
+                name=run_name,
+            )
+            if cfg.use_wandb
+            else None
+        )
+
+        # Callbacks  --------------------------------------------------------------
+        # save the model
+        segmentation_checkpoint_callback = ModelCheckpoint(
+            dirpath=path.join(log_path, f"segmentation_final_{i}"),
+            save_last=False,
+            save_top_k=1,
+            verbose=False,
+            monitor="loss",
+            mode="min",
+        )
+
+        semseg_image_callback = ValidationSetSegmentationImageLogger(
+            train_datamodule,
+            network="net",
+            log_key=f"Segmentation (Final) - Train",
+        )
+
+        baseline_image_callback = TestSetSegmentationImageLogger(
+            test_datamodule,
+            network="net",
+            log_key=f"Segmentation (Final)",
+        )
+
+        cv_trainer = Trainer(
+            max_epochs=n_epochs,
+            gpus=1 if cfg.gpu else 0,
+            reload_dataloaders_every_n_epochs=True,
+            num_sanity_val_steps=0,
+            logger=seg_wandb_logger,
+            callbacks=[segmentation_checkpoint_callback, semseg_image_callback,baseline_image_callback],
+        )
+
+        cv_trainer.fit(seg_system, datamodule=train_datamodule)
+
+        res = cv_trainer.test(seg_system, datamodule=test_datamodule)
+        # Acess dict values of trainer after test and get metrics for average
+        fold_metrics["iou"].append(res[0]["IOU Metric"])
+        fold_metrics["soil"].append(res[0]["Test Metric Summary - soil"])
+        fold_metrics["weed"].append(res[0]["Test Metric Summary - weed"])
+        fold_metrics["crop"].append(res[0]["Test Metric Summary - crop"])
+
+    # Acess dict values of trainer after test and get metrics for average
+    wandb.run.summary[f"Crossvalidation IOU"] = mean(fold_metrics["iou"])
+    wandb.run.summary[f"Crossvalidation IOU Soil"] = mean(fold_metrics["soil"])
+    wandb.run.summary[f"Crossvalidation IOU Weed"] = mean(fold_metrics["weed"])
+    wandb.run.summary[f"Crossvalidation IOU Crop"] = mean(fold_metrics["crop"])
 
 
 if __name__ == "__main__":

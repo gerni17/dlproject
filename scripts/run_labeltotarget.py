@@ -4,30 +4,25 @@ import wandb
 
 from datetime import datetime
 from pytorch_lightning import Trainer
-from datasets.gam import GamDataModule
-from datasets.generated_gam import GeneratedGamDataModule
+from datasets.labeltotarget import LabelToTargetDataModule
+from datasets.generated_labeltotarget import GeneratedLabelToTargetDataModule
 from datasets.labeled import LabeledDataModule
 from datasets.crossval import CrossValidationDataModule
 from datasets.test import TestLabeledDataModule
-from logger.gam_pipeline_image import GamPipelineImageLogger
-from logger.gogoll_baseline_image import GogollBaselineImageLogger
-from logger.gogoll_pipeline_image import GogollPipelineImageLogger
+from logger.labeltotarget_pipeline_image import LabelToTargetPipelineImageLogger
+from logger.test_set_seg_image import TestSetSegmentationImageLogger
 from models.unet_light_semseg import UnetLight
 from preprocessing.seg_transforms import SegImageTransform
-from datasets.gogoll import GogollDataModule
 
 from systems.final_seg_system import FinalSegSystem
-from systems.gam_system import GamSystem
-from systems.gogoll_seg_system import GogollSegSystem
-from utils.generate_targets_with_semantics import save_generated_dataset
+from systems.labeltotarget_system import LabelToTargetSystem
 from utils.weight_initializer import init_weights
-from configs.gogoll_config import command_line_parser
+from configs.labeltotarget_config import command_line_parser
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from models.discriminators import CycleGANDiscriminator
 from models.generators import CycleGANGenerator
-from logger.gogoll_semseg_image import GogollSemsegImageLogger
-from systems.gogoll_system import GogollSystem
+from logger.validation_set_seg_image import ValidationSetSegmentationImageLogger
 
 from numpy import mean
 
@@ -49,7 +44,7 @@ def main():
         "G": 0.0002,
         "D": 0.0002,
     }
-    epochs_gogoll = cfg.num_epochs_gogoll
+    epochs_labeltotarget = cfg.num_epochs_labeltotarget
     reconstr_w = cfg.reconstruction_weight
     id_w = cfg.identity_weight
     if cfg.shared:
@@ -71,7 +66,7 @@ def main():
     transform = SegImageTransform(img_size=cfg.image_size)
 
     # DataModule  -----------------------------------------------------------------
-    dm = GamDataModule(
+    dm = LabelToTargetDataModule(
         path.join(data_dir, 'source'), path.join(data_dir, 'easy', 'rgb'), transform, batch_size
     )
 
@@ -93,21 +88,22 @@ def main():
         "D_ta": D_base,
         "D_se": D_style,
         "lr": lr,
-        "reconstr_w": reconstr_w
+        "reconstr_w": reconstr_w,
+        "cfg": cfg,
     }
-    main_system = GamSystem(**gogoll_net_config)
+    main_system = LabelToTargetSystem(**gogoll_net_config)
 
     # Logger  --------------------------------------------------------------
-    gam_wandb_logger = (
-        WandbLogger(project=project_name, name=run_name, prefix="gam")
+    labeltotarget_wandb_logger = (
+        WandbLogger(project=project_name, name=run_name)
         if cfg.use_wandb
         else None
     )
 
     # Callbacks  --------------------------------------------------------------
     # save the model
-    gam_checkpoint_callback = ModelCheckpoint(
-        dirpath=path.join(log_path, "gam"),
+    labeltotarget_checkpoint_callback = ModelCheckpoint(
+        dirpath=path.join(log_path, "labeltotarget"),
         save_last=False,
         save_top_k=1,
         verbose=True,
@@ -116,29 +112,29 @@ def main():
     )
 
     # save the generated images (from the validation data) after every epoch to wandb
-    pipeline_image_callback = GamPipelineImageLogger(dm, log_key="Pipeline")
+    pipeline_image_callback = LabelToTargetPipelineImageLogger(dm, log_key="Pipeline")
 
     # Trainer  --------------------------------------------------------------
     print("Start training", run_name)
     print(f"Gpu {cfg.gpu}")
 
     trainer = Trainer(
-        max_epochs=epochs_gogoll,
+        max_epochs=epochs_labeltotarget,
         gpus=1 if cfg.gpu else 0,
         reload_dataloaders_every_n_epochs=True,
         num_sanity_val_steps=0,
-        logger=gam_wandb_logger,
-        callbacks=[gam_checkpoint_callback, pipeline_image_callback,],
+        logger=labeltotarget_wandb_logger,
+        callbacks=[labeltotarget_checkpoint_callback, pipeline_image_callback,],
     )
 
     # Train
-    if not cfg.gogoll_checkpoint_path:
-        print("Fitting gam system...", run_name)
+    if not cfg.checkpoint_path:
+        print("Fitting LabelToTarget system...", run_name)
         trainer.fit(main_system, datamodule=dm)
     else:
-        print("Loading gam net from checkpoint...")
-        main_system = GamSystem.load_from_checkpoint(
-            cfg.gogoll_checkpoint_path, **gogoll_net_config
+        print("Loading LabelToTarget net from checkpoint...")
+        main_system = LabelToTargetSystem.load_from_checkpoint(
+            cfg.checkpoint_path, **gogoll_net_config
         )
 
     generator = main_system.G_se2ta
@@ -147,7 +143,7 @@ def main():
     dm_source = LabeledDataModule(
         path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True
     )
-    dm_generated = GeneratedGamDataModule(generator, dm_source, batch_size=batch_size)
+    dm_generated = GeneratedLabelToTargetDataModule(generator, dm_source, batch_size=batch_size)
     
     # easy dataset with full dataset in test loader
     dm_easy_test = TestLabeledDataModule(
@@ -171,8 +167,8 @@ def main():
         log_path,
         n_cross_val_epochs,
         n_splits,
-        "GAM",
-        "gam"
+        "LabelToTarget",
+        "labeltotarget"
     )
 
     wandb.finish()
@@ -208,7 +204,6 @@ def evaluate_ours(
             WandbLogger(
                 project=project_name,
                 name=run_name,
-                prefix=f"({experiment_name}) ",
             )
             if cfg.use_wandb
             else None
@@ -225,13 +220,13 @@ def evaluate_ours(
             mode="min",
         )
 
-        semseg_image_callback = GogollSemsegImageLogger(
+        semseg_image_callback = ValidationSetSegmentationImageLogger(
             train_datamodule,
             network="net",
             log_key=f"Segmentation (Final - {experiment_name}) - Train",
         )
 
-        baseline_image_callback = GogollBaselineImageLogger(
+        baseline_image_callback = TestSetSegmentationImageLogger(
             test_datamodule,
             network="net",
             log_key=f"Segmentation (Final - {experiment_name})",

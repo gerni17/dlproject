@@ -16,18 +16,18 @@ from datasets.gogoll import GogollDataModule
 
 from systems.final_seg_system import FinalSegSystem
 from systems.gogoll_seg_system import GogollSegSystem
-from utils.generate_targets_with_semantics import save_generated_dataset
 from utils.weight_initializer import init_weights
-from configs.embedding_config import command_line_parser
+from configs.gogoll_config import command_line_parser
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from models.discriminators import CycleGANDiscriminator
 from models.generators import CycleGANGenerator
 from logger.validation_set_seg_image import ValidationSetSegmentationImageLogger
-from systems.embedding_system import GogollSystem
+
+from models.attention_model import AttentionNet
+from systems.gogoll_attention_system import GogollAttentionSystem
 
 from numpy import mean
-
 
 def main():
     cfg = command_line_parser()
@@ -51,24 +51,11 @@ def main():
     epochs_seg = cfg.num_epochs_seg
     epochs_gogoll = cfg.num_epochs_gogoll
     reconstr_w = cfg.reconstruction_weight
-    if cfg.shared:
-        wandb.init(
-            reinit=True,
-            name=run_name,
-            config=cfg,
-            settings=wandb.Settings(start_method="fork"),
-            entity="dlshared",
-            project="dlproject"
-        )
-    else:
-        wandb.init(
-            reinit=True,
-            name=run_name,
-            config=cfg,
-            settings=wandb.Settings(start_method="fork"),
-            # entity="gerni",
-            project="dlproject"
-        )
+    id_w = cfg.identity_weight
+    seg_w = cfg.segmentation_weight
+
+    wandb.login(key="969803cb62211763351a441ac5c9e96ce995f7eb") # for aleks euler
+
     # Data Preprocessing  -----------------------------------------------------------------
     transform = SegImageTransform(img_size=cfg.image_size)
 
@@ -81,6 +68,7 @@ def main():
         path.join(data_dir, 'source'), transform, batch_size
     )
 
+
     # Sub-Models  -----------------------------------------------------------------
     seg_net_s = UnetLight()
     seg_net_t = UnetLight()
@@ -88,9 +76,12 @@ def main():
     G_stylebase = CycleGANGenerator(filter=cfg.generator_filters)
     D_base = CycleGANDiscriminator(filter=cfg.discriminator_filters)
     D_style = CycleGANDiscriminator(filter=cfg.discriminator_filters)
+    
+    A_base = AttentionNet()
+    A_style = AttentionNet()
 
     # Init Weight  --------------------------------------------------------------
-    for net in [G_basestyle, G_stylebase, D_base, D_style]:
+    for net in [G_basestyle, G_stylebase, D_base, D_style, A_base, A_style]:
         init_weights(net, init_type="normal")
 
     # LightningModule  --------------------------------------------------------------
@@ -101,13 +92,17 @@ def main():
         "G_t2s": G_stylebase,
         "D_source": D_base,
         "D_target": D_style,
+        "A_s": A_base, # Attention network for source mask
+        "A_t": A_style, # Attention network for target mask
         "seg_s": seg_net_s,
         "seg_t": seg_net_t,
         "lr": lr,
         "reconstr_w": reconstr_w,
+        "id_w": id_w,
+        "seg_w": seg_w,
         "cfg": cfg,
     }
-    main_system = GogollSystem(**gogoll_net_config)
+    main_system = GogollAttentionSystem(**gogoll_net_config)
 
     # Logger  --------------------------------------------------------------
     seg_wandb_logger = (
@@ -116,7 +111,7 @@ def main():
         else None
     )
     gogoll_wandb_logger = (
-        WandbLogger(project=project_name, name=run_name, prefix="embedding")
+        WandbLogger(project=project_name, name=run_name, prefix="attention")
         if cfg.use_wandb
         else None
     )
@@ -187,17 +182,11 @@ def main():
     else:
         print("Loading segmentation net from checkpoint...")
         seg_system = GogollSegSystem.load_from_checkpoint(
-            cfg.seg_checkpoint_path, net=seg_net_s
+            cfg.seg_checkpoint_path, net=seg_net_s, cfg=cfg
         )
 
-    if not cfg.gogoll_checkpoint_path:
-        print("Fitting gogoll system...", run_name)
-        trainer.fit(main_system, datamodule=dm)
-    else:
-        print("Loading gogol net from checkpoint...")
-        main_system = GogollSystem.load_from_checkpoint(
-            cfg.gogoll_checkpoint_path, **gogoll_net_config
-        )
+    print("Fitting gogoll system...", run_name)
+    trainer.fit(main_system, datamodule=dm)
 
     generator = main_system.G_s2t
 

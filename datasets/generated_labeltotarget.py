@@ -3,12 +3,12 @@ from torch.utils.data import DataLoader, Dataset
 import pytorch_lightning as pl
 import torch
 from sklearn.model_selection import train_test_split
-from datasets.gam import SegToOneHot
+from datasets.labeltotarget import SegToOneHot
 
 from utils.sanity import assert_matching_images
 
 
-class GeneratedGamDataset(Dataset):
+class GeneratedLabelToTargetDataset(Dataset):
     def __init__(
         self,
         generator,
@@ -44,11 +44,11 @@ class GeneratedGamDataset(Dataset):
 
 
 # Data Module
-class GeneratedGamDataModule(pl.LightningDataModule):
+class GeneratedLabelToTargetDataModule(pl.LightningDataModule):
     def __init__(
         self, generator, datamodule, batch_size
     ):
-        super(GeneratedGamDataModule, self).__init__()
+        super(GeneratedLabelToTargetDataModule, self).__init__()
         self.generator = generator
         self.datamodule = datamodule
         self.batch_size = batch_size
@@ -59,17 +59,17 @@ class GeneratedGamDataModule(pl.LightningDataModule):
     def setup(self, stage: Optional[str] = None):
         self.datamodule.setup(stage)
         # Assign train/val datasets for use in dataloaders
-        self.train_dataset = GeneratedGamDataset(
+        self.train_dataset = GeneratedLabelToTargetDataset(
             self.generator,
             self.datamodule.train_dataloader().dataset,
         )
 
-        self.val_dataset = GeneratedGamDataset(
+        self.val_dataset = GeneratedLabelToTargetDataset(
             self.generator,
             self.datamodule.val_dataloader().dataset,
         )
 
-        self.test_dataset = GeneratedGamDataset(
+        self.test_dataset = GeneratedLabelToTargetDataset(
             self.generator,
             self.datamodule.test_dataloader().dataset,
         )

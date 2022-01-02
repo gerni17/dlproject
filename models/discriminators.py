@@ -1,5 +1,7 @@
+import torch
 from torch import nn
 from models.layers import Downsample
+import torch.nn.functional as F
 
 
 class CycleGANDiscriminator(nn.Module):

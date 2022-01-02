@@ -12,18 +12,18 @@ python -m scripts.run_semseg --name semseg
 python -m scripts.run_baselines --name baselines 
 
 # run cycle gan
-python -m scripts.run_cyclegan --name cycle 
+python -m scripts.run_cycle_gan --name cycle 
 
-# run gogoll 
-python -m scripts.run_gogoll --name gogoll
+# run gogoll gan
+python -m scripts.run_gogoll_gan --name gogoll
 
-# run gogoll cross validation
-python -m scripts.run_gogoll_crossval --name gogoll
+# run labeltotarget
+python -m scripts.run_labeltotarget --name labeltotarget
 
-# run gam 
-python -m scripts.run_gam --name gam
+# run attention gan
+python -m scripts.run_attention_gan --name attention 
 
 # run embedding
-python -m scripts.run_gam --name embedding
+python -m scripts.run_embedding --name embedding
 
 

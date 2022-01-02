@@ -17,7 +17,7 @@ def SegToOneHot(x):
     return x
 
 # Agriculture Dataset ---------------------------------------------------------------------------
-class GamDataset(Dataset):
+class LabelToTargetDataset(Dataset):
     def __init__(
         self,
         source_img_paths,
@@ -37,7 +37,7 @@ class GamDataset(Dataset):
         assert_matching_images(self.source_img_paths, self.segmentation_img_paths)
 
     def __len__(self):
-        return min(
+        return max(
             [
                 len(self.source_img_paths),
                 len(self.segmentation_img_paths),
@@ -46,9 +46,9 @@ class GamDataset(Dataset):
         )
 
     def __getitem__(self, idx):
-        rgb_img = Image.open(self.source_img_paths[idx])
-        segmentation_img = Image.open(self.segmentation_img_paths[idx])
-        target_img = Image.open(self.target_img_paths[idx])
+        rgb_img = Image.open(self.source_img_paths[idx % len(self.source_img_paths)])
+        segmentation_img = Image.open(self.segmentation_img_paths[idx % len(self.segmentation_img_paths)])
+        target_img = Image.open(self.target_img_paths[idx % len(self.target_img_paths)])
         assert rgb_img.size == segmentation_img.size
 
         img, segmentation = self.transform(rgb_img, segmentation_img, self.phase)
@@ -63,9 +63,9 @@ class GamDataset(Dataset):
 
 
 # Data Module
-class GamDataModule(pl.LightningDataModule):
+class LabelToTargetDataModule(pl.LightningDataModule):
     def __init__(self, source_dir, target_dir, transform, batch_size, split=True):
-        super(GamDataModule, self).__init__()
+        super(LabelToTargetDataModule, self).__init__()
         self.source_dir = source_dir
         self.target_dir = target_dir
         self.transform = transform
@@ -103,11 +103,11 @@ class GamDataModule(pl.LightningDataModule):
 
     def setup(self, stage: Optional[str] = None):
         # Assign train/val datasets for use in dataloaders
-        self.train_dataset = GamDataset(
+        self.train_dataset = LabelToTargetDataset(
             self.rgb_train, self.seg_train, self.target_train, self.transform, "train"
         )
 
-        self.val_dataset = GamDataset(
+        self.val_dataset = LabelToTargetDataset(
             self.rgb_val, self.seg_val, self.target_val, self.transform, "train"
         )
 

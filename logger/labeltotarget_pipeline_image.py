@@ -7,7 +7,7 @@ import wandb
 from logger.semseg_image import prepare_semseg
 
 
-class GogollPipelineImageLogger(Callback):
+class LabelToTargetPipelineImageLogger(Callback):
     """
     Callback which at the end of every training epoch will log some generated images to wandb.
 
@@ -28,50 +28,41 @@ class GogollPipelineImageLogger(Callback):
         dataloader = data_module.val_dataloader()
         val_samples = next(iter(dataloader))
 
-        self.rgb_imgs = val_samples["source"]
-        self.label_imgs = val_samples["source_segmentation"]
-        self.label_imgs = prepare_semseg(self.label_imgs)
+        self.target_imgs = val_samples["target"]
+        self.seg_imgs = val_samples["source_segmentation"]
+        self.seg_imgs = self.seg_imgs.float()
 
     def on_train_epoch_end(self, trainer, pl_module, *args):
-        input_imgs = self.rgb_imgs.to(device=pl_module.device)
-        labeled_imgs = self.label_imgs.to(device=pl_module.device)
+        target_imgs = self.target_imgs.to(device=pl_module.device)
+        seg_imgs = self.seg_imgs.to(device=pl_module.device)
 
-        batch_size = input_imgs.shape[0]
+        batch_size = target_imgs.shape[0]
 
-        # get the segmentation network
-        G_s2t = getattr(pl_module, "G_s2t")
-        G_t2s = getattr(pl_module, "G_t2s")
-        seg_s = getattr(pl_module, "seg_s")
-        seg_t = getattr(pl_module, "seg_t")
+        # get the generators
+        G_se2ta = getattr(pl_module, "G_se2ta")
+        G_ta2se = getattr(pl_module, "G_ta2se")
 
-        generated_target = G_s2t(input_imgs)
-        cycled_input = G_t2s(G_s2t(input_imgs))
+        generated_target = G_se2ta(seg_imgs)
+        cycled_segmentation = G_ta2se(G_se2ta(seg_imgs))
 
-        plant_imgs = torch.cat([input_imgs, cycled_input, generated_target], dim=0)
+        seg_imgs_display = prepare_semseg(seg_imgs.argmax(dim=1))
+        seg_imgs_display = seg_imgs_display.to(device=pl_module.device)
 
-        # Get model prediction
-        semseg_s = seg_s(cycled_input)
-        semseg_s = semseg_s.argmax(dim=1)
-        semseg_s = prepare_semseg(semseg_s).to(device=pl_module.device)
+        cycled_segmentation_display = prepare_semseg(cycled_segmentation.argmax(dim=1))
+        cycled_segmentation_display = cycled_segmentation_display.to(device=pl_module.device)
 
-        semseg_t = seg_t(generated_target)
-        semseg_t = semseg_t.argmax(dim=1)
-        semseg_t = prepare_semseg(semseg_t).to(device=pl_module.device)
-
+        plant_imgs = generated_target
         plant_imgs = plant_imgs * 0.5 + 0.5
         plant_imgs = plant_imgs * 255
 
-        imgs = torch.cat([plant_imgs, labeled_imgs, semseg_s, semseg_t], dim=0)
+        imgs = torch.cat([seg_imgs_display, cycled_segmentation_display, plant_imgs], dim=0)
 
         joined_images_tensor = make_grid(imgs, nrow=batch_size, padding=2)
 
         # Pipeline stacks the images like this:
-        # - Source domain
-        # - Generated source domain Reconstruction
+        # - Segmentation domain
+        # - Segmentation domain Reconstruction
         # - Generated target domain
-        # - Ground truth segmentation
-        # - Generated target domain segmentation
-        # - Generated source domain reconstruction segmentation
         joined_images = joined_images_tensor.detach().cpu().numpy().astype(int)
         joined_images = np.transpose(joined_images, [1, 2, 0])
 
@@ -82,4 +73,4 @@ class GogollPipelineImageLogger(Callback):
             )
 
         except BaseException as err:
-            print(f"Error occured while uploading image to wandb. {err}, {type(err)}")
+            print(f"Error occured while uploading image to wandb. {err=}, {type(err)=}")

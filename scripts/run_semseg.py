@@ -90,9 +90,9 @@ def main():
         logger=seg_wandb_logger if cfg.use_wandb else None,
         callbacks=[checkpoint_callback, semseg_s_image_callback],
         # Uncomment the following options if you want to try out framework changes without training too long
-        # limit_train_batches=2,
-        # limit_val_batches=2,
-        # limit_test_batches=2,
+        limit_train_batches=2,
+        limit_val_batches=2,
+        limit_test_batches=2,
     )
 
     # Train

@@ -5,7 +5,6 @@ import wandb
 from datetime import datetime
 from pytorch_lightning import Trainer
 from datasets.generated_stacking import GeneratedDataModule
-from datasets.mixed import MixedDataModule
 from datasets.labeled import LabeledDataModule
 from datasets.crossval import CrossValidationDataModule
 from datasets.test import TestLabeledDataModule

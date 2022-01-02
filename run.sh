@@ -26,4 +26,5 @@ python -m scripts.run_attention_gan --name attention
 # run embedding
 python -m scripts.run_embedding --name embedding
 
-
+# run stacking
+python -m scripts.run_stacking --name stacking

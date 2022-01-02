@@ -1,36 +1,22 @@
-# Deep Learning Project
+# Deep Learning Project (Aleksandar Milojevic, Mugeeb Hassan, Gian Erni)
 
-## Getting started
+## Getting started 
 
-Make sure you install all required packages first (e.g wandb, pytorch, pytorch lightning etc)
+We provide information to reproduce our results on Euler (new software stack).
 
-To run the pipeline on euler run the following command in the dlproject directory:
+### To run the pipeline on euler run the following commands:
 
+Clone the repo:
 ```sh
-bsub -n 2 -R "rusage[scratch=1000,mem=15000,ngpus_excl_p=1]" -oo /cluster/scratch/gerni/log < run.sh
+git clone 
 ```
 
-To add commandline arguiments you can add them in the bash file run.sh e.g.:
-
+Download and run the files:
 ```sh
-python -m scripts.train_cross_val --name whole_pipeline_test --log_dir /cluster/scratch/$USER/logs --dataset_root /cluster/scratch/$USER/dat/data --use_wandb True  --seg_checkpoint_path /cluster/scratch/$USER/logs/whole_pipeline_test_1201-1709_34/segmentation/'epoch=15-step=847.ckpt' --gogoll_checkpoint_path /cluster/scratch/$USER/logs/whole_pipeline_test_1201-1709_34/gogoll/'epoch=73-step=3921.ckpt'
+bsub -n 2 -R "rusage[scratch=1000,mem=15000,ngpus_excl_p=1]" -oo /cluster/scratch/$USER/log < run.sh
 ```
 
-## Folder structure
+To add commandline arguments you can add them in the bash file run.sh, all the possible command line files can be found in the files inside the config folder.
 
-Aside from the folder structure you'll get by cloning this branch, you will need to make sure your data folder has the following layout:
 
-```
-project
-├── data
-│   ├── exp
-│   │   ├── rgb
-│   │   └── semseg
-│   └── other_domains
-│       ├── domainA
-│       └── domainB
-├── configs
-├── models
-├── preprocessing
-└── ...
-```
+

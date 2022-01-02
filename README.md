@@ -8,7 +8,7 @@ We provide information to reproduce our results on Euler (new software stack).
 
 Clone the repo:
 ```sh
-git clone 
+git clone git@gitlab.ethz.ch:dlproject/dlproject.git
 ```
 
 Download and run the files:

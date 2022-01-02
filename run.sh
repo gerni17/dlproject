@@ -2,7 +2,7 @@ module load gcc/8.2.0
 module load python_gpu/3.8.5
 module load eth_proxy
 
-bash download_euler.sh /cluster/scratch/$USER
+bash download_euler.sh /cluster/scratch/$USER/dl_data
 
 
 # run semseg

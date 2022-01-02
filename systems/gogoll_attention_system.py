@@ -141,7 +141,6 @@ class GogollAttentionSystem(pl.LightningModule):
         valid = torch.ones(b, 1, 30, 30).cuda()
         fake = torch.zeros(b, 1, 30, 30).cuda()
 
-        #Do the attention thing
         # S --> S'' 
         attnMapS = toZeroThreshold(self.A_s(source_img))
         fgS = attnMapS * source_img
@@ -165,11 +164,6 @@ class GogollAttentionSystem(pl.LightningModule):
         bgfakeS = (1 - attnMapfakeS) * fakeS
         genT_ = self.G_s2t(fgfakeS)
         T_ = (attnMapfakeS * genT_) + bgfakeS
-
-        #fake_source = self.G_t2s(target_img)
-        #fake_target = self.G_s2t(source_img)
-        #cycled_source = self.G_t2s(fake_target)
-        #cycled_target = self.G_s2t(fake_source)
 
         if self.current_epoch >= 30:
             fake_source = genS

@@ -9,7 +9,7 @@ from datasets.mixed import MixedDataModule
 from datasets.labeled import LabeledDataModule
 from datasets.crossval import CrossValidationDataModule
 from datasets.test import TestLabeledDataModule
-from logger.gogoll_baseline_image import GogollBaselineImageLogger
+from logger.test_set_seg_image import TestSetSegmentationImageLogger
 from logger.gogoll_pipeline_image import GogollPipelineImageLogger
 from models.unet_light_semseg import UnetLight
 from preprocessing.seg_transforms import SegImageTransform
@@ -24,7 +24,7 @@ from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from models.discriminators import CycleGANDiscriminator
 from models.generators import CycleGANGenerator
-from logger.gogoll_semseg_image import GogollSemsegImageLogger
+from logger.validation_set_seg_image import ValidationSetSegmentationImageLogger
 from systems.embedding_system import GogollSystem
 
 from numpy import mean
@@ -117,7 +117,7 @@ def main():
         else None
     )
     gogoll_wandb_logger = (
-        WandbLogger(project=project_name, name=run_name, prefix="gogoll")
+        WandbLogger(project=project_name, name=run_name, prefix="embedding")
         if cfg.use_wandb
         else None
     )
@@ -143,7 +143,7 @@ def main():
     )
 
     # save the generated images (from the validation data) after every epoch to wandb
-    semseg_s_image_callback = GogollSemsegImageLogger(
+    semseg_s_image_callback = ValidationSetSegmentationImageLogger(
         dm, network="net", log_key="Segmentation (Source)"
     )
     pipeline_image_callback = GogollPipelineImageLogger(dm, log_key="Pipeline")
@@ -295,13 +295,13 @@ def evaluate_ours(
             mode="min",
         )
 
-        semseg_image_callback = GogollSemsegImageLogger(
+        semseg_image_callback = ValidationSetSegmentationImageLogger(
             train_datamodule,
             network="net",
             log_key=f"Segmentation (Final) - Train",
         )
 
-        baseline_image_callback = GogollBaselineImageLogger(
+        baseline_image_callback = TestSetSegmentationImageLogger(
             test_datamodule,
             network="net",
             log_key=f"Segmentation (Final)",

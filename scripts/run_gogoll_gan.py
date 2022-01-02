@@ -5,10 +5,11 @@ import wandb
 from datetime import datetime
 from pytorch_lightning import Trainer
 from datasets.generated import GeneratedDataModule
+from datasets.mixed import MixedDataModule
 from datasets.labeled import LabeledDataModule
 from datasets.crossval import CrossValidationDataModule
 from datasets.test import TestLabeledDataModule
-from logger.gogoll_baseline_image import GogollBaselineImageLogger
+from logger.test_set_seg_image import TestSetSegmentationImageLogger
 from logger.gogoll_pipeline_image import GogollPipelineImageLogger
 from models.unet_light_semseg import UnetLight
 from preprocessing.seg_transforms import SegImageTransform
@@ -23,12 +24,11 @@ from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from models.discriminators import CycleGANDiscriminator
 from models.generators import CycleGANGenerator
-from logger.gogoll_semseg_image import GogollSemsegImageLogger
-
-from models.attention_model import AttentionNet
-from systems.gogoll_attention_system import GogollAttentionSystem
+from logger.validation_set_seg_image import ValidationSetSegmentationImageLogger
+from systems.gogoll_system import GogollSystem
 
 from numpy import mean
+
 
 def main():
     cfg = command_line_parser()
@@ -54,9 +54,21 @@ def main():
     reconstr_w = cfg.reconstruction_weight
     id_w = cfg.identity_weight
     seg_w = cfg.segmentation_weight
-
-    wandb.login(key="969803cb62211763351a441ac5c9e96ce995f7eb") # for aleks euler
-
+    if cfg.shared:
+        wandb.init(
+            reinit=True,
+            name=run_name,
+            config=cfg,
+            settings=wandb.Settings(start_method="fork"),
+            entity="dlshared",
+        )
+    else:
+        wandb.init(
+            reinit=True,
+            name=run_name,
+            config=cfg,
+            settings=wandb.Settings(start_method="fork"),
+        )
     # Data Preprocessing  -----------------------------------------------------------------
     transform = SegImageTransform(img_size=cfg.image_size)
 
@@ -69,7 +81,6 @@ def main():
         path.join(data_dir, 'source'), transform, batch_size
     )
 
-
     # Sub-Models  -----------------------------------------------------------------
     seg_net_s = UnetLight()
     seg_net_t = UnetLight()
@@ -77,12 +88,9 @@ def main():
     G_stylebase = CycleGANGenerator(filter=cfg.generator_filters)
     D_base = CycleGANDiscriminator(filter=cfg.discriminator_filters)
     D_style = CycleGANDiscriminator(filter=cfg.discriminator_filters)
-    
-    A_base = AttentionNet()
-    A_style = AttentionNet()
 
     # Init Weight  --------------------------------------------------------------
-    for net in [G_basestyle, G_stylebase, D_base, D_style, A_base, A_style]:
+    for net in [G_basestyle, G_stylebase, D_base, D_style]:
         init_weights(net, init_type="normal")
 
     # LightningModule  --------------------------------------------------------------
@@ -93,8 +101,6 @@ def main():
         "G_t2s": G_stylebase,
         "D_source": D_base,
         "D_target": D_style,
-        "A_s": A_base, # Attention network for source mask
-        "A_t": A_style, # Attention network for target mask
         "seg_s": seg_net_s,
         "seg_t": seg_net_t,
         "lr": lr,
@@ -103,7 +109,7 @@ def main():
         "seg_w": seg_w,
         "cfg": cfg,
     }
-    main_system = GogollAttentionSystem(**gogoll_net_config)
+    main_system = GogollSystem(**gogoll_net_config)
 
     # Logger  --------------------------------------------------------------
     seg_wandb_logger = (
@@ -138,7 +144,7 @@ def main():
     )
 
     # save the generated images (from the validation data) after every epoch to wandb
-    semseg_s_image_callback = GogollSemsegImageLogger(
+    semseg_s_image_callback = ValidationSetSegmentationImageLogger(
         dm, network="net", log_key="Segmentation (Source)"
     )
     pipeline_image_callback = GogollPipelineImageLogger(dm, log_key="Pipeline")
@@ -183,11 +189,17 @@ def main():
     else:
         print("Loading segmentation net from checkpoint...")
         seg_system = GogollSegSystem.load_from_checkpoint(
-            cfg.seg_checkpoint_path, net=seg_net_s, cfg=cfg
+            cfg.seg_checkpoint_path, net=seg_net_s
         )
 
-    print("Fitting gogoll system...", run_name)
-    trainer.fit(main_system, datamodule=dm)
+    if not cfg.gogoll_checkpoint_path:
+        print("Fitting gogoll system...", run_name)
+        trainer.fit(main_system, datamodule=dm)
+    else:
+        print("Loading gogol net from checkpoint...")
+        main_system = GogollSystem.load_from_checkpoint(
+            cfg.gogoll_checkpoint_path, **gogoll_net_config
+        )
 
     generator = main_system.G_s2t
 
@@ -284,13 +296,13 @@ def evaluate_ours(
             mode="min",
         )
 
-        semseg_image_callback = GogollSemsegImageLogger(
+        semseg_image_callback = ValidationSetSegmentationImageLogger(
             train_datamodule,
             network="net",
             log_key=f"Segmentation (Final) - Train",
         )
 
-        baseline_image_callback = GogollBaselineImageLogger(
+        baseline_image_callback = TestSetSegmentationImageLogger(
             test_datamodule,
             network="net",
             log_key=f"Segmentation (Final)",

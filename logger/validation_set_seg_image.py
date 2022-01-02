@@ -7,7 +7,7 @@ import wandb
 from logger.semseg_image import prepare_semseg
 
 
-class GogollBaselineImageLogger(Callback):
+class ValidationSetSegmentationImageLogger(Callback):
     """
     Callback which at the end of every training epoch will log some generated images to wandb.
 
@@ -18,7 +18,7 @@ class GogollBaselineImageLogger(Callback):
         self,
         data_module,
         network="seg_s",
-        log_key="Final Baseline",
+        log_key="Media/Segmentation (Source)",
         num_samples=4,
     ):
         super().__init__()
@@ -31,8 +31,8 @@ class GogollBaselineImageLogger(Callback):
 
         if not data_module.has_setup_fit:
             data_module.setup()
-        
-        dataloader = data_module.test_dataloader()
+            
+        dataloader = data_module.val_dataloader()
 
         val_samples = next(iter(dataloader))
 
@@ -40,7 +40,7 @@ class GogollBaselineImageLogger(Callback):
         self.label_imgs = val_samples["source_segmentation"]
         self.label_imgs = prepare_semseg(self.label_imgs)
 
-    def on_test_epoch_end(self, trainer, pl_module, *args):
+    def on_train_epoch_end(self, trainer, pl_module, *args):
         input_imgs = self.rgb_imgs.to(device=pl_module.device)
         labeled_imgs = self.label_imgs.to(device=pl_module.device)
 

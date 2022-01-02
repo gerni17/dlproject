@@ -17,7 +17,7 @@ def SegToOneHot(x):
     return x
 
 # Agriculture Dataset ---------------------------------------------------------------------------
-class GamDataset(Dataset):
+class LabelToTargetDataset(Dataset):
     def __init__(
         self,
         source_img_paths,
@@ -63,9 +63,9 @@ class GamDataset(Dataset):
 
 
 # Data Module
-class GamDataModule(pl.LightningDataModule):
+class LabelToTargetDataModule(pl.LightningDataModule):
     def __init__(self, source_dir, target_dir, transform, batch_size, split=True):
-        super(GamDataModule, self).__init__()
+        super(LabelToTargetDataModule, self).__init__()
         self.source_dir = source_dir
         self.target_dir = target_dir
         self.transform = transform
@@ -103,11 +103,11 @@ class GamDataModule(pl.LightningDataModule):
 
     def setup(self, stage: Optional[str] = None):
         # Assign train/val datasets for use in dataloaders
-        self.train_dataset = GamDataset(
+        self.train_dataset = LabelToTargetDataset(
             self.rgb_train, self.seg_train, self.target_train, self.transform, "train"
         )
 
-        self.val_dataset = GamDataset(
+        self.val_dataset = LabelToTargetDataset(
             self.rgb_val, self.seg_val, self.target_val, self.transform, "train"
         )
 

@@ -9,7 +9,7 @@ from torch import nn, optim
 import pytorch_lightning as pl
 
 
-class GamSystem(pl.LightningModule):
+class LabelToTargetSystem(pl.LightningModule):
     def __init__(
         self,
         G_se2ta,  # generator segmentation to target
@@ -20,7 +20,7 @@ class GamSystem(pl.LightningModule):
         reconstr_w=10,  # reconstruction weighting
         cfg=None,
     ):
-        super(GamSystem, self).__init__()
+        super(LabelToTargetSystem, self).__init__()
         self.G_se2ta = G_se2ta
         self.G_ta2se = G_ta2se
         self.D_ta = D_ta

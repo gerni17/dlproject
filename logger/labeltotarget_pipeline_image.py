@@ -7,7 +7,7 @@ import wandb
 from logger.semseg_image import prepare_semseg
 
 
-class GamPipelineImageLogger(Callback):
+class LabelToTargetPipelineImageLogger(Callback):
     """
     Callback which at the end of every training epoch will log some generated images to wandb.
 

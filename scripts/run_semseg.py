@@ -3,7 +3,7 @@ import uuid
 
 from datetime import datetime
 from pytorch_lightning import Trainer
-from logger.gogoll_semseg_image import GogollSemsegImageLogger
+from logger.validation_set_seg_image import ValidationSetSegmentationImageLogger
 from preprocessing.seg_transforms import SegImageTransform
 from datasets.labeled import LabeledDataModule
 
@@ -79,7 +79,7 @@ def main():
     )
 
     # save the generated images (from the validation data) after every epoch to wandb
-    semseg_s_image_callback = GogollSemsegImageLogger(
+    semseg_s_image_callback = ValidationSetSegmentationImageLogger(
         dm, network="net", log_key="Segmentation (Source)"
     )
 

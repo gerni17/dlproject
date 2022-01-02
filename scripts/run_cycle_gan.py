@@ -5,33 +5,24 @@ import wandb
 from datetime import datetime
 from pytorch_lightning import Trainer
 from datasets.full_gan import FullGanDataModule
-from datasets.gam import GamDataModule
 from datasets.generated import GeneratedDataModule
-from datasets.generated_gam import GeneratedGamDataModule
 from datasets.labeled import LabeledDataModule
 from datasets.crossval import CrossValidationDataModule
 from datasets.test import TestLabeledDataModule
 from logger.cycle_gan_pipeline_image import CycleGanPipelineImageLogger
-from logger.gam_pipeline_image import GamPipelineImageLogger
-from logger.gogoll_baseline_image import GogollBaselineImageLogger
-from logger.gogoll_pipeline_image import GogollPipelineImageLogger
+from logger.test_set_seg_image import TestSetSegmentationImageLogger
 from models.unet_light_semseg import UnetLight
 from preprocessing.seg_transforms import SegImageTransform
-from datasets.gogoll import GogollDataModule
 from systems.cycle_gan_system import CycleGanSystem
 
 from systems.final_seg_system import FinalSegSystem
-from systems.gam_system import GamSystem
-from systems.gogoll_seg_system import GogollSegSystem
-from utils.generate_targets_with_semantics import save_generated_dataset
 from utils.weight_initializer import init_weights
 from configs.gogoll_config import command_line_parser
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import ModelCheckpoint
 from models.discriminators import CycleGANDiscriminator
 from models.generators import CycleGANGenerator
-from logger.gogoll_semseg_image import GogollSemsegImageLogger
-from systems.gogoll_system import GogollSystem
+from logger.validation_set_seg_image import ValidationSetSegmentationImageLogger
 
 from numpy import mean
 
@@ -103,7 +94,7 @@ def main():
 
     # Logger  --------------------------------------------------------------
     wandb_logger = (
-        WandbLogger(project=project_name, name=run_name, prefix="gam")
+        WandbLogger(project=project_name, name=run_name)
         if cfg.use_wandb
         else None
     )
@@ -160,8 +151,8 @@ def main():
         log_path,
         n_cross_val_epochs,
         n_splits,
-        "GAM",
-        "gam"
+        "CycleGAN",
+        "cyclegan"
     )
 
     wandb.finish()
@@ -197,7 +188,6 @@ def evaluate_ours(
             WandbLogger(
                 project=project_name,
                 name=run_name,
-                prefix=f"({experiment_name}) ",
             )
             if cfg.use_wandb
             else None
@@ -214,13 +204,13 @@ def evaluate_ours(
             mode="min",
         )
 
-        semseg_image_callback = GogollSemsegImageLogger(
+        semseg_image_callback = ValidationSetSegmentationImageLogger(
             train_datamodule,
             network="net",
             log_key=f"Segmentation (Final - {experiment_name}) - Train",
         )
 
-        baseline_image_callback = GogollBaselineImageLogger(
+        baseline_image_callback = TestSetSegmentationImageLogger(
             test_datamodule,
             network="net",
             log_key=f"Segmentation (Final - {experiment_name})",

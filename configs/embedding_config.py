@@ -25,7 +25,10 @@ def command_line_parser():
 
     # -------------------------- wandb settings --------------------------
     parser.add_argument(
-        "--project", type=str, help="Name for your run to wandb project.",
+        "--project",
+        type=str,
+        default="Gogoll",
+        help="Name for your run to wandb project.",
     )
     parser.add_argument(
         "--name",
@@ -36,15 +39,44 @@ def command_line_parser():
 
     # -------------------------- logging settings --------------------------
     parser.add_argument(
-        "--log_dir", type=expandpath, default="/cluster/scratch/$USER/logs", help="Place for artifacts and logs"
+        "--log_dir",
+        type=expandpath,
+        default="/cluster/scratch/$USER/logs",
+        help="Place for artifacts and logs",
     )
     parser.add_argument(
-        "--use_wandb", type=str2bool, default=False, help="Use WandB for logging"
+        "--use_wandb", type=str2bool, default=True, help="Use WandB for logging"
     )
-
+    parser.add_argument(
+        "--shared", type=str2bool, default=False, help="Push to shared wandb project"
+    )
+    parser.add_argument(
+        '--sched', type=bool, default=True, help='Using scheduler')
     # -------------------------- training settings --------------------------
     parser.add_argument(
-        "--num_epochs", type=int, default=16, help="Number of training epochs"
+        "--num_epochs_seg",
+        type=int,
+        default=55,
+        help="Number of training epochs for the segmentation net",
+    )
+    parser.add_argument(
+        "--num_epochs_final",
+        type=int,
+        default=16,
+        help="Number of training epochs for the final segmentation net",
+    )
+    parser.add_argument(
+        "--num_epochs_gogoll", type=int, default=100, help="Number of training epochs"
+    )
+    parser.add_argument(
+        "--seg_checkpoint_path",
+        type=expandpath,
+        help="Path to the source segmentation net's checkpoint (leave empty if should be trained)",
+    )
+    parser.add_argument(
+        "--gogoll_checkpoint_path",
+        type=expandpath,
+        help="Path to the gogol net's checkpoint (leave empty if should be trained)",
     )
     parser.add_argument(
         "--batch_size",
@@ -71,11 +103,31 @@ def command_line_parser():
         help="Weight assigned to the identity loss",
     )
     parser.add_argument(
+        "--segmentation_weight",
+        type=float,
+        default=0.5,
+        help="Weight assigned to the segmentation loss",
+    )
+    parser.add_argument(
         "--resume",
         type=str,
         default=None,
         help="Resume training from checkpoint, which can also be an AWS link s3://...",
     )
+    parser.add_argument(
+        '--lr_scheduler_power', type=float, default=0.9, help='Poly learning rate power')
+    parser.add_argument(
+        '--lr_scheduler_power_final', type=float, default=0.95, help='Poly learning rate power')
+
+    parser.add_argument(
+        "--lr_ratio",
+        type=float,
+        default=1,
+        help="Ratio for the learing rate of the target segmentation network in the gogol net",
+    )
+
+    parser.add_argument(
+        '--seg_lr', type=float, default=0.0001, help='Poly learning rate power')
 
     # -------------------------- model settings --------------------------
     parser.add_argument(
@@ -92,14 +144,29 @@ def command_line_parser():
         help="Filters for the CycleGAN discriminator",
     )
 
+    parser.add_argument(
+        "--w_embed",
+        type=float,
+        default=1.0,
+        help="Weight of embedding loss",
+    )
+
+    parser.add_argument(
+        "--loss_type",
+        type=str,
+        default="L2",
+        choices=["L2", "L1","cosine"],
+        help="Type of loss function for embedding",
+    )
+
     # -------------------------- data settings --------------------------
     parser.add_argument(
-        "--dataset_root", type=expandpath, default="/cluster/scratch/$USER/dl_data/data", help="Path to dataset", 
+        "--dataset_root", type=expandpath, default="/cluster/scratch/$USER/dl_data/data", help="Path to dataset",
     )
     parser.add_argument(
         "--domain",
         type=str,
-        default="domainA",
+        default="domainB",
         choices=["domainA", "domainB"],
         help="Type of the target domain",
     )
@@ -109,19 +176,37 @@ def command_line_parser():
         default=256,
         help="Size training images should be scaled to",
     )
+    parser.add_argument(
+        "--save_generated_images",
+        type=str2bool,
+        default=False,
+        help="Save generated images at the end of training?",
+    )
+    parser.add_argument(
+        "--max_generated_images_saved",
+        type=int,
+        default=100,
+        help="Maximum number of images to generate and save at the end of training",
+    )
+    parser.add_argument(
+        "--generated_dataset_save_root",
+        type=expandpath,
+        default="./output/data",
+        help="Path where you save generated images",
+    )
 
     # -------------------------- hardware settings --------------------------
     parser.add_argument("--gpu", type=str2bool, default=True, help="GPU usage")
     parser.add_argument(
         "--workers",
         type=int,
-        default=1,
+        default=4,
         help="Number of worker threads fetching training data",
     )
     parser.add_argument(
         "--workers_validation",
         type=int,
-        default=1,
+        default=4,
         help="Number of worker threads fetching validation data",
     )
 

@@ -41,7 +41,7 @@ def command_line_parser():
     parser.add_argument(
         "--log_dir",
         type=expandpath,
-        default="./logs",
+        default="/cluster/scratch/$USER/logs",
         help="Place for artifacts and logs",
     )
     parser.add_argument(
@@ -146,7 +146,7 @@ def command_line_parser():
 
     # -------------------------- data settings --------------------------
     parser.add_argument(
-        "--dataset_root", type=expandpath, default="./data", help="Path to dataset"
+        "--dataset_root", type=expandpath, default="/cluster/scratch/$USER/dl_data/data", help="Path to dataset",
     )
     parser.add_argument(
         "--domain",

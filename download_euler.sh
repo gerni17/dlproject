@@ -1,4 +1,4 @@
-# How to use: download.sh $(root_dir)
+# How to use: download_euler.sh $(root_dir)
 
 root_dir=${1:-/cluster/scratch/$USER/dl_data}
 data_dir=$root_dir"/data/"

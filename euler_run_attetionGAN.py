@@ -5,7 +5,6 @@ import wandb
 from datetime import datetime
 from pytorch_lightning import Trainer
 from datasets.generated import GeneratedDataModule
-from datasets.mixed import MixedDataModule
 from datasets.labeled import LabeledDataModule
 from datasets.crossval import CrossValidationDataModule
 from datasets.test import TestLabeledDataModule
@@ -25,11 +24,9 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from models.discriminators import CycleGANDiscriminator
 from models.generators import CycleGANGenerator
 from logger.gogoll_semseg_image import GogollSemsegImageLogger
-from systems.gogoll_system import GogollSystem
 
 from models.attention_model import AttentionNet
 from systems.gogoll_attention_system import GogollAttentionSystem
-from systems.gogoll_expert_system import GogollExpertSystem
 
 from numpy import mean
 

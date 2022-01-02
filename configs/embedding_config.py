@@ -62,7 +62,7 @@ def command_line_parser():
     parser.add_argument(
         "--num_epochs_final",
         type=int,
-        default=55,
+        default=16,
         help="Number of training epochs for the final segmentation net",
     )
     parser.add_argument(
@@ -109,12 +109,6 @@ def command_line_parser():
         help="Weight assigned to the segmentation loss",
     )
     parser.add_argument(
-        "--gan_noise",
-        type=float,
-        default=0.7,
-        help="Noise used to generate images",
-    )
-    parser.add_argument(
         "--resume",
         type=str,
         default=None,
@@ -148,6 +142,21 @@ def command_line_parser():
         type=int,
         default=32,
         help="Filters for the CycleGAN discriminator",
+    )
+
+    parser.add_argument(
+        "--w_embed",
+        type=float,
+        default=1.0,
+        help="Weight of embedding loss",
+    )
+
+    parser.add_argument(
+        "--loss_type",
+        type=str,
+        default="L2",
+        choices=["L2", "L1","cosine"],
+        help="Type of loss function for embedding",
     )
 
     # -------------------------- data settings --------------------------

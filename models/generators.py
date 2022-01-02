@@ -33,16 +33,21 @@ class CycleGANGenerator(nn.Module):
             nn.Tanh(),
         )
 
-    def forward(self, x):
+    def forward(self, x,deep=False):
         skips = []
         for l in self.downsamples:
             x = l(x)
             skips.append(x)
+
+        mid = x
 
         skips = reversed(skips[:-1])
         for l, s in zip(self.upsamples, skips):
             x = l(x, s)
 
         out = self.last(x)
+
+        if deep:
+            return out, mid
 
         return out

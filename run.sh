@@ -6,7 +6,7 @@ bash download_euler.sh /cluster/scratch/$USER/dl_data
 
 
 # run semseg
-python -m scripts.run_semseg --name semseg
+python -m scripts.run_semseg --name semseg --num_epochs_seg 2
 
 # run baselines
 python -m scripts.run_baselines --name baselines 

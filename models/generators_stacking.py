@@ -8,7 +8,9 @@ class CycleGANGenerator(nn.Module):
         super(CycleGANGenerator, self).__init__()
         self.downsamples = nn.ModuleList(
             [
-                Downsample(in_channels, filter, kernel_size=4, apply_instancenorm=False),
+                Downsample(
+                    in_channels, filter, kernel_size=4, apply_instancenorm=False
+                ),
                 Downsample(filter, filter * 2),
                 Downsample(filter * 2, filter * 4),
                 Downsample(filter * 4, filter * 8),
@@ -30,15 +32,17 @@ class CycleGANGenerator(nn.Module):
         )
 
         self.last = nn.Sequential(
-            nn.ConvTranspose2d(filter * 2, out_channels, kernel_size=4, stride=2, padding=1),
+            nn.ConvTranspose2d(
+                filter * 2, out_channels, kernel_size=4, stride=2, padding=1
+            ),
             nn.Tanh(),
         )
 
     def forward(self, x, network=None):
         skips = []
         if network is not None:
-            seg_hat=network(x).detach()
-            x = torch.cat([x, seg_hat],1)
+            seg_hat = network(x).detach()
+            x = torch.cat([x, seg_hat], 1)
         for l in self.downsamples:
             x = l(x)
             skips.append(x)

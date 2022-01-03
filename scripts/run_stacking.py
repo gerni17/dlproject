@@ -73,18 +73,19 @@ def main():
 
     # DataModule  -----------------------------------------------------------------
     dm = GogollDataModule(
-        path.join(data_dir, 'source'), path.join(data_dir, 'easy', 'rgb'), transform, batch_size
+        path.join(data_dir, "source"),
+        path.join(data_dir, "easy", "rgb"),
+        transform,
+        batch_size,
     )  # used for training
 
-    seg_dm = LabeledDataModule(
-        path.join(data_dir, 'source'), transform, batch_size
-    )
+    seg_dm = LabeledDataModule(path.join(data_dir, "source"), transform, batch_size)
 
     # Sub-Models  -----------------------------------------------------------------
     seg_net_s = UnetLight()
     seg_net_t = UnetLight()
-    G_basestyle = CycleGANGenerator(filter=cfg.generator_filters,in_channels=6)
-    G_stylebase = CycleGANGenerator(filter=cfg.generator_filters,in_channels=6)
+    G_basestyle = CycleGANGenerator(filter=cfg.generator_filters, in_channels=6)
+    G_stylebase = CycleGANGenerator(filter=cfg.generator_filters, in_channels=6)
     D_base = CycleGANDiscriminator(filter=cfg.discriminator_filters)
     D_style = CycleGANDiscriminator(filter=cfg.discriminator_filters)
 
@@ -174,7 +175,10 @@ def main():
         reload_dataloaders_every_n_epochs=True,
         num_sanity_val_steps=0,
         logger=gogoll_wandb_logger,
-        callbacks=[gogoll_checkpoint_callback, pipeline_image_callback,],
+        callbacks=[
+            gogoll_checkpoint_callback,
+            pipeline_image_callback,
+        ],
         # Uncomment the following options if you want to try out framework changes without training too long
         limit_train_batches=2,
         limit_val_batches=2,
@@ -188,7 +192,7 @@ def main():
     else:
         print("Loading segmentation net from checkpoint...")
         seg_system = GogollSegSystem.load_from_checkpoint(
-            cfg.seg_checkpoint_path, net=seg_net_s,cfg=cfg
+            cfg.seg_checkpoint_path, net=seg_net_s, cfg=cfg
         )
 
     if not cfg.gogoll_checkpoint_path:
@@ -202,21 +206,24 @@ def main():
 
     generator = main_system.G_s2t
 
-
     # Train datamodules
     dm_source = LabeledDataModule(
-        path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True
+        path.join(data_dir, "source"), transform, batch_size=batch_size, split=True
     )
-    dm_generated = GeneratedDataModule(generator, dm_source, batch_size=batch_size,seg_net=seg_net_s)
-    
+    dm_generated = GeneratedDataModule(
+        generator, dm_source, batch_size=batch_size, seg_net=seg_net_s
+    )
+
     # easy dataset with full dataset in test loader
     dm_easy_test = TestLabeledDataModule(
-        path.join(data_dir, 'easy'), transform, batch_size=batch_size
+        path.join(data_dir, "easy"), transform, batch_size=batch_size
     )
 
     n_splits = 5
 
-    cv_source = CrossValidationDataModule(dm_generated, batch_size=batch_size, n_splits=n_splits)
+    cv_source = CrossValidationDataModule(
+        dm_generated, batch_size=batch_size, n_splits=n_splits
+    )
 
     # train the final segmentation net that we use to evaluate if our augmented dataset helps
     # with training a segnet that is more robust to different domains/conditions
@@ -234,6 +241,7 @@ def main():
     )
 
     wandb.finish()
+
 
 # evaluate segementation on our generated data
 def evaluate_ours(
@@ -298,10 +306,15 @@ def evaluate_ours(
             reload_dataloaders_every_n_epochs=True,
             num_sanity_val_steps=0,
             logger=seg_wandb_logger,
-            callbacks=[segmentation_checkpoint_callback, semseg_image_callback,baseline_image_callback],
+            callbacks=[
+                segmentation_checkpoint_callback,
+                semseg_image_callback,
+                baseline_image_callback,
+            ],
             limit_train_batches=2,
             limit_val_batches=2,
-            limit_test_batches=2,)
+            limit_test_batches=2,
+        )
 
         cv_trainer.fit(seg_system, datamodule=train_datamodule)
 

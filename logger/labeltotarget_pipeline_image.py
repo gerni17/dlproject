@@ -24,7 +24,7 @@ class LabelToTargetPipelineImageLogger(Callback):
 
         if not data_module.has_setup_fit:
             data_module.setup()
-        
+
         dataloader = data_module.val_dataloader()
         val_samples = next(iter(dataloader))
 
@@ -49,13 +49,17 @@ class LabelToTargetPipelineImageLogger(Callback):
         seg_imgs_display = seg_imgs_display.to(device=pl_module.device)
 
         cycled_segmentation_display = prepare_semseg(cycled_segmentation.argmax(dim=1))
-        cycled_segmentation_display = cycled_segmentation_display.to(device=pl_module.device)
+        cycled_segmentation_display = cycled_segmentation_display.to(
+            device=pl_module.device
+        )
 
         plant_imgs = generated_target
         plant_imgs = plant_imgs * 0.5 + 0.5
         plant_imgs = plant_imgs * 255
 
-        imgs = torch.cat([seg_imgs_display, cycled_segmentation_display, plant_imgs], dim=0)
+        imgs = torch.cat(
+            [seg_imgs_display, cycled_segmentation_display, plant_imgs], dim=0
+        )
 
         joined_images_tensor = make_grid(imgs, nrow=batch_size, padding=2)
 
@@ -69,7 +73,8 @@ class LabelToTargetPipelineImageLogger(Callback):
         try:
             # Log the images as wandb Image
             trainer.logger.experiment.log(
-                {self.log_key: [wandb.Image(joined_images)]}, commit=False,
+                {self.log_key: [wandb.Image(joined_images)]},
+                commit=False,
             )
 
         except BaseException as err:

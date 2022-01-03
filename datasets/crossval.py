@@ -37,10 +37,9 @@ class CrossValidationDataModule(pl.LightningDataModule):
         self.datamodule.setup()
 
         # for crossvalidation we mix (and use both) train and val dataset (instead of a static split with train_dataset and val_dataset)
-        self.train_val_dataset = MixedDataset([
-            self.datamodule.train_dataset,
-            self.datamodule.val_dataset
-        ])
+        self.train_val_dataset = MixedDataset(
+            [self.datamodule.train_dataset, self.datamodule.val_dataset]
+        )
 
         # for test we keep the dataset that is unseen during training
         self.test_dataset = self.datamodule.test_dataset

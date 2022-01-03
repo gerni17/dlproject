@@ -8,6 +8,7 @@ import torch
 
 from utils.sanity import assert_matching_images
 
+
 def SegToOneHot(x):
     hot_map = [(1, 0, 0), (0, 1, 0), (0, 0, 1)]
     encodings = torch.tensor(hot_map, dtype=torch.float32)
@@ -15,6 +16,7 @@ def SegToOneHot(x):
     x = encodings[x]  # H x W x 3
     x = x.permute(2, 0, 1)
     return x
+
 
 # Agriculture Dataset ---------------------------------------------------------------------------
 class LabelToTargetDataset(Dataset):
@@ -47,7 +49,9 @@ class LabelToTargetDataset(Dataset):
 
     def __getitem__(self, idx):
         rgb_img = Image.open(self.source_img_paths[idx % len(self.source_img_paths)])
-        segmentation_img = Image.open(self.segmentation_img_paths[idx % len(self.segmentation_img_paths)])
+        segmentation_img = Image.open(
+            self.segmentation_img_paths[idx % len(self.segmentation_img_paths)]
+        )
         target_img = Image.open(self.target_img_paths[idx % len(self.target_img_paths)])
         assert rgb_img.size == segmentation_img.size
 
@@ -79,9 +83,7 @@ class LabelToTargetDataModule(pl.LightningDataModule):
         )
         self.target_paths = glob.glob(
             os.path.join(self.target_dir, "*.jpg")
-        ) + glob.glob(
-            os.path.join(self.target_dir, "*.png")
-        )
+        ) + glob.glob(os.path.join(self.target_dir, "*.png"))
 
         if self.split:
             (

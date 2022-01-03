@@ -16,10 +16,8 @@ class GeneratedLabelToTargetDataset(Dataset):
     ):
         self.generator = generator
         self.dataset = dataset
-        
-        self.raw_len = min(
-            [len(self.dataset)]
-        )
+
+        self.raw_len = min([len(self.dataset)])
 
     def __len__(self):
         return self.raw_len
@@ -27,14 +25,16 @@ class GeneratedLabelToTargetDataset(Dataset):
     def __getitem__(self, idx):
         d_item = self.dataset[idx]
 
-        segmentation_img = d_item['source_segmentation']
-        segmentation_img_hot = SegToOneHot(d_item['source_segmentation'])
+        segmentation_img = d_item["source_segmentation"]
+        segmentation_img_hot = SegToOneHot(d_item["source_segmentation"])
 
         with torch.no_grad():
             shape = segmentation_img_hot.shape
 
             generated = self.generator(
-                torch.reshape(segmentation_img_hot, (1, shape[0], shape[1], shape[2])).float()
+                torch.reshape(
+                    segmentation_img_hot, (1, shape[0], shape[1], shape[2])
+                ).float()
             )
             generated = torch.reshape(
                 generated, (generated.shape[1], generated.shape[2], generated.shape[3])
@@ -45,9 +45,7 @@ class GeneratedLabelToTargetDataset(Dataset):
 
 # Data Module
 class GeneratedLabelToTargetDataModule(pl.LightningDataModule):
-    def __init__(
-        self, generator, datamodule, batch_size
-    ):
+    def __init__(self, generator, datamodule, batch_size):
         super(GeneratedLabelToTargetDataModule, self).__init__()
         self.generator = generator
         self.datamodule = datamodule

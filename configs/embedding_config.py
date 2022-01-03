@@ -50,8 +50,7 @@ def command_line_parser():
     parser.add_argument(
         "--shared", type=str2bool, default=False, help="Push to shared wandb project"
     )
-    parser.add_argument(
-        '--sched', type=bool, default=True, help='Using scheduler')
+    parser.add_argument("--sched", type=bool, default=True, help="Using scheduler")
     # -------------------------- training settings --------------------------
     parser.add_argument(
         "--num_epochs_seg",
@@ -115,9 +114,14 @@ def command_line_parser():
         help="Resume training from checkpoint, which can also be an AWS link s3://...",
     )
     parser.add_argument(
-        '--lr_scheduler_power', type=float, default=0.9, help='Poly learning rate power')
+        "--lr_scheduler_power", type=float, default=0.9, help="Poly learning rate power"
+    )
     parser.add_argument(
-        '--lr_scheduler_power_final', type=float, default=0.95, help='Poly learning rate power')
+        "--lr_scheduler_power_final",
+        type=float,
+        default=0.95,
+        help="Poly learning rate power",
+    )
 
     parser.add_argument(
         "--lr_ratio",
@@ -127,7 +131,8 @@ def command_line_parser():
     )
 
     parser.add_argument(
-        '--seg_lr', type=float, default=0.0001, help='Poly learning rate power')
+        "--seg_lr", type=float, default=0.0001, help="Poly learning rate power"
+    )
 
     # -------------------------- model settings --------------------------
     parser.add_argument(
@@ -155,13 +160,16 @@ def command_line_parser():
         "--loss_type",
         type=str,
         default="L2",
-        choices=["L2", "L1","cosine"],
+        choices=["L2", "L1", "cosine"],
         help="Type of loss function for embedding",
     )
 
     # -------------------------- data settings --------------------------
     parser.add_argument(
-        "--dataset_root", type=expandpath, default="/cluster/scratch/$USER/dl_data/data", help="Path to dataset",
+        "--dataset_root",
+        type=expandpath,
+        default="/cluster/scratch/$USER/dl_data/data",
+        help="Path to dataset",
     )
     parser.add_argument(
         "--domain",

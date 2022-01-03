@@ -97,13 +97,14 @@ class LabelToTargetSystem(pl.LightningModule):
             val_loss = (val_ta + val_se) / 2
 
             # Reconstruction
-            reconstr_se = self.cse_loss(cycled_se, segmentation_img_target.argmax(dim=1))
+            reconstr_se = self.cse_loss(
+                cycled_se, segmentation_img_target.argmax(dim=1)
+            )
             reconstr_ta = self.mae(cycled_ta, target_img)
             reconstr_loss = (reconstr_se + reconstr_ta) / 2
 
             # Loss Weight
             G_loss = val_loss + self.reconstr_w * reconstr_loss
-
 
             logs = {
                 "G_loss": G_loss,
@@ -124,15 +125,9 @@ class LabelToTargetSystem(pl.LightningModule):
         elif optimizer_idx == 2 or optimizer_idx == 3:
             # Train Discriminator
             # MSELoss
-            D_ta_gen_loss = self.discriminator_loss(
-                self.D_ta(fake_ta), fake
-            )
-            D_se_gen_loss = self.discriminator_loss(
-                self.D_se(fake_se), fake
-            )
-            D_ta_valid_loss = self.discriminator_loss(
-                self.D_ta(target_img), valid
-            )
+            D_ta_gen_loss = self.discriminator_loss(self.D_ta(fake_ta), fake)
+            D_se_gen_loss = self.discriminator_loss(self.D_se(fake_se), fake)
+            D_ta_valid_loss = self.discriminator_loss(self.D_ta(target_img), valid)
             D_se_valid_loss = self.discriminator_loss(
                 self.D_se(segmentation_img), valid
             )

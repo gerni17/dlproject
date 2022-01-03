@@ -58,7 +58,10 @@ def command_line_parser():
         help="Number of training epochs for the final segmentation net",
     )
     parser.add_argument(
-        "--num_epochs_labeltotarget", type=int, default=500, help="Number of training epochs"
+        "--num_epochs_labeltotarget",
+        type=int,
+        default=500,
+        help="Number of training epochs",
     )
     parser.add_argument(
         "--checkpoint_path",
@@ -90,7 +93,11 @@ def command_line_parser():
         help="Noise used to generate images",
     )
     parser.add_argument(
-        '--lr_scheduler_power_final', type=float, default=0.95, help='Poly learning rate power')
+        "--lr_scheduler_power_final",
+        type=float,
+        default=0.95,
+        help="Poly learning rate power",
+    )
 
     # -------------------------- model settings --------------------------
     parser.add_argument(
@@ -109,7 +116,10 @@ def command_line_parser():
 
     # -------------------------- data settings --------------------------
     parser.add_argument(
-        "--dataset_root", type=expandpath, default="/cluster/scratch/$USER/dl_data/data", help="Path to dataset",
+        "--dataset_root",
+        type=expandpath,
+        default="/cluster/scratch/$USER/dl_data/data",
+        help="Path to dataset",
     )
     parser.add_argument(
         "--image_size",
@@ -117,7 +127,7 @@ def command_line_parser():
         default=256,
         help="Size training images should be scaled to",
     )
-    
+
     # -------------------------- hardware settings --------------------------
     parser.add_argument("--gpu", type=str2bool, default=True, help="GPU usage")
     parser.add_argument(

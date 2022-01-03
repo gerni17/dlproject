@@ -9,7 +9,9 @@ class CycleGANDiscriminator(nn.Module):
         super(CycleGANDiscriminator, self).__init__()
 
         self.block = nn.Sequential(
-            Downsample(in_channels, filter, kernel_size=4, stride=2, apply_instancenorm=False),
+            Downsample(
+                in_channels, filter, kernel_size=4, stride=2, apply_instancenorm=False
+            ),
             Downsample(filter, filter * 2, kernel_size=4, stride=2),
             Downsample(filter * 2, filter * 4, kernel_size=4, stride=2),
             Downsample(filter * 4, filter * 8, kernel_size=4, stride=1),

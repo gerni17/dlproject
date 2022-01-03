@@ -67,12 +67,19 @@ def main():
 
     # DataModule  -----------------------------------------------------------------
     dm = FullGanDataModule(
-        path.join(data_dir, 'source'), path.join(data_dir, 'easy', 'rgb'), transform, batch_size
+        path.join(data_dir, "source"),
+        path.join(data_dir, "easy", "rgb"),
+        transform,
+        batch_size,
     )
 
     # Sub-Models  -----------------------------------------------------------------
-    G_s2t = CycleGANGenerator(filter=cfg.generator_filters, in_channels=3, out_channels=3)
-    G_t2s = CycleGANGenerator(filter=cfg.generator_filters, in_channels=3, out_channels=3)
+    G_s2t = CycleGANGenerator(
+        filter=cfg.generator_filters, in_channels=3, out_channels=3
+    )
+    G_t2s = CycleGANGenerator(
+        filter=cfg.generator_filters, in_channels=3, out_channels=3
+    )
     D_base = CycleGANDiscriminator(filter=cfg.discriminator_filters, in_channels=3)
     D_style = CycleGANDiscriminator(filter=cfg.discriminator_filters, in_channels=3)
 
@@ -88,15 +95,13 @@ def main():
         "D_source": D_base,
         "D_target": D_style,
         "lr": lr,
-        "reconstr_w": reconstr_w
+        "reconstr_w": reconstr_w,
     }
     main_system = CycleGanSystem(**cycle_net_config)
 
     # Logger  --------------------------------------------------------------
     wandb_logger = (
-        WandbLogger(project=project_name, name=run_name)
-        if cfg.use_wandb
-        else None
+        WandbLogger(project=project_name, name=run_name) if cfg.use_wandb else None
     )
 
     # Callbacks  --------------------------------------------------------------
@@ -114,7 +119,9 @@ def main():
         reload_dataloaders_every_n_epochs=True,
         num_sanity_val_steps=0,
         logger=wandb_logger,
-        callbacks=[pipeline_image_callback,],
+        callbacks=[
+            pipeline_image_callback,
+        ],
         # Uncomment the following options if you want to try out framework changes without training too long
         limit_train_batches=2,
         limit_val_batches=2,
@@ -129,18 +136,20 @@ def main():
 
     # Train datamodules
     dm_source = LabeledDataModule(
-        path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True
+        path.join(data_dir, "source"), transform, batch_size=batch_size, split=True
     )
     dm_generated = GeneratedDataModule(generator, dm_source, batch_size=batch_size)
-    
+
     # easy dataset with full dataset in test loader
     dm_easy_test = TestLabeledDataModule(
-        path.join(data_dir, 'easy'), transform, batch_size=batch_size
+        path.join(data_dir, "easy"), transform, batch_size=batch_size
     )
 
     n_splits = 5
 
-    cv_source = CrossValidationDataModule(dm_generated, batch_size=batch_size, n_splits=n_splits)
+    cv_source = CrossValidationDataModule(
+        dm_generated, batch_size=batch_size, n_splits=n_splits
+    )
 
     # train the final segmentation net that we use to evaluate if our augmented dataset helps
     # with training a segnet that is more robust to different domains/conditions
@@ -156,10 +165,11 @@ def main():
         n_cross_val_epochs,
         n_splits,
         "CycleGAN",
-        "cyclegan"
+        "cyclegan",
     )
 
     wandb.finish()
+
 
 # evaluate segementation on our generated data
 def evaluate_ours(
@@ -172,7 +182,7 @@ def evaluate_ours(
     n_epochs,
     n_splits,
     experiment_name,
-    model_save_name
+    model_save_name,
 ):
     # Cross Validation Run
     fold_metrics = {
@@ -226,7 +236,11 @@ def evaluate_ours(
             reload_dataloaders_every_n_epochs=True,
             num_sanity_val_steps=0,
             logger=seg_wandb_logger,
-            callbacks=[segmentation_checkpoint_callback, semseg_image_callback,baseline_image_callback],
+            callbacks=[
+                segmentation_checkpoint_callback,
+                semseg_image_callback,
+                baseline_image_callback,
+            ],
             # Uncomment the following options if you want to try out framework changes without training too long
             limit_train_batches=2,
             limit_val_batches=2,
@@ -243,10 +257,18 @@ def evaluate_ours(
         fold_metrics["crop"].append(res[0]["Test Metric Summary - crop"])
 
     # Acess dict values of trainer after test and get metrics for average
-    wandb.run.summary[f"Crossvalidation IOU ({experiment_name})"] = mean(fold_metrics["iou"])
-    wandb.run.summary[f"Crossvalidation IOU Soil ({experiment_name})"] = mean(fold_metrics["soil"])
-    wandb.run.summary[f"Crossvalidation IOU Weed ({experiment_name})"] = mean(fold_metrics["weed"])
-    wandb.run.summary[f"Crossvalidation IOU Crop ({experiment_name})"] = mean(fold_metrics["crop"])
+    wandb.run.summary[f"Crossvalidation IOU ({experiment_name})"] = mean(
+        fold_metrics["iou"]
+    )
+    wandb.run.summary[f"Crossvalidation IOU Soil ({experiment_name})"] = mean(
+        fold_metrics["soil"]
+    )
+    wandb.run.summary[f"Crossvalidation IOU Weed ({experiment_name})"] = mean(
+        fold_metrics["weed"]
+    )
+    wandb.run.summary[f"Crossvalidation IOU Crop ({experiment_name})"] = mean(
+        fold_metrics["crop"]
+    )
 
 
 if __name__ == "__main__":

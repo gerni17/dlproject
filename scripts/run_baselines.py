@@ -53,22 +53,26 @@ def main():
 
     # Train datamodules
     dm_source = LabeledDataModule(
-        path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True
+        path.join(data_dir, "source"), transform, batch_size=batch_size, split=True
     )
-    
+
     # easy dataset with a train/val/test split
     dm_easy_split = LabeledDataModule(
-        path.join(data_dir, 'easy'), transform, batch_size=batch_size
+        path.join(data_dir, "easy"), transform, batch_size=batch_size
     )
     # easy dataset with full dataset in test loader
     dm_easy_test = TestLabeledDataModule(
-        path.join(data_dir, 'easy'), transform, batch_size=batch_size
+        path.join(data_dir, "easy"), transform, batch_size=batch_size
     )
 
     n_splits = 5
 
-    cv_source = CrossValidationDataModule(dm_source, batch_size=batch_size, n_splits=n_splits)
-    cv_easy_split = CrossValidationDataModule(dm_easy_split, batch_size=batch_size, n_splits=n_splits)
+    cv_source = CrossValidationDataModule(
+        dm_source, batch_size=batch_size, n_splits=n_splits
+    )
+    cv_easy_split = CrossValidationDataModule(
+        dm_easy_split, batch_size=batch_size, n_splits=n_splits
+    )
 
     baselines = [
         {
@@ -77,7 +81,7 @@ def main():
             "name": "Source <> Easy",
         },
         {
-            "train": cv_easy_split, # no test datamodule because we use the same datamodule as train for test
+            "train": cv_easy_split,  # no test datamodule because we use the same datamodule as train for test
             "name": "Easy <> Easy",
         },
     ]
@@ -86,13 +90,7 @@ def main():
 
     for baseline in baselines:
         evaluate_baseline(
-            cfg,
-            baseline,
-            project_name,
-            run_name,
-            log_path,
-            n_epochs,
-            n_splits=n_splits
+            cfg, baseline, project_name, run_name, log_path, n_epochs, n_splits=n_splits
         )
 
     wandb.finish()
@@ -107,9 +105,9 @@ def evaluate_baseline(
     n_epochs,
     n_splits,
 ):
-    baseline_name = baseline['name']
-    train_datamodule = baseline['train']
-    test_datamodule = baseline.get('test') or baseline['train']
+    baseline_name = baseline["name"]
+    train_datamodule = baseline["train"]
+    test_datamodule = baseline.get("test") or baseline["train"]
 
     # Cross Validation Run
     fold_metrics = {
@@ -122,7 +120,13 @@ def evaluate_baseline(
         # Cross Validation Run
         seg_net = UnetLight()
         seg_system = FinalSegSystem(seg_net, cfg=cfg)
-        safe_baseline_name = baseline_name.replace(' ', '_').replace('(', '').replace(')', '').replace('<>', 'to').lower()
+        safe_baseline_name = (
+            baseline_name.replace(" ", "_")
+            .replace("(", "")
+            .replace(")", "")
+            .replace("<>", "to")
+            .lower()
+        )
 
         # Logger  --------------------------------------------------------------
         seg_wandb_logger = (
@@ -164,7 +168,11 @@ def evaluate_baseline(
             reload_dataloaders_every_n_epochs=True,
             num_sanity_val_steps=0,
             logger=seg_wandb_logger,
-            callbacks=[segmentation_checkpoint_callback, semseg_image_callback,baseline_image_callback],
+            callbacks=[
+                segmentation_checkpoint_callback,
+                semseg_image_callback,
+                baseline_image_callback,
+            ],
             # Uncomment the following options if you want to try out framework changes without training too long
             limit_train_batches=2,
             limit_val_batches=2,
@@ -181,10 +189,18 @@ def evaluate_baseline(
         fold_metrics["crop"].append(res[0]["Test Metric Summary - crop"])
 
     # Acess dict values of trainer after test and get metrics for average
-    wandb.run.summary[f"Crossvalidation IOU - {baseline_name}"] = mean(fold_metrics["iou"])
-    wandb.run.summary[f"Crossvalidation IOU Soil - {baseline_name}"] = mean(fold_metrics["soil"])
-    wandb.run.summary[f"Crossvalidation IOU Weed - {baseline_name}"] = mean(fold_metrics["weed"])
-    wandb.run.summary[f"Crossvalidation IOU Crop - {baseline_name}"] = mean(fold_metrics["crop"])
+    wandb.run.summary[f"Crossvalidation IOU - {baseline_name}"] = mean(
+        fold_metrics["iou"]
+    )
+    wandb.run.summary[f"Crossvalidation IOU Soil - {baseline_name}"] = mean(
+        fold_metrics["soil"]
+    )
+    wandb.run.summary[f"Crossvalidation IOU Weed - {baseline_name}"] = mean(
+        fold_metrics["weed"]
+    )
+    wandb.run.summary[f"Crossvalidation IOU Crop - {baseline_name}"] = mean(
+        fold_metrics["crop"]
+    )
 
 
 if __name__ == "__main__":

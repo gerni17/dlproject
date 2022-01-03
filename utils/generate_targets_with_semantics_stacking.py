@@ -41,7 +41,7 @@ def save_generated_dataset(
 ):
     print("Generating images...")
 
-    dm = GeneratedDataModule(generator, source_dm, batch_size=1,seg_net=seg_net)
+    dm = GeneratedDataModule(generator, source_dm, batch_size=1, seg_net=seg_net)
     dm.prepare_data()
     dm.setup()
     ds = dm.train_dataloader().dataset
@@ -61,4 +61,3 @@ def save_generated_dataset(
         if idx >= max_images:
             break
     print("Images generated successfully")
-

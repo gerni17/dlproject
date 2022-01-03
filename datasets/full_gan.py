@@ -38,9 +38,11 @@ class FullGanDataset(Dataset):
 
     def __getitem__(self, idx):
         rgb_img = Image.open(self.source_img_paths[idx % len(self.source_img_paths)])
-        segmentation_img = Image.open(self.segmentation_img_paths[idx % len(self.segmentation_img_paths)])
+        segmentation_img = Image.open(
+            self.segmentation_img_paths[idx % len(self.segmentation_img_paths)]
+        )
         target_img = Image.open(self.target_img_paths[idx % len(self.target_img_paths)])
-        
+
         assert rgb_img.size == segmentation_img.size
 
         img, segmentation = self.transform(rgb_img, segmentation_img, self.phase)
@@ -71,9 +73,7 @@ class FullGanDataModule(pl.LightningDataModule):
         )
         self.target_paths = glob.glob(
             os.path.join(self.target_dir, "*.jpg")
-        ) + glob.glob(
-            os.path.join(self.target_dir, "*.png")
-        )
+        ) + glob.glob(os.path.join(self.target_dir, "*.png"))
 
         if self.split:
             (

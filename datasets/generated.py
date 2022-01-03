@@ -15,10 +15,8 @@ class GeneratedDataset(Dataset):
     ):
         self.generator = generator
         self.dataset = dataset
-        
-        self.raw_len = min(
-            [len(self.dataset)]
-        )
+
+        self.raw_len = min([len(self.dataset)])
 
     def __len__(self):
         return self.raw_len
@@ -26,8 +24,8 @@ class GeneratedDataset(Dataset):
     def __getitem__(self, idx):
         d_item = self.dataset[idx]
 
-        rgb_img = d_item['source']
-        segmentation_img = d_item['source_segmentation']
+        rgb_img = d_item["source"]
+        segmentation_img = d_item["source_segmentation"]
 
         shape = rgb_img.shape
 
@@ -44,9 +42,7 @@ class GeneratedDataset(Dataset):
 
 # Data Module
 class GeneratedDataModule(pl.LightningDataModule):
-    def __init__(
-        self, generator, datamodule, batch_size
-    ):
+    def __init__(self, generator, datamodule, batch_size):
         super(GeneratedDataModule, self).__init__()
         self.generator = generator
         self.datamodule = datamodule

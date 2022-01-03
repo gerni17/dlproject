@@ -50,13 +50,14 @@ def main():
         )
 
     # DataModule  -----------------------------------------------------------------
-    dm = LabeledDataModule(data_dir, transform, batch_size,split=True)  # used for training
-
+    dm = LabeledDataModule(
+        data_dir, transform, batch_size, split=True
+    )  # used for training
 
     net = UnetLight()
 
     # LightningModule  --------------------------------------------------------------
-    model = Semseg(net,cfg)
+    model = Semseg(net, cfg)
     # Logger  --------------------------------------------------------------
     seg_wandb_logger = (
         WandbLogger(project=project_name, name=run_name, prefix="source_seg")

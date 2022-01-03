@@ -26,11 +26,19 @@ class GogollSegSystem(pl.LightningModule):
         self.losses = []
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=self.cfg.seg_lr, betas=(0.5, 0.999),)
+        optimizer = optim.Adam(
+            self.parameters(),
+            lr=self.cfg.seg_lr,
+            betas=(0.5, 0.999),
+        )
         if self.cfg.sched:
-            sched=LambdaLR(
+            sched = LambdaLR(
                 optimizer,
-                lambda ep: max(1e-6, (1 - ep / self.cfg.num_epochs_seg) ** self.cfg.lr_scheduler_power))
+                lambda ep: max(
+                    1e-6,
+                    (1 - ep / self.cfg.num_epochs_seg) ** self.cfg.lr_scheduler_power,
+                ),
+            )
             return [optimizer], [sched]
         return [optimizer], []
 

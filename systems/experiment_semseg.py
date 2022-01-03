@@ -10,9 +10,8 @@ from torchmetrics import IoU
 from torch.optim.lr_scheduler import LambdaLR
 
 
-
 class Semseg(pl.LightningModule):
-    def __init__(self, net,cfg):
+    def __init__(self, net, cfg):
         super(Semseg, self).__init__()
         self.cfg = cfg
         self.save_hyperparameters(self.cfg)
@@ -24,11 +23,19 @@ class Semseg(pl.LightningModule):
         self.iou_metric = IoU(num_classes=3)
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=self.cfg.seg_lr, betas=(0.5, 0.999),)
+        optimizer = optim.Adam(
+            self.parameters(),
+            lr=self.cfg.seg_lr,
+            betas=(0.5, 0.999),
+        )
         if self.cfg.sched:
-            sched=LambdaLR(
+            sched = LambdaLR(
                 optimizer,
-                lambda ep: max(1e-6, (1 - ep / self.cfg.num_epochs_seg) ** self.cfg.lr_scheduler_power))
+                lambda ep: max(
+                    1e-6,
+                    (1 - ep / self.cfg.num_epochs_seg) ** self.cfg.lr_scheduler_power,
+                ),
+            )
             return [optimizer], [sched]
         return [optimizer], []
 
@@ -45,7 +52,9 @@ class Semseg(pl.LightningModule):
         loss_semseg = self.loss_semseg(y_hat, y_semseg_lbl)
 
         self.log_dict(
-            {"loss_train/semseg": loss_semseg,},
+            {
+                "loss_train/semseg": loss_semseg,
+            },
             on_step=True,
             on_epoch=True,
             prog_bar=True,
@@ -80,14 +89,16 @@ class Semseg(pl.LightningModule):
         self.metrics_semseg.update_batch(y_hat_semseg_lbl, y_semseg_lbl)
 
         self.log_dict(
-            {"loss_val/semseg": loss_val_semseg}, on_step=False, on_epoch=True,
+            {"loss_val/semseg": loss_val_semseg},
+            on_step=False,
+            on_epoch=True,
         )
 
     def validation_epoch_end(self, outputs):
         metrics_semseg = self.metrics_semseg.get_metrics_summary()
         self.metrics_semseg.reset()
 
-        metric_semseg = metrics_semseg['MEAN IOU']
+        metric_semseg = metrics_semseg["MEAN IOU"]
 
         scalar_logs = {
             "metrics_summary/semseg": metric_semseg,
@@ -117,16 +128,20 @@ class Semseg(pl.LightningModule):
 
         self.log_dict(logs, on_step=False, on_epoch=True, prog_bar=True, logger=True)
 
-    def test_epoch_end(self,outputs):
+    def test_epoch_end(self, outputs):
         metrics_semseg = self.metrics_semseg.get_metrics_summary()
         self.metrics_semseg.reset()
 
-        metric_semseg = metrics_semseg['MEAN IOU']
-
+        metric_semseg = metrics_semseg["MEAN IOU"]
 
         scalar_logs = {
-            'metrics_test_summary/semseg': metric_semseg,
+            "metrics_test_summary/semseg": metric_semseg,
         }
-        scalar_logs.update({f'metrics_test_semseg/{k.replace(" ", "_")}': v for k, v in metrics_semseg.items()})
+        scalar_logs.update(
+            {
+                f'metrics_test_semseg/{k.replace(" ", "_")}': v
+                for k, v in metrics_semseg.items()
+            }
+        )
 
         self.log_dict(scalar_logs, on_step=False, on_epoch=True)

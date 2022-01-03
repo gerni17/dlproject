@@ -24,7 +24,7 @@ class GogollPipelineImageLogger(Callback):
 
         if not data_module.has_setup_fit:
             data_module.setup()
-        
+
         dataloader = data_module.val_dataloader()
         val_samples = next(iter(dataloader))
 
@@ -78,7 +78,8 @@ class GogollPipelineImageLogger(Callback):
         try:
             # Log the images as wandb Image
             trainer.logger.experiment.log(
-                {self.log_key: [wandb.Image(joined_images)]}, commit=False,
+                {self.log_key: [wandb.Image(joined_images)]},
+                commit=False,
             )
 
         except BaseException as err:

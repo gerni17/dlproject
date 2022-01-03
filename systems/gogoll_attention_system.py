@@ -24,15 +24,15 @@ class GogollAttentionSystem(pl.LightningModule):
         G_t2s,  # generator target to source
         D_source,
         D_target,
-        A_s, # Attention network for source mask
-        A_t, # Attention network for target mask
+        A_s,  # Attention network for source mask
+        A_t,  # Attention network for target mask
         seg_s,  # segmentation source
         seg_t,  # segmentation target
         lr,
         reconstr_w=10,  # reconstruction weighting
         id_w=2,  # identity weighting
         seg_w=1,
-        cfg=None
+        cfg=None,
     ):
         super(GogollAttentionSystem, self).__init__()
         self.G_s2t = G_s2t
@@ -95,7 +95,9 @@ class GogollAttentionSystem(pl.LightningModule):
             self.seg_s.parameters(), lr=self.lr["seg_s"], betas=(0.5, 0.999)
         )
         self.seg_t_optimizer = optim.Adam(
-            self.seg_t.parameters(), lr=self.lr["seg_t"]/self.cfg.lr_ratio, betas=(0.5, 0.999)
+            self.seg_t.parameters(),
+            lr=self.lr["seg_t"] / self.cfg.lr_ratio,
+            betas=(0.5, 0.999),
         )
         self.a_s_optimizer = optim.Adam(
             self.A_s.parameters(), lr=self.lr["G"], betas=(0.5, 0.999)
@@ -129,7 +131,7 @@ class GogollAttentionSystem(pl.LightningModule):
     def training_step(self, batch, batch_idx, optimizer_idx):
         if self.current_epoch > self.initial_epoch:
             self.initial_epoch = self.current_epoch
-        
+
         source_img, segmentation_img, target_img = (
             batch["source"],
             batch["source_segmentation"],
@@ -141,11 +143,11 @@ class GogollAttentionSystem(pl.LightningModule):
         valid = torch.ones(b, 1, 30, 30).cuda()
         fake = torch.zeros(b, 1, 30, 30).cuda()
 
-        # S --> S'' 
+        # S --> S''
         attnMapS = toZeroThreshold(self.A_s(source_img))
         fgS = attnMapS * source_img
         bgS = (1 - attnMapS) * source_img
-        genT = self.G_s2t(fgS) 
+        genT = self.G_s2t(fgS)
         fakeT = (attnMapS * genT) + bgS
         attnMapfakeT = toZeroThreshold(self.A_t(fakeT))
         fgfakeT = attnMapfakeT * fakeT
@@ -157,7 +159,7 @@ class GogollAttentionSystem(pl.LightningModule):
         attnMapT = toZeroThreshold(self.A_t(target_img))
         fgT = attnMapT * target_img
         bgT = (1 - attnMapT) * target_img
-        genS = self.G_t2s(fgT) 
+        genS = self.G_t2s(fgT)
         fakeS = (attnMapT * genS) + bgT
         attnMapfakeS = toZeroThreshold(self.A_s(fakeS))
         fgfakeS = attnMapfakeS * fakeS
@@ -176,7 +178,13 @@ class GogollAttentionSystem(pl.LightningModule):
             cycled_source = S_
             cycled_target = T_
 
-        if optimizer_idx == 0 or optimizer_idx == 1 or optimizer_idx == 4 or optimizer_idx == 5 or optimizer_idx == 6:
+        if (
+            optimizer_idx == 0
+            or optimizer_idx == 1
+            or optimizer_idx == 4
+            or optimizer_idx == 5
+            or optimizer_idx == 6
+        ):
             # Train Generator
             # Validity
             # MSELoss
@@ -274,7 +282,7 @@ class GogollAttentionSystem(pl.LightningModule):
             )
 
             return D_loss
-            
+
     def training_epoch_end(self, outputs):
         self.step += 1
 

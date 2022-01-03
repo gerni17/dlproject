@@ -27,7 +27,7 @@ class GogollSystem(pl.LightningModule):
         seg_t,  # segmentation target
         lr,
         reconstr_w=10,  # reconstruction weighting
-        cfg=None
+        cfg=None,
     ):
         super(GogollSystem, self).__init__()
         self.G_s2t = G_s2t
@@ -40,8 +40,8 @@ class GogollSystem(pl.LightningModule):
         self.reconstr_w = reconstr_w
         self.id_w = cfg.identity_weight
         self.seg_w = cfg.segmentation_weight
-        self.w_embed=cfg.w_embed
-        
+        self.w_embed = cfg.w_embed
+
         self.cnt_train_step = 0
         self.step = 0
         self.cfg = cfg
@@ -52,9 +52,9 @@ class GogollSystem(pl.LightningModule):
         self.mae = nn.L1Loss()
         self.generator_loss = nn.MSELoss()
         self.discriminator_loss = nn.MSELoss()
-        if self.cfg.loss_type=="L1":
-            self.deep_loss = nn.L1Loss()        
-        elif self.cfg.loss_type=="cosine":
+        if self.cfg.loss_type == "L1":
+            self.deep_loss = nn.L1Loss()
+        elif self.cfg.loss_type == "cosine":
             self.deep_loss = nn.CosineEmbeddingLoss()
         else:
             self.deep_loss = nn.MSELoss()
@@ -84,9 +84,10 @@ class GogollSystem(pl.LightningModule):
             self.seg_s.parameters(), lr=self.lr["seg_s"], betas=(0.5, 0.999)
         )
         self.seg_t_optimizer = optim.Adam(
-            self.seg_t.parameters(), lr=self.lr["seg_t"]/self.cfg.lr_ratio, betas=(0.5, 0.999)
+            self.seg_t.parameters(),
+            lr=self.lr["seg_t"] / self.cfg.lr_ratio,
+            betas=(0.5, 0.999),
         )
-
 
         return (
             [
@@ -114,11 +115,11 @@ class GogollSystem(pl.LightningModule):
         valid = torch.ones(b, 1, 30, 30).cuda()
         fake = torch.zeros(b, 1, 30, 30).cuda()
 
-        deep=True
-        fake_source , deep_fake_source= self.G_t2s(target_img,deep)
-        fake_target,deep_fake_target = self.G_s2t(source_img,deep)
-        cycled_source,deep_cycled_source = self.G_t2s(fake_target,deep)
-        cycled_target,deep_cycled_target = self.G_s2t(fake_source,deep)
+        deep = True
+        fake_source, deep_fake_source = self.G_t2s(target_img, deep)
+        fake_target, deep_fake_target = self.G_s2t(source_img, deep)
+        cycled_source, deep_cycled_source = self.G_t2s(fake_target, deep)
+        cycled_target, deep_cycled_target = self.G_s2t(fake_source, deep)
 
         if optimizer_idx == 0 or optimizer_idx == 1 or optimizer_idx == 4:
             # Train Generator
@@ -139,18 +140,31 @@ class GogollSystem(pl.LightningModule):
             id_loss = (id_source + id_target) / 2
 
             # Embedding loss
-            deep_loss=0
-            if self.cfg.loss_type=="cosine":
-                deep_loss_source=self.deep_loss(torch.flatten(deep_fake_source,start_dim=1),torch.flatten(deep_cycled_source,start_dim=1),torch.ones(deep_fake_source.shape[0]))
-                deep_loss_target=self.deep_loss(torch.flatten(deep_fake_target,start_dim=1),torch.flatten(deep_cycled_target,start_dim=1),torch.ones(deep_fake_source.shape[0]))
+            deep_loss = 0
+            if self.cfg.loss_type == "cosine":
+                deep_loss_source = self.deep_loss(
+                    torch.flatten(deep_fake_source, start_dim=1),
+                    torch.flatten(deep_cycled_source, start_dim=1),
+                    torch.ones(deep_fake_source.shape[0]),
+                )
+                deep_loss_target = self.deep_loss(
+                    torch.flatten(deep_fake_target, start_dim=1),
+                    torch.flatten(deep_cycled_target, start_dim=1),
+                    torch.ones(deep_fake_source.shape[0]),
+                )
                 deep_loss = (deep_loss_source + deep_loss_target) / 2
             else:
-                deep_loss_source=self.deep_loss(deep_fake_source,deep_cycled_source)
-                deep_loss_target=self.deep_loss(deep_fake_target,deep_cycled_target)
+                deep_loss_source = self.deep_loss(deep_fake_source, deep_cycled_source)
+                deep_loss_target = self.deep_loss(deep_fake_target, deep_cycled_target)
                 deep_loss = (deep_loss_source + deep_loss_target) / 2
 
             # Loss Weight
-            G_loss = val_loss + self.reconstr_w * reconstr_loss + self.id_w * id_loss + self.w_embed* deep_loss
+            G_loss = (
+                val_loss
+                + self.reconstr_w * reconstr_loss
+                + self.id_w * id_loss
+                + self.w_embed * deep_loss
+            )
 
             # Segmentation
             y_seg_s = self.seg_s(cycled_source)

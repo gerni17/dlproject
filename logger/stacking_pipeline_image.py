@@ -24,7 +24,7 @@ class GogollPipelineImageLogger(Callback):
 
         if not data_module.has_setup_fit:
             data_module.setup()
-        
+
         dataloader = data_module.val_dataloader()
         val_samples = next(iter(dataloader))
 
@@ -44,9 +44,8 @@ class GogollPipelineImageLogger(Callback):
         seg_s = getattr(pl_module, "seg_s")
         seg_t = getattr(pl_module, "seg_t")
 
-        generated_target = G_s2t(input_imgs,seg_s)
-        cycled_input = G_t2s(G_s2t(input_imgs,seg_s),seg_t)
-
+        generated_target = G_s2t(input_imgs, seg_s)
+        cycled_input = G_t2s(G_s2t(input_imgs, seg_s), seg_t)
 
         plant_imgs = torch.cat([input_imgs, cycled_input, generated_target], dim=0)
 
@@ -79,7 +78,8 @@ class GogollPipelineImageLogger(Callback):
         try:
             # Log the images as wandb Image
             trainer.logger.experiment.log(
-                {self.log_key: [wandb.Image(joined_images)]}, commit=False,
+                {self.log_key: [wandb.Image(joined_images)]},
+                commit=False,
             )
 
         except BaseException as err:

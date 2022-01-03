@@ -29,7 +29,7 @@ class GogollSystem(pl.LightningModule):
         reconstr_w=10,  # reconstruction weighting
         id_w=2,  # identity weighting
         seg_w=1,
-        cfg=None
+        cfg=None,
     ):
         super(GogollSystem, self).__init__()
         self.G_s2t = G_s2t
@@ -78,7 +78,9 @@ class GogollSystem(pl.LightningModule):
             self.seg_s.parameters(), lr=self.lr["seg_s"], betas=(0.5, 0.999)
         )
         self.seg_t_optimizer = optim.Adam(
-            self.seg_t.parameters(), lr=self.lr["seg_t"]/self.cfg.lr_ratio, betas=(0.5, 0.999)
+            self.seg_t.parameters(),
+            lr=self.lr["seg_t"] / self.cfg.lr_ratio,
+            betas=(0.5, 0.999),
         )
 
         return (

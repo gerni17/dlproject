@@ -31,10 +31,19 @@ class FinalSegSystem(pl.LightningModule):
         self.metrics_semseg = MetricsSemseg(3, names)
 
     def configure_optimizers(self):
-        optimizer = optim.Adam(self.parameters(), lr=self.cfg.seg_lr, betas=(0.5, 0.999),)
-        sched=LambdaLR(
+        optimizer = optim.Adam(
+            self.parameters(),
+            lr=self.cfg.seg_lr,
+            betas=(0.5, 0.999),
+        )
+        sched = LambdaLR(
             optimizer,
-            lambda ep: max(1e-6, (1 - ep / self.cfg.num_epochs_final) ** self.cfg.lr_scheduler_power_final))
+            lambda ep: max(
+                1e-6,
+                (1 - ep / self.cfg.num_epochs_final)
+                ** self.cfg.lr_scheduler_power_final,
+            ),
+        )
         return [optimizer], [sched]
 
     def training_step(self, batch, batch_idx):
@@ -68,14 +77,20 @@ class FinalSegSystem(pl.LightningModule):
         self.metrics_semseg.update_batch(y_hat_semseg_lbl, segmentation_img)
 
         self.log_dict(
-            {"loss_val/semseg": loss_val_semseg,}, on_step=False, on_epoch=True
+            {
+                "loss_val/semseg": loss_val_semseg,
+            },
+            on_step=False,
+            on_epoch=True,
         )
 
     def validation_epoch_end(self, outputs):
         metrics_semseg = self.metrics_semseg.get_metrics_summary()
         self.metrics_semseg.reset()
 
-        scalar_logs = {f'Val Metric Summary - {k}': v for k, v in metrics_semseg.items()}
+        scalar_logs = {
+            f"Val Metric Summary - {k}": v for k, v in metrics_semseg.items()
+        }
 
         self.log_dict(scalar_logs, on_step=False, on_epoch=True)
 
@@ -85,7 +100,7 @@ class FinalSegSystem(pl.LightningModule):
         y_seg = self.net(source_img)
 
         y_hat_semseg_lbl = y_seg.argmax(dim=1)
-        
+
         self.metrics_semseg.update_batch(y_hat_semseg_lbl, segmentation_img)
 
         jaccard_index = self.iou_metric(y_seg, segmentation_img.int())
@@ -96,11 +111,13 @@ class FinalSegSystem(pl.LightningModule):
 
         self.log_dict(logs, on_step=False, on_epoch=True, prog_bar=True, logger=True)
 
-    def test_epoch_end(self,outputs):
+    def test_epoch_end(self, outputs):
         metrics_semseg = self.metrics_semseg.get_metrics_summary()
         self.metrics_semseg.reset()
 
-        scalar_logs = {f'Test Metric Summary - {k}': v for k, v in metrics_semseg.items()}
+        scalar_logs = {
+            f"Test Metric Summary - {k}": v for k, v in metrics_semseg.items()
+        }
 
         self.log_dict(scalar_logs, on_step=False, on_epoch=True)
 

@@ -36,9 +36,7 @@ def undo_transform(image):
     return image * 0.5 + 0.5
 
 
-def save_generated_dataset(
-    generator, source_dm, save_path, max_images=10, logger=None
-):
+def save_generated_dataset(generator, source_dm, save_path, max_images=10, logger=None):
     print("Generating images...")
 
     dm = GeneratedDataModule(generator, source_dm, batch_size=1)
@@ -61,4 +59,3 @@ def save_generated_dataset(
         if idx >= max_images:
             break
     print("Images generated successfully")
-

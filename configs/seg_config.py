@@ -25,7 +25,9 @@ def command_line_parser():
 
     # -------------------------- wandb settings --------------------------
     parser.add_argument(
-        "--project", type=str, help="Name for your run to wandb project.",
+        "--project",
+        type=str,
+        help="Name for your run to wandb project.",
     )
     parser.add_argument(
         "--name",
@@ -36,7 +38,10 @@ def command_line_parser():
 
     # -------------------------- logging settings --------------------------
     parser.add_argument(
-        "--log_dir", type=expandpath, default="/cluster/scratch/$USER/logs", help="Place for artifacts and logs"
+        "--log_dir",
+        type=expandpath,
+        default="/cluster/scratch/$USER/logs",
+        help="Place for artifacts and logs",
     )
     parser.add_argument(
         "--use_wandb", type=str2bool, default=True, help="Use WandB for logging"
@@ -67,17 +72,21 @@ def command_line_parser():
         help="Resume training from checkpoint, which can also be an AWS link s3://...",
     )
     parser.add_argument(
-        '--seg_lr', type=float, default=0.0001, help='Poly learning rate power')
+        "--seg_lr", type=float, default=0.0001, help="Poly learning rate power"
+    )
     parser.add_argument(
-        '--lr_scheduler_power', type=float, default=0.9, help='Poly learning rate power')
+        "--lr_scheduler_power", type=float, default=0.9, help="Poly learning rate power"
+    )
 
-    parser.add_argument(
-        '--sched', type=bool, default=True, help='Usin scheduler')
+    parser.add_argument("--sched", type=bool, default=True, help="Usin scheduler")
     # -------------------------- model settings --------------------------
 
     # -------------------------- data settings --------------------------
     parser.add_argument(
-        "--dataset_root", type=expandpath, default="/cluster/scratch/$USER/dl_data/data/source", help="Path to dataset",
+        "--dataset_root",
+        type=expandpath,
+        default="/cluster/scratch/$USER/dl_data/data/source",
+        help="Path to dataset",
     )
     parser.add_argument(
         "--image_size",

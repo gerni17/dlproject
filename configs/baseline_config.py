@@ -64,13 +64,21 @@ def command_line_parser():
         help="Number of samples in a batch for training",
     )
     parser.add_argument(
-        '--lr_scheduler_power_final', type=float, default=0.95, help='Poly learning rate power')
+        "--lr_scheduler_power_final",
+        type=float,
+        default=0.95,
+        help="Poly learning rate power",
+    )
     parser.add_argument(
-        '--seg_lr', type=float, default=0.0001, help='Poly learning rate power')
+        "--seg_lr", type=float, default=0.0001, help="Poly learning rate power"
+    )
 
     # -------------------------- data settings --------------------------
     parser.add_argument(
-        "--dataset_root", type=expandpath, default="/cluster/scratch/$USER/dl_data/data", help="Path to dataset",
+        "--dataset_root",
+        type=expandpath,
+        default="/cluster/scratch/$USER/dl_data/data",
+        help="Path to dataset",
     )
     parser.add_argument(
         "--image_size",

@@ -21,11 +21,15 @@ class TestLabeledDataModule(pl.LightningDataModule):
 
     def prepare_data(self):
         self.rgb_paths = glob.glob(os.path.join(self.data_dir, "rgb", "*.png"))
-        self.segmentation_paths = glob.glob(os.path.join(self.data_dir, "semseg", "*.png"))
+        self.segmentation_paths = glob.glob(
+            os.path.join(self.data_dir, "semseg", "*.png")
+        )
 
     def setup(self, stage: Optional[str] = None):
         # Assign full dataset to all loaders
-        self.full_dataset = LabeledDataset(self.rgb_paths, self.segmentation_paths, self.transform, "test")
+        self.full_dataset = LabeledDataset(
+            self.rgb_paths, self.segmentation_paths, self.transform, "test"
+        )
 
     def test_dataloader(self):
         return DataLoader(

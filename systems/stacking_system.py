@@ -29,7 +29,7 @@ class GogollSystem(pl.LightningModule):
         reconstr_w=10,  # reconstruction weighting
         id_w=2,  # identity weighting
         seg_w=1,
-        cfg=None
+        cfg=None,
     ):
         super(GogollSystem, self).__init__()
         self.G_s2t = G_s2t
@@ -79,7 +79,9 @@ class GogollSystem(pl.LightningModule):
             self.seg_s.parameters(), lr=self.lr["seg_s"], betas=(0.5, 0.999)
         )
         self.seg_t_optimizer = optim.Adam(
-            self.seg_t.parameters(), lr=self.lr["seg_t"]/self.cfg.lr_ratio, betas=(0.5, 0.999)
+            self.seg_t.parameters(),
+            lr=self.lr["seg_t"] / self.cfg.lr_ratio,
+            betas=(0.5, 0.999),
         )
 
         return (
@@ -105,10 +107,9 @@ class GogollSystem(pl.LightningModule):
         source_segmentation_hat = self.seg_s(source_img).detach()
 
         target_segmentation_hat = self.seg_t(target_img).detach()
-        
 
-        input_source_img = torch.cat([source_img, source_segmentation_hat],1)
-        input_target_img = torch.cat([target_img, target_segmentation_hat],1)
+        input_source_img = torch.cat([source_img, source_segmentation_hat], 1)
+        input_target_img = torch.cat([target_img, target_segmentation_hat], 1)
 
         b = source_img.size()[0]
 
@@ -118,8 +119,8 @@ class GogollSystem(pl.LightningModule):
         fake_source = self.G_t2s(input_target_img)
         fake_target = self.G_s2t(input_source_img)
 
-        input_fake_source = torch.cat([fake_source, self.seg_s(fake_source)],1) 
-        input_fake_target = torch.cat([fake_target, self.seg_t(fake_target)],1)
+        input_fake_source = torch.cat([fake_source, self.seg_s(fake_source)], 1)
+        input_fake_target = torch.cat([fake_target, self.seg_t(fake_target)], 1)
 
         cycled_source = self.G_t2s(input_fake_target)
         cycled_target = self.G_s2t(input_fake_source)
@@ -229,5 +230,5 @@ class GogollSystem(pl.LightningModule):
 
     def generate(self, inputs):
         source_segmentation_hat = self.seg_s(inputs)
-        input_source_img = torch.cat([inputs, source_segmentation_hat],1)
+        input_source_img = torch.cat([inputs, source_segmentation_hat], 1)
         return self.G_s2t(input_source_img)

@@ -70,9 +70,7 @@ class GogollDataModule(pl.LightningDataModule):
         )
         self.target_paths = glob.glob(
             os.path.join(self.target_dir, "*.jpg")
-        ) + glob.glob(
-            os.path.join(self.target_dir, "*.png")
-        )
+        ) + glob.glob(os.path.join(self.target_dir, "*.png"))
 
         if self.split:
             (

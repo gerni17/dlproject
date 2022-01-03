@@ -1,10 +1,6 @@
-import os
 import pytorch_lightning as pl
 import torch
-import wandb
-from torch.utils.data import DataLoader
-from torch.utils.data.dataloader import default_collate
-from torch import nn, optim
+from torch import optim
 from utils.metrics import MetricsSemseg
 from torchmetrics import IoU
 from torch.optim.lr_scheduler import LambdaLR

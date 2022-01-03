@@ -2,14 +2,8 @@ import warnings
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
-import glob
-import numpy as np
-import matplotlib.pyplot as plt
-from PIL import Image
-from itertools import chain
 import torch
-from torchvision.utils import make_grid
-from torch import nn, optim
+from torch import optim
 import pytorch_lightning as pl
 from utils.metrics import MetricsSemseg
 from torchmetrics import IoU

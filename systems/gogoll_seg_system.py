@@ -2,15 +2,8 @@ import warnings
 
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
-import glob
-import numpy as np
-import matplotlib.pyplot as plt
-from PIL import Image
-from itertools import chain
 import torch
-import torchmetrics
-from torchvision.utils import make_grid
-from torch import nn, optim
+from torch import optim
 import pytorch_lightning as pl
 from torch.optim.lr_scheduler import LambdaLR
 

@@ -1,14 +1,8 @@
-import math
 from typing import Optional
-from PIL import Image
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader
 import pytorch_lightning as pl
-import torch
-import os, glob, random
-from sklearn.model_selection import train_test_split
+import os, glob
 from datasets.labeled import LabeledDataset
-
-from utils.sanity import assert_matching_images
 
 
 # Data Module

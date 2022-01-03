@@ -1,20 +1,11 @@
 import warnings
 
-from torch.optim.lr_scheduler import LambdaLR
-
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
-import glob
-import numpy as np
-import matplotlib.pyplot as plt
-from PIL import Image
-from itertools import chain
 import torch
-import torchmetrics
-from torchvision.utils import make_grid
 from torch import nn, optim
 import pytorch_lightning as pl
-from utils.attention import toZeroThreshold, clamp
+from utils.attention import toZeroThreshold
 
 
 class GogollAttentionSystem(pl.LightningModule):

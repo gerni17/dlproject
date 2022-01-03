@@ -1,7 +1,5 @@
 import warnings
 
-from torch.optim.lr_scheduler import LambdaLR
-
 warnings.simplefilter(action="ignore", category=FutureWarning)
 
 import torch

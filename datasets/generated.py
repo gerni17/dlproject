@@ -2,9 +2,6 @@ from typing import Optional
 from torch.utils.data import DataLoader, Dataset
 import pytorch_lightning as pl
 import torch
-from sklearn.model_selection import train_test_split
-
-from utils.sanity import assert_matching_images
 
 
 class GeneratedDataset(Dataset):

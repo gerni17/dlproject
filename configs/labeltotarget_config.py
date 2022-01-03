@@ -98,7 +98,9 @@ def command_line_parser():
         default=0.95,
         help="Poly learning rate power",
     )
-
+    parser.add_argument(
+        "--seg_lr", type=float, default=0.0001, help="Poly learning rate power"
+    )
     # -------------------------- model settings --------------------------
     parser.add_argument(
         "--generator_filters",

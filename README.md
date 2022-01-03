@@ -4,6 +4,8 @@
 
 We provide information to reproduce our results on Euler (new software stack).
 
+Since our loggers and visualizers rely on logging to wandb, make sure you have signed up to https://wandb.ai/ and that you have installed and signed in to your wandb account on Euler.
+
 ### To run the pipeline on euler run the following commands:
 
 Clone the repo:

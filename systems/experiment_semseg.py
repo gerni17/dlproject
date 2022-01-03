@@ -55,11 +55,6 @@ class Semseg(pl.LightningModule):
             "loss": loss_semseg,
         }
 
-    # def training_epoch_end(self, outputs):
-    #     sampleimg=torch.rand((1,3,960,1280)).cuda()
-    #     # self.logger.experiment[2].add_graph(self,sampleimg) TOFO
-    #     pass
-
     def inference_step(self, batch):
         rgb = batch["source"]
 

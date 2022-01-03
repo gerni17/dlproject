@@ -59,7 +59,6 @@ class GogollSystem(pl.LightningModule):
         else:
             self.deep_loss = nn.MSELoss()
         self.semseg_loss = nn.CrossEntropyLoss()
-        # self.semseg_loss = torchmetrics.IoU(3)
         self.losses = []
         self.Seg_mean_losses = []
         self.G_mean_losses = []
@@ -235,30 +234,6 @@ class GogollSystem(pl.LightningModule):
 
     def training_epoch_end(self, outputs):
         self.step += 1
-
-        # # all = range(6)
-        # # segmentations = [0, 1]
-        # # generators = [2, 3]
-        # # discriminators = [4, 5]
-
-        # # avg_loss = sum([torch.stack([x["loss"] for x in outputs[i]]).mean().item() / 4 for i in all])
-        # # Seg_mean_loss = sum([torch.stack([x["loss"] for x in outputs[i]]).mean().item() / 2 for i in segmentations])
-        # # G_mean_loss = sum([torch.stack([x["loss"] for x in outputs[i]]).mean().item() / 2 for i in generators])
-        # # D_mean_loss = sum([torch.stack([x["loss"] for x in outputs[i]]).mean().item() / 2 for i in discriminators])
-        # # validity = sum([torch.stack([x["validity"] for x in outputs[i]]).mean().item() / 2 for i in generators])
-        # # reconstr = sum([torch.stack([x["reconstr"] for x in outputs[i]]).mean().item() / 2 for i in generators])
-        # # identity = sum([torch.stack([x["identity"] for x in outputs[i]]).mean().item() / 2 for i in generators])
-
-        # # self.losses.append(avg_loss)
-        # # self.Seg_mean_losses.append(Seg_mean_loss)
-        # # self.G_mean_losses.append(G_mean_loss)
-        # # self.D_mean_losses.append(D_mean_loss)
-        # # self.validity.append(validity)
-        # # self.reconstr.append(reconstr)
-        # # self.identity.append(identity)
-
-        # self.losses.append(outputs[0]["loss"])
-
         return None
 
     def generate(self, inputs):

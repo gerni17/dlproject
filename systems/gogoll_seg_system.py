@@ -23,7 +23,6 @@ class GogollSegSystem(pl.LightningModule):
         self.step = 0
 
         self.semseg_loss = torch.nn.CrossEntropyLoss()
-        # self.semseg_loss = torchmetrics.IoU(3)
         self.losses = []
 
     def configure_optimizers(self):

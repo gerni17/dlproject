@@ -177,12 +177,6 @@ def command_line_parser():
         help="Size training images should be scaled to",
     )
     parser.add_argument(
-        "--save_generated_images",
-        type=str2bool,
-        default=False,
-        help="Save generated images at the end of training?",
-    )
-    parser.add_argument(
         "--max_generated_images_saved",
         type=int,
         default=100,

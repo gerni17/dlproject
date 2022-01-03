@@ -53,7 +53,6 @@ class GogollSystem(pl.LightningModule):
         self.generator_loss = nn.MSELoss()
         self.discriminator_loss = nn.MSELoss()
         self.semseg_loss = nn.CrossEntropyLoss()
-        # self.semseg_loss = torchmetrics.IoU(3)
         self.losses = []
         self.Seg_mean_losses = []
         self.G_mean_losses = []
@@ -63,17 +62,6 @@ class GogollSystem(pl.LightningModule):
         self.identity = []
 
     def configure_optimizers(self):
-        # self.global_optimizer = optim.Adam(
-        #     chain(
-        #         self.G_s2t.parameters(),
-        #         self.G_t2s.parameters(),
-        #         self.D_source.parameters(),
-        #         self.D_target.parameters(),
-        #         self.seg_t.parameters(),
-        #     ),
-        #     lr=self.lr["G"],
-        #     betas=(0.5, 0.999),
-        # )
         self.g_s2t_optimizer = optim.Adam(
             self.G_s2t.parameters(), lr=self.lr["G"], betas=(0.5, 0.999)
         )
@@ -93,24 +81,13 @@ class GogollSystem(pl.LightningModule):
             self.seg_t.parameters(), lr=self.lr["seg_t"]/self.cfg.lr_ratio, betas=(0.5, 0.999)
         )
 
-        # sched = LambdaLR(self.seg_t_optimizer, lambda ep: max(1e-6, (1 - (ep - self.initial_epoch) / self.cfg.num_epochs_gogoll) ** self.cfg.lr_scheduler_power))
-
-        # self.g_optimizer = optim.Adam(chain(self.G_s2t.parameters(), self.G_t2s.parameters()), lr=self.lr["G"], betas=(0.5, 0.999))
-        # self.d_optimizer = optim.Adam(chain(self.D_source.parameters(), self.D_target.parameters()), lr=self.lr["D"], betas=(0.5, 0.999))
-        # self.seg_optimizer = optim.Adam(chain(self.seg_s.parameters(), self.seg_t.parameters()), lr=self.lr["D"], betas=(0.5, 0.999))
-
         return (
             [
-                # self.global_optimizer,
                 self.g_s2t_optimizer,
                 self.g_t2s_optimizer,
                 self.d_source_optimizer,
                 self.d_target_optimizer,
                 self.seg_t_optimizer,
-                # self.seg_t_optimizer,
-                # self.g_optimizer,
-                # self.d_optimizer,
-                # self.seg_optimizer,
             ],
             [],
         )
@@ -236,30 +213,6 @@ class GogollSystem(pl.LightningModule):
 
     def training_epoch_end(self, outputs):
         self.step += 1
-
-        # # all = range(6)
-        # # segmentations = [0, 1]
-        # # generators = [2, 3]
-        # # discriminators = [4, 5]
-
-        # # avg_loss = sum([torch.stack([x["loss"] for x in outputs[i]]).mean().item() / 4 for i in all])
-        # # Seg_mean_loss = sum([torch.stack([x["loss"] for x in outputs[i]]).mean().item() / 2 for i in segmentations])
-        # # G_mean_loss = sum([torch.stack([x["loss"] for x in outputs[i]]).mean().item() / 2 for i in generators])
-        # # D_mean_loss = sum([torch.stack([x["loss"] for x in outputs[i]]).mean().item() / 2 for i in discriminators])
-        # # validity = sum([torch.stack([x["validity"] for x in outputs[i]]).mean().item() / 2 for i in generators])
-        # # reconstr = sum([torch.stack([x["reconstr"] for x in outputs[i]]).mean().item() / 2 for i in generators])
-        # # identity = sum([torch.stack([x["identity"] for x in outputs[i]]).mean().item() / 2 for i in generators])
-
-        # # self.losses.append(avg_loss)
-        # # self.Seg_mean_losses.append(Seg_mean_loss)
-        # # self.G_mean_losses.append(G_mean_loss)
-        # # self.D_mean_losses.append(D_mean_loss)
-        # # self.validity.append(validity)
-        # # self.reconstr.append(reconstr)
-        # # self.identity.append(identity)
-
-        # self.losses.append(outputs[0]["loss"])
-
         return None
 
     def generate(self, inputs):

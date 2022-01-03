@@ -46,7 +46,6 @@ def main():
     }
     epochs_labeltotarget = cfg.num_epochs_labeltotarget
     reconstr_w = cfg.reconstruction_weight
-    id_w = cfg.identity_weight
     if cfg.shared:
         wandb.init(
             reinit=True,

@@ -202,22 +202,6 @@ def main():
 
     generator = main_system.G_s2t
 
-    # Image Generation & Saving  --------------------------------------------------------------
-    if cfg.save_generated_images:
-        dm_source = LabeledDataModule(
-            path.join(data_dir, 'source'), transform, batch_size=batch_size, split=True
-        )
-        save_path = path.join(cfg.generated_dataset_save_root, run_name)
-        # Generate fake target domain images and save them to a persistent folder (with the
-        # same name as the current run)
-        save_generated_dataset(
-            generator,
-            dm_source,
-            save_path,
-            logger=seg_wandb_logger,
-            max_images=cfg.max_generated_images_saved,
-            seg_net=seg_net_s
-        )
 
     # Train datamodules
     dm_source = LabeledDataModule(

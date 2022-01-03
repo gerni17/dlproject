@@ -77,7 +77,7 @@ def command_line_parser():
 
     # -------------------------- data settings --------------------------
     parser.add_argument(
-        "--dataset_root", type=expandpath, default="/cluster/scratch/$USER/dl_data/data", help="Path to dataset",
+        "--dataset_root", type=expandpath, default="/cluster/scratch/$USER/dl_data/data/source", help="Path to dataset",
     )
     parser.add_argument(
         "--image_size",

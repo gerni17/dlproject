@@ -163,9 +163,9 @@ def main():
             # semseg_t_image_callback,
         ],
         # Uncomment the following options if you want to try out framework changes without training too long
-        limit_train_batches=2,
-        limit_val_batches=2,
-        limit_test_batches=2,
+        # limit_train_batches=2,
+        # limit_val_batches=2,
+        # limit_test_batches=2,
     )
 
     trainer = Trainer(
@@ -179,9 +179,9 @@ def main():
             pipeline_image_callback,
         ],
         # Uncomment the following options if you want to try out framework changes without training too long
-        limit_train_batches=2,
-        limit_val_batches=2,
-        limit_test_batches=2,
+        # limit_train_batches=2,
+        # limit_val_batches=2,
+        # limit_test_batches=2,
     )
 
     # Train
@@ -310,9 +310,9 @@ def evaluate_ours(
                 semseg_image_callback,
                 baseline_image_callback,
             ],
-            limit_train_batches=2,
-            limit_val_batches=2,
-            limit_test_batches=2,
+            # limit_train_batches=2,
+            # limit_val_batches=2,
+            # limit_test_batches=2,
         )
 
         cv_trainer.fit(seg_system, datamodule=train_datamodule)

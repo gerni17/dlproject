@@ -7,25 +7,25 @@ if [ ! -d /cluster/scratch/$USER/dl_data ]; then
 fi
 
 # run semseg
-python -m scripts.run_semseg --name semseg --num_epochs_seg 2
+python -m scripts.run_semseg --name semseg 
 
 # run baselines
-python -m scripts.run_baselines --name baselines --num_epochs_final 2 
+python -m scripts.run_baselines --name baselines 
 
 # run cycle gan
-python -m scripts.run_cycle_gan --name cycle --num_epochs_seg 1 --num_epochs_final 2 --num_epochs_cyclegan 2
+python -m scripts.run_cycle_gan --name cycle 
 
 # run gogoll gan
-python -m scripts.run_gogoll_gan --name gogoll --num_epochs_seg 1 --num_epochs_final 2 --num_epochs_gogoll 2
+python -m scripts.run_gogoll_gan --name gogoll
 
 # run labeltotarget
-python -m scripts.run_labeltotarget --name labeltotarget --num_epochs_final 2 --num_epochs_labeltotarget 2
+python -m scripts.run_labeltotarget --name labeltotarget
 
 # run attention gan
-python -m scripts.run_attention_gan --name attention --num_epochs_seg 1 --num_epochs_final 2 --num_epochs_gogoll 2
+python -m scripts.run_attention_gan --name attention
 
 # run embedding
-python -m scripts.run_embedding --name embedding --num_epochs_seg 1 --num_epochs_final 2 --num_epochs_gogoll 2
+python -m scripts.run_embedding --name embedding
 
 # run stacking
-python -m scripts.run_stacking --name stacking --num_epochs_seg 1 --num_epochs_final 2 --num_epochs_gogoll 2
+python -m scripts.run_stacking --name stacking

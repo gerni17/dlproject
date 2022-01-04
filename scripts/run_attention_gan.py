@@ -55,7 +55,6 @@ def main():
     id_w = cfg.identity_weight
     seg_w = cfg.segmentation_weight
 
-    wandb.login(key="969803cb62211763351a441ac5c9e96ce995f7eb")  # for aleks euler
 
     # Data Preprocessing  -----------------------------------------------------------------
     transform = SegImageTransform(img_size=cfg.image_size)
